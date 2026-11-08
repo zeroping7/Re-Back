@@ -4,7 +4,8 @@ Juego de carreras de coches RC para Android inspirado en Re-Volt.
 Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor.
 
 - **Jugar en el navegador:** https://zeroping7.github.io/Re-Back/
-- **APK (última versión):** https://github.com/zeroping7/Re-Back/releases/latest/download/re-back.apk
+- **APK (última versión):** https://zeroping7.github.io/Re-Back/re-back.apk
+  (alternativa: https://github.com/zeroping7/Re-Back/releases/latest)
 
 ## Fase actual: 1 — Un coche y un circuito para afinar la conducción ✅ (pendiente de probar en móvil)
 
