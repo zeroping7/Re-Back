@@ -1,50 +1,57 @@
 # PROGRESO — Re-Back
 
 Juego de carreras de coches RC para Android inspirado en Re-Volt.
-Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor.
+Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor 8.
 
 - **Jugar en el navegador:** https://zeroping7.github.io/Re-Back/
 - **APK (última versión):** https://zeroping7.github.io/Re-Back/re-back.apk
   (alternativa: https://github.com/zeroping7/Re-Back/releases/latest)
 
-## Fase actual: 1 — Un coche y un circuito para afinar la conducción ✅ (pendiente de probar en móvil)
+## Estado: fases 1-5 hechas ✅ — pendiente de probar en el móvil y pulir
 
-### Hecho
-- Proyecto Vite + Three.js + Rapier + Capacitor 8 (Android, horizontal, pantalla completa inmersiva).
-- CI (GitHub Actions): publica la web en la rama `gh-pages` y compila el APK en cada push a `main`
-  (release `v0.1.N` con `re-back.apk`; firma fija para actualizar sin desinstalar).
-- **Coche RC** (`src/car.js`): controlador de vehículo por rayos de Rapier con suspensión real,
-  tracción 4x4 con reparto trasero, freno, marcha atrás, derrape con freno+giro, control en el aire,
-  estabilizador anti-vuelco, carga aerodinámica, recolocación automática si vuelca.
-  Modelo de buggy RC 1:10 por código (`src/carModel.js`): carrocería de policarbonato con franjas y dorsal,
-  chasis de aluminio, torretas de carbono, trapecios y amortiguadores con muelle animados con la suspensión,
-  neumáticos de tacos, llantas de 6 radios, alerón, pilotos de freno y antena con muelle.
+### Fase 1 — Conducción ✅
+- Coche con controlador de vehículo por rayos de Rapier: suspensión real, 4x4 con reparto trasero,
+  freno, marcha atrás, derrape (freno + giro), control en el aire, antivuelco, carga aerodinámica.
 - Ajuste por defecto elegido por el usuario: tracción trasera 90 %, freno 10, giro máx. 0,3.
-- **Circuito 1 "El salón"** (`src/track.js`): bordes de bloques de juguete, salida con latas gigantes,
-  rampa-libro para saltar, dos lápices como badenes, túnel bajo la mesa de centro, sofá, mueble de TV,
-  estantería, planta, lámpara, alfombra, ventana con sol (sombras dinámicas) y reflejos de entorno.
-- **Sensaciones** (`src/main.js`, `src/effects.js`): cámara de persecución con anticolisión, FOV según
-  velocidad, temblor en golpes y aterrizajes, humo de derrape, polvo al aterrizar, chispas, marcas de
-  neumático, vibración del móvil, sonido sintetizado (motor, derrape, golpes).
-- **Controles** (`src/controls.js`): botones táctiles (◀ ▶ ▲ ▼), modo inclinación (botón 🎮/📱) y teclado.
-- **Panel de ajustes ⚙** (`src/tuning.js`): sliders en vivo para potencia, giro, agarre, suspensión,
-  gravedad, cámara… se guardan en el móvil; "Copiar valores" para pegarlos en el chat.
-- Calidad adaptativa (baja la resolución si van menos de 42 fps).
-- Pruebas: `tests/sim.mjs` (piloto automático sin gráficos: vueltas, vuelcos, trompos),
-  `tests/auto.mjs` (capturas en Chrome headless), `tests/driftsim.mjs`, `tests/curv.mjs`.
+- Panel ⚙ con sliders en vivo (se guardan en el móvil; "Copiar valores" para pegarlos en el chat).
 
-### Pendiente fase 1
-- ~~Afinar la conducción~~ ✅ valores del usuario aplicados por defecto.
-- Comprobar el sentido del modo inclinación.
+### Fase 2 — Rivales y vueltas ✅
+- `src/race.js`: cuenta atrás con cámara de presentación, vueltas, posiciones, mejor vuelta,
+  aviso de sentido contrario, recolocación automática (vuelco, fuera de pista, atasco), resultados.
+- `src/ai.js`: IA con carril propio, frena antes de las curvas según el radio, esquiva coches y aceite,
+  sale de atascos marcha atrás, "goma elástica" suave y uso de objetos.
+- Récords por circuito (vuelta, carrera, victorias) guardados en el móvil.
+- Marcador: posición, vuelta, tiempo, récord, minimapa, velocímetro.
 
-## Próximas fases
-2. IA rival y vueltas cronometradas (checkpoints, contador de vueltas, mejor vuelta).
-3. Power-ups: cohete, bola de agua, turbo, mancha de aceite, bomba.
-4. Más circuitos (supermercado, jardín), más coches, menús y sonido.
-5. APK final (icono, firma de release).
+### Fase 3 — Power-ups ✅ (`src/items.js`)
+- Cajas "?" en 3 puntos de cada circuito; el objeto depende de la posición (los últimos reciben mejores).
+- 🚀 Cohete teledirigido al coche de delante · 💧 Bola de agua que rebota y empapa (frena)
+- ⚡ Turbo · 🛢️ Mancha de aceite (pierdes agarre) · 💣 Bomba "patata caliente" (se pasa al tocar a otro).
+- Explosiones con fuego, humo, chispas, destello de luz y temblor de cámara.
+
+### Fase 4 — Contenido ✅
+- Circuitos (`src/tracks/`): **El salón** (rampa-libro, lápices, túnel bajo la mesa), **Supermercado**
+  (estantería gigante, caja-rampa, túnel de cajas de cereales, naranjas, carritos) y **El jardín**
+  (camino de tierra, tabla-rampa, charco que frena, raíces, gnomo, estanque, árboles, cielo).
+- Coches (`src/cars.js`): Rayo (buggy), Chispa (ligero), Flecha (turismo), Tanque (monster truck), Bólido.
+  Modelos por código con suspensión animada (`src/carModel.js`).
+- Menús: principal (con el coche girando en una plataforma), carrera / contrarreloj, opciones
+  (sonido, música, dirección, calidad), pausa y resultados.
+- Sonido y música sintetizados por código (`src/audio.js`).
+
+### Fase 5 — APK final ✅
+- Icono propio (adaptativo), pantalla de carga, nombre "Re-Back", versión 1.0.N, horizontal, pantalla completa.
+- Firma fija (debug) para actualizar sin desinstalar. Cada push publica web + APK.
+
+## Pendiente / ideas
+- Probar en el móvil: rendimiento (Opciones → Calidad si va lento) y sentido del modo inclinación.
+- Multijugador online (opcional, futuro).
+- Más circuitos y coches; logros.
 
 ## Notas técnicas
-- Escala: 1 unidad ≈ 22 cm. Coche ≈ 2 u de largo. Gravedad de juego 28.
-- Los bordes y paredes están en un grupo de colisión que los rayos de las ruedas ignoran
-  (evita que el coche salga despedido al rozar un bloque).
-- Parámetros de URL para depurar: `?test=1` (empieza sin menú), `&cam=top` (vista cenital), `&cam=side`, `&cam=close`, `&cam=rear`.
+- Escala: 1 unidad ≈ 22 cm. Gravedad de juego 28.
+- Grupos de colisión (`tracks/common.js`): los rayos de las ruedas ignoran bordes y coches; la cámara ignora coches.
+- Las mallas estáticas del circuito se fusionan por material (`mergeStatic`) para reducir llamadas de dibujo.
+- Depuración: `?test=1&track=super&rivals=3&auto=1&cam=top` (auto = el jugador conduce solo).
+- Pruebas: `node tests/racesim.mjs <circuito> <rivales> <vueltas>` (carrera completa sin gráficos),
+  `tests/race.mjs` y `tests/menu.mjs` (capturas en Chrome headless), `tests/curv.mjs` (radios de curva).

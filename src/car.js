@@ -271,7 +271,7 @@ export class Car {
     this.lastVel.copy(this.velocity);
 
     // ¿volcado?
-    if (this.up.y < 0.3 && this.speed < 3) this.upsideTime += dt; else this.upsideTime = 0;
+    if (this.up.y < 0.5 && this.speed < 3) this.upsideTime += dt; else this.upsideTime = 0;
   }
 
   render(alpha) {

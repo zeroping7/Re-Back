@@ -199,6 +199,11 @@ export class Race {
       if (st.wrongT > 1.2) { this.hud.message('¡SENTIDO CONTRARIO!', 0.3, 'warn'); if (st.wrongT < 1.22) this.sfx.play('wrong'); }
     }
 
+    // IA atascada sin avanzar
+    if (!car.isPlayer && this.started && !st.finished) {
+      if (st.progress > (st.bestProg ?? -1e9)) { st.bestProg = st.progress; st.noProgT = 0; } else st.noProgT = (st.noProgT || 0) + dt;
+      if (st.noProgT > 5) { st.noProgT = 0; this.respawn(car); }
+    }
     // fuera de la pista (por ejemplo tras una explosión)
     const sc = c.samples[st.idx];
     const lat = Math.abs((p.x - sc.p.x) * sc.n.x + (p.z - sc.p.z) * sc.n.z);

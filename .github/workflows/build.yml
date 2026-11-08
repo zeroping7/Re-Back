@@ -35,7 +35,7 @@ jobs:
         working-directory: android
         env:
           VERSION_CODE: ${{ github.run_number }}
-          VERSION_NAME: 0.1.${{ github.run_number }}
+          VERSION_NAME: 1.0.${{ github.run_number }}
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
@@ -55,8 +55,8 @@ jobs:
       - name: Publicar release con el APK
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.1.${{ github.run_number }}
-          name: Re-Back v0.1.${{ github.run_number }}
+          tag_name: v1.0.${{ github.run_number }}
+          name: Re-Back v1.0.${{ github.run_number }}
           body: |
             APK automático del commit ${{ github.sha }}.
             Descarga directa de la última versión:

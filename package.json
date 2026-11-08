@@ -1,6 +1,6 @@
 {
   "name": "re-back",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Juego de carreras de coches RC inspirado en Re-Volt",
   "scripts": {
     "dev": "vite --host",
