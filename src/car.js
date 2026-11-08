@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { WHEEL_RAY_GROUPS } from './track.js';
+import { buildCarModel } from './carModel.js';
 
 // Coche RC: chasis de Rapier + controlador de vehículo por rayos (suspensión real).
 // Ejes locales: +Z adelante, +Y arriba, +X izquierda.
@@ -59,7 +60,8 @@ export class Car {
     this.applyTuning();
 
     // ----- Modelo low-poly -----
-    this.model = buildModel(color);
+    this.model = buildCarModel(color, WHEELS, WHEEL_R, CONN_Y);
+    this.hubY = [0, 0, 0, 0];
     this.wheelMeshes = this.model.userData.wheels;
     scene.add(this.model);
   }
@@ -263,10 +265,12 @@ export class Car {
       const wm = this.wheelMeshes[i];
       const len = veh.wheelSuspensionLength(i) ?? this.t.suspRest;
       wm.position.set(WHEELS[i].x, CONN_Y - len, WHEELS[i].z);
+      this.hubY[i] = CONN_Y - len;
       wm.rotation.y = WHEELS[i].front ? this.steer : 0;
       wm.children[0].rotation.x = this.spin[i];
     }
     const u = this.model.userData;
+    u.updateSuspension(this.hubY);
     u.antenna.rotation.set(u.antennaBase.x + this.antenna.pitch, 0, this.antenna.roll);
     const brakeGlow = this.braking || this.drifting ? 3.2 : this.reversing ? 1.5 : 0.6;
     u.tailMat.emissiveIntensity += (brakeGlow - u.tailMat.emissiveIntensity) * 0.3;
@@ -274,91 +278,3 @@ export class Car {
   }
 }
 
-// ---------------------------------------------------------------------------
-function buildModel(color) {
-  const g = new THREE.Group();
-  const paint = new THREE.MeshPhysicalMaterial({ color, roughness: 0.32, metalness: 0.15, clearcoat: 1, clearcoatRoughness: 0.15, flatShading: true });
-  const dark = new THREE.MeshStandardMaterial({ color: '#232326', roughness: 0.7, flatShading: true });
-  const glass = new THREE.MeshStandardMaterial({ color: '#16243a', roughness: 0.05, metalness: 0.6, flatShading: true });
-  const white = new THREE.MeshStandardMaterial({ color: '#f2f2f2', roughness: 0.5, flatShading: true });
-  const add = (geo, m, x, y, z) => { const mesh = new THREE.Mesh(geo, m); mesh.position.set(x, y, z); mesh.castShadow = true; mesh.receiveShadow = true; g.add(mesh); return mesh; };
-
-  // chasis inferior
-  add(new THREE.BoxGeometry(0.86, 0.14, 2.05), dark, 0, -0.04, 0);
-  // carrocería en cuña
-  const shell = new THREE.BoxGeometry(1.02, 0.32, 1.78, 1, 1, 2);
-  shapeVerts(shell, (v) => {
-    if (v.y > 0 && v.z > 0.3) v.y -= 0.17 * (v.z / 0.89);   // morro bajo
-    if (v.y > 0) v.x *= 0.88;
-    if (v.z > 0.8) v.x *= 0.85;
-  });
-  add(shell, paint, 0, 0.17, 0.02);
-  // cabina
-  const cab = new THREE.BoxGeometry(0.72, 0.3, 0.8);
-  shapeVerts(cab, (v) => {
-    if (v.y > 0) { v.x *= 0.78; if (v.z > 0) v.z -= 0.26; if (v.z < 0) v.z += 0.1; }
-  });
-  add(cab, glass, 0, 0.46, -0.12);
-  // franja
-  add(new THREE.BoxGeometry(0.2, 0.02, 0.5), white, 0, 0.62, -0.18);
-  // parachoques
-  add(new THREE.BoxGeometry(1.08, 0.13, 0.16), dark, 0, -0.02, 1.06);
-  add(new THREE.BoxGeometry(1.0, 0.12, 0.14), dark, 0, 0.0, -1.02);
-  // alerón
-  add(new THREE.BoxGeometry(1.2, 0.05, 0.36), paint, 0, 0.72, -0.86);
-  add(new THREE.BoxGeometry(0.05, 0.16, 0.38), dark, 0.6, 0.7, -0.86);
-  add(new THREE.BoxGeometry(0.05, 0.16, 0.38), dark, -0.6, 0.7, -0.86);
-  for (const x of [0.32, -0.32]) add(new THREE.BoxGeometry(0.05, 0.36, 0.12), dark, x, 0.5, -0.86);
-  // faros
-  const headMat = new THREE.MeshStandardMaterial({ color: '#fff7d6', emissive: '#fff2b0', emissiveIntensity: 1.2 });
-  for (const x of [0.32, -0.32]) add(new THREE.BoxGeometry(0.2, 0.07, 0.04), headMat, x, 0.12, 0.92);
-  const tailMat = new THREE.MeshStandardMaterial({ color: '#550000', emissive: '#ff1a1a', emissiveIntensity: 0.6 });
-  for (const x of [0.33, -0.33]) add(new THREE.BoxGeometry(0.22, 0.08, 0.04), tailMat, x, 0.2, -0.88);
-  const revMat = new THREE.MeshStandardMaterial({ color: '#888', emissive: '#ffffff', emissiveIntensity: 0 });
-  add(new THREE.BoxGeometry(0.1, 0.06, 0.04), revMat, 0, 0.2, -0.88);
-  // número lateral
-  for (const s of [1, -1]) {
-    const disc = add(new THREE.CylinderGeometry(0.15, 0.15, 0.02, 10), white, s * 0.47, 0.2, -0.05);
-    disc.rotation.z = Math.PI / 2;
-  }
-
-  // antena de radio (muelle)
-  const antenna = new THREE.Group();
-  antenna.position.set(-0.32, 0.3, -0.62);
-  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.02, 1.3, 5), dark);
-  rod.position.y = 0.65; rod.castShadow = true;
-  const tip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 4), new THREE.MeshStandardMaterial({ color: '#ff3b30', emissive: '#ff3b30', emissiveIntensity: 0.4 }));
-  tip.position.y = 1.32;
-  antenna.add(rod, tip);
-  g.add(antenna);
-
-  // ruedas
-  const tire = new THREE.MeshStandardMaterial({ color: '#1b1b1b', roughness: 0.9, flatShading: true });
-  const rim = new THREE.MeshStandardMaterial({ color: '#f5c518', roughness: 0.35, metalness: 0.5, flatShading: true });
-  const wheels = [];
-  for (const w of WHEELS) {
-    const pivot = new THREE.Group();
-    const spin = new THREE.Group();
-    const t = new THREE.Mesh(new THREE.CylinderGeometry(WHEEL_R, WHEEL_R, 0.32, 12), tire);
-    t.rotation.z = Math.PI / 2; t.castShadow = true;
-    const h = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.34, 6), rim);
-    h.rotation.z = Math.PI / 2;
-    const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.06, 0.36), dark);
-    spin.add(t, h, spoke);
-    pivot.add(spin);
-    pivot.position.set(w.x, CONN_Y - 0.3, w.z);
-    g.add(pivot);
-    wheels.push(pivot);
-  }
-
-  g.userData = { wheels, antenna, antennaBase: new THREE.Vector3(-0.12, 0, 0), tailMat, revMat };
-  return g;
-}
-
-function shapeVerts(geo, fn) {
-  const p = geo.attributes.position, v = new THREE.Vector3();
-  for (let i = 0; i < p.count; i++) {
-    v.fromBufferAttribute(p, i); fn(v); p.setXYZ(i, v.x, v.y, v.z);
-  }
-  geo.computeVertexNormals();
-}

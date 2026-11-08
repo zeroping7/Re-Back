@@ -4,9 +4,9 @@ const KEY = 'reback.tuning.v1';
 export const TUNING_DEFS = [
   { key: 'engine',      label: 'Potencia',              min: 40,  max: 400, step: 5,    def: 150 },
   { key: 'maxSpeed',    label: 'Velocidad máx.',        min: 10,  max: 70,  step: 1,    def: 33 },
-  { key: 'rearBias',    label: 'Tracción trasera (%)',  min: 0,   max: 100, step: 5,    def: 60 },
-  { key: 'brake',       label: 'Freno',                 min: 0.5, max: 12,  step: 0.5,  def: 3 },
-  { key: 'steerMax',    label: 'Giro máx. (rad)',       min: 0.2, max: 0.9, step: 0.01, def: 0.55 },
+  { key: 'rearBias',    label: 'Tracción trasera (%)',  min: 0,   max: 100, step: 5,    def: 90 },
+  { key: 'brake',       label: 'Freno',                 min: 0.5, max: 12,  step: 0.5,  def: 10 },
+  { key: 'steerMax',    label: 'Giro máx. (rad)',       min: 0.2, max: 0.9, step: 0.01, def: 0.3 },
   { key: 'steerSpeed',  label: 'Rapidez de giro',       min: 1,   max: 15,  step: 0.5,  def: 6 },
   { key: 'steerFalloff',label: 'Menos giro a alta vel.',min: 0,   max: 0.1, step: 0.005,def: 0.03 },
   { key: 'gripFront',   label: 'Agarre delantero',      min: 0.5, max: 8,   step: 0.1,  def: 3.4 },

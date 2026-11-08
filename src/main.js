@@ -109,8 +109,10 @@ async function init() {
       camera.position.set(0, 120, 0.01); camera.lookAt(0, 0, 0); camera.fov = 50; camera.updateProjectionMatrix();
       return;
     }
-    if (params.get('cam') === 'side') {
-      camera.position.copy(carRender).add(tmp.set(4.5, 2.2, 3.5)); camera.lookAt(carRender); camera.fov = 50; camera.updateProjectionMatrix();
+    if (params.get('cam') === 'side' || params.get('cam') === 'close' || params.get('cam') === 'rear') {
+      const off = { side: [4.5, 2.2, 3.5], close: [2.2, 0.9, 1.9], rear: [-1.6, 0.8, -2.4] }[params.get('cam')];
+      tmp.set(off[0], off[1], off[2]).applyAxisAngle(new THREE.Vector3(0, 1, 0), track.start.yaw);
+      camera.position.copy(carRender).add(tmp); camera.lookAt(carRender); camera.fov = 50; camera.updateProjectionMatrix();
       return;
     }
     // dirección: morro del coche, mezclada con la velocidad al derrapar

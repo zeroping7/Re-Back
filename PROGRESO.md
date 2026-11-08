@@ -16,7 +16,10 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - **Coche RC** (`src/car.js`): controlador de vehículo por rayos de Rapier con suspensión real,
   tracción 4x4 con reparto trasero, freno, marcha atrás, derrape con freno+giro, control en el aire,
   estabilizador anti-vuelco, carga aerodinámica, recolocación automática si vuelca.
-  Modelo low-poly por código: carrocería en cuña, cabina, alerón, faros, pilotos de freno, antena con muelle.
+  Modelo de buggy RC 1:10 por código (`src/carModel.js`): carrocería de policarbonato con franjas y dorsal,
+  chasis de aluminio, torretas de carbono, trapecios y amortiguadores con muelle animados con la suspensión,
+  neumáticos de tacos, llantas de 6 radios, alerón, pilotos de freno y antena con muelle.
+- Ajuste por defecto elegido por el usuario: tracción trasera 90 %, freno 10, giro máx. 0,3.
 - **Circuito 1 "El salón"** (`src/track.js`): bordes de bloques de juguete, salida con latas gigantes,
   rampa-libro para saltar, dos lápices como badenes, túnel bajo la mesa de centro, sofá, mueble de TV,
   estantería, planta, lámpara, alfombra, ventana con sol (sombras dinámicas) y reflejos de entorno.
@@ -31,7 +34,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
   `tests/auto.mjs` (capturas en Chrome headless), `tests/driftsim.mjs`, `tests/curv.mjs`.
 
 ### Pendiente fase 1
-- Probar en el móvil y afinar la conducción con el panel ⚙ (pegar los valores en el chat).
+- ~~Afinar la conducción~~ ✅ valores del usuario aplicados por defecto.
 - Comprobar el sentido del modo inclinación.
 
 ## Próximas fases
@@ -44,4 +47,4 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Escala: 1 unidad ≈ 22 cm. Coche ≈ 2 u de largo. Gravedad de juego 28.
 - Los bordes y paredes están en un grupo de colisión que los rayos de las ruedas ignoran
   (evita que el coche salga despedido al rozar un bloque).
-- Parámetros de URL para depurar: `?test=1` (empieza sin menú), `&cam=top` (vista cenital), `&cam=side`.
+- Parámetros de URL para depurar: `?test=1` (empieza sin menú), `&cam=top` (vista cenital), `&cam=side`, `&cam=close`, `&cam=rear`.
