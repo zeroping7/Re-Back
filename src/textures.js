@@ -110,3 +110,52 @@ export function canTexture() {
     g.font = 'italic bold 40px sans-serif'; g.fillText('FIZZ', 70, 50);
   });
 }
+
+export function tileTexture(repeat) {
+  return canvasTex(256, 256, (g, w, h) => {
+    const r = rnd(21);
+    const n = 2, s = w / n;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+      const l = (i + j) % 2 ? 90 : 84;
+      g.fillStyle = `hsl(210, 8%, ${l + r() * 3}%)`;
+      g.fillRect(i * s, j * s, s, s);
+    }
+    g.fillStyle = '#9aa1a8';
+    for (let i = 0; i <= n; i++) { g.fillRect(i * s - 2, 0, 4, h); g.fillRect(0, i * s - 2, w, 4); }
+    for (let k = 0; k < 400; k++) { g.fillStyle = r() > 0.5 ? '#ffffff22' : '#0000000d'; g.fillRect(r() * w, r() * h, 2, 2); }
+  }, { repeat });
+}
+
+export function grassTexture(repeat) {
+  return canvasTex(256, 256, (g, w, h) => {
+    const r = rnd(5);
+    g.fillStyle = '#5d9a3a'; g.fillRect(0, 0, w, h);
+    for (let k = 0; k < 2600; k++) {
+      const l = 30 + r() * 22;
+      g.fillStyle = `hsl(${92 + r() * 20}, 50%, ${l}%)`;
+      g.fillRect(r() * w, r() * h, 2, 3 + r() * 4);
+    }
+  }, { repeat });
+}
+
+export function dirtTexture(repeat) {
+  return canvasTex(256, 256, (g, w, h) => {
+    const r = rnd(9);
+    g.fillStyle = '#8a6a48'; g.fillRect(0, 0, w, h);
+    for (let k = 0; k < 2200; k++) {
+      g.fillStyle = `hsl(${28 + r() * 10}, ${30 + r() * 20}%, ${28 + r() * 25}%)`;
+      const s = 1 + r() * 4;
+      g.fillRect(r() * w, r() * h, s, s);
+    }
+  }, { repeat });
+}
+
+export function labelTexture(lines, bg, fg = '#fff') {
+  return canvasTex(256, 128, (g, w, h) => {
+    g.fillStyle = bg; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#ffffff33'; g.fillRect(0, h * 0.68, w, h * 0.12);
+    g.fillStyle = fg; g.textAlign = 'center'; g.font = 'bold 40px sans-serif';
+    g.fillText(lines[0], w / 2, 56);
+    if (lines[1]) { g.font = 'bold 22px sans-serif'; g.fillText(lines[1], w / 2, 100); }
+  });
+}

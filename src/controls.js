@@ -22,10 +22,15 @@ export class Controls {
       el.addEventListener('contextmenu', (e) => e.preventDefault());
     };
     bind('btn-left', 'left'); bind('btn-right', 'right'); bind('btn-gas', 'gas'); bind('btn-brake', 'brake');
+    this.firePending = false;
+    const item = document.getElementById('btn-item');
+    item.addEventListener('pointerdown', (e) => { e.preventDefault(); this.firePending = true; vibrate(15); });
 
     addEventListener('keydown', (e) => {
       this.keys.add(e.code);
       if (e.code === 'KeyR' && this.onReset) this.onReset();
+      if ((e.code === 'KeyE' || e.code === 'Enter' || e.code === 'ShiftLeft') && !e.repeat) this.firePending = true;
+      if ((e.code === 'Escape' || e.code === 'KeyP') && this.onPause) this.onPause();
     });
     addEventListener('keyup', (e) => this.keys.delete(e.code));
     addEventListener('blur', () => this.keys.clear());
@@ -45,19 +50,31 @@ export class Controls {
       document.getElementById('steer-pad').classList.toggle('hidden', this.mode === 'tilt');
       modeBtn.textContent = this.mode === 'tilt' ? '📱' : '🎮';
     };
-    modeBtn.addEventListener('click', async () => {
-      if (this.mode === 'buttons') {
-        try {
-          if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) {
-            await DeviceOrientationEvent.requestPermission();
-          }
-        } catch { /* sin permiso */ }
-        this.mode = 'tilt'; this.tiltZero = null;
-      } else this.mode = 'buttons';
-      localStorage.setItem(KEY_MODE, this.mode);
-      applyMode();
-    });
+    this.applyMode = applyMode;
+    modeBtn.addEventListener('click', () => this.setMode(this.mode === 'buttons' ? 'tilt' : 'buttons'));
     applyMode();
+  }
+
+  async setMode(m) {
+    if (m === 'tilt') {
+      try {
+        if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission) {
+          await DeviceOrientationEvent.requestPermission();
+        }
+      } catch { /* sin permiso */ }
+      this.tiltZero = null;
+    }
+    this.mode = m;
+    localStorage.setItem(KEY_MODE, m);
+    this.applyMode();
+  }
+
+  consumeFire() { const f = this.firePending; this.firePending = false; return f; }
+
+  releaseAll() {
+    for (const k in this.state) this.state[k] = false;
+    document.querySelectorAll('.pad.active').forEach((el) => el.classList.remove('active'));
+    this.keys.clear(); this.firePending = false;
   }
 
   // Devuelve { steer: -1..1 (+ = izquierda), throttle, brake }

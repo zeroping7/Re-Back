@@ -100,7 +100,7 @@ export class SkidMarks {
     this.mesh.frustumCulled = false;
     scene.add(this.mesh);
     this.next = 0;
-    this.last = [null, null, null, null];
+    this.last = [];
   }
 
   // Llamar cada paso por rueda: punto de contacto, dirección lateral, intensidad (0 = sin marca)

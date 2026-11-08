@@ -1,57 +1,20 @@
 import * as THREE from 'three';
-import { parquetTexture, rugTexture, checkerTexture, wallpaperTexture, bookCoverTexture, canTexture } from './textures.js';
+import { parquetTexture, rugTexture, wallpaperTexture, bookCoverTexture, canTexture } from '../textures.js';
+import { buildCircuit, mat, BARRIER_GROUPS } from './common.js';
 
-// Circuito 1: "El salón". Escala de juguete: 1 unidad ≈ 22 cm del mundo real.
-export const TRACK_WIDTH = 8.5;
-// Grupo de colisión de bordes y paredes: los rayos de las ruedas lo ignoran
-export const BARRIER_GROUPS = (0x0002 << 16) | 0xffff;
-export const WHEEL_RAY_GROUPS = (0x0001 << 16) | 0x0001;
+// Circuito 1: "El salón". Escala de juguete: 1 unidad ≈ 22 cm.
 const ROOM = { x: 48, z: 34, h: 30 };
 
-const matCache = new Map();
-function mat(color, opts = {}) {
-  const k = color + JSON.stringify(opts);
-  if (!matCache.has(k)) {
-    matCache.set(k, new THREE.MeshStandardMaterial({ color, roughness: 0.75, metalness: 0, flatShading: true, ...opts }));
-  }
-  return matCache.get(k);
-}
+export default {
+  id: 'salon',
+  name: 'El salón',
+  desc: 'Parqué, rampa-libro y túnel bajo la mesa',
+  color: '#e8a23b',
+  build,
+};
 
-export function buildTrack(scene, world, RAPIER) {
-  const fixed = world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
-  const tmpQ = new THREE.Quaternion();
-  const tmpE = new THREE.Euler();
-
-  function collider(desc, pos, quat, { friction = 0.6, restitution = 0.1, groups } = {}) {
-    desc.setTranslation(pos.x, pos.y, pos.z);
-    if (quat) desc.setRotation({ x: quat.x, y: quat.y, z: quat.z, w: quat.w });
-    desc.setFriction(friction).setRestitution(restitution);
-    if (groups !== undefined) desc.setCollisionGroups(groups);
-    world.createCollider(desc, fixed);
-  }
-
-  // Caja con malla + colisión. rot = [x,y,z] Euler 'YXZ'
-  function box(w, h, d, x, y, z, material, { rot = [0, 0, 0], solid = true, shadow = true, receive = true, phys = {} } = {}) {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), typeof material === 'string' ? mat(material) : material);
-    m.position.set(x, y, z);
-    tmpE.set(rot[0], rot[1], rot[2], 'YXZ');
-    m.quaternion.setFromEuler(tmpE);
-    m.castShadow = shadow; m.receiveShadow = receive;
-    scene.add(m);
-    if (solid) collider(RAPIER.ColliderDesc.cuboid(w / 2, h / 2, d / 2), m.position, m.quaternion, phys);
-    return m;
-  }
-
-  function cyl(rTop, rBot, h, x, y, z, material, { seg = 10, solid = true, shadow = true, rot = [0, 0, 0] } = {}) {
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, h, seg), typeof material === 'string' ? mat(material) : material);
-    m.position.set(x, y, z);
-    tmpE.set(rot[0], rot[1], rot[2], 'YXZ');
-    m.quaternion.setFromEuler(tmpE);
-    m.castShadow = shadow; m.receiveShadow = true;
-    scene.add(m);
-    if (solid) collider(RAPIER.ColliderDesc.cylinder(h / 2, Math.max(rTop, rBot)), m.position, m.quaternion);
-    return m;
-  }
+function build(B) {
+  const { scene, RAPIER, box, cyl, collider } = B;
 
   // ---------- Suelo y paredes ----------
   const floorMat = new THREE.MeshStandardMaterial({ map: parquetTexture([22, 15.5]), roughness: 0.38, metalness: 0.0 });
@@ -108,27 +71,20 @@ export function buildTrack(scene, world, RAPIER) {
   box(8, 10, 0.3, 20, 16, ROOM.z - 0.2, '#3b3b3b', { solid: false });
   box(7, 9, 0.32, 20, 16, ROOM.z - 0.25, '#5b8fd1', { solid: false });
 
+
   // ---------- Trazado ----------
-  const pts = [
-    [-18, 26], [4, 26.5], [24, 25], [36, 17], [39, 4], [37, -10], [29, -21], [15, -25.5],
-    [0, -25], [-13, -22], [-21, -14], [-29, -11], [-36, -4], [-38, 8], [-33, 20],
-  ].map(([x, z]) => new THREE.Vector3(x, 0, z));
-  const curve = new THREE.CatmullRomCurve3(pts, true, 'centripetal');
-  const length = curve.getLength();
-  const N = Math.round(length / 1.6);
-  const samples = [];
-  for (let i = 0; i < N; i++) {
-    const u = i / N;
-    const p = curve.getPointAt(u);
-    const t = curve.getTangentAt(u).setY(0).normalize();
-    samples.push({ p, t, n: new THREE.Vector3(-t.z, 0, t.x), u });
-  }
-  // La salida va en la recta de abajo
-  {
-    let k = 0, bd = Infinity;
-    samples.forEach((s, i) => { const d = (s.p.x + 12) ** 2 + (s.p.z - 26) ** 2; if (d < bd) { bd = d; k = i; } });
-    samples.push(...samples.splice(0, k));
-  }
+  const circuit = buildCircuit(B, {
+    points: [
+      [-18, 26], [4, 26.5], [24, 25], [36, 17], [39, 4], [37, -10], [29, -21], [15, -25.5],
+      [0, -25], [-13, -22], [-21, -14], [-29, -11], [-36, -4], [-38, 8], [-33, 20],
+    ],
+    start: [-12, 26],
+    width: 8.5,
+    barrier: { colors: ['#e63946', '#f1c40f', '#2a9df4', '#2ecc71', '#ff8c1a', '#9b59b6'] },
+  });
+  const W = circuit.width;
+  const { samples, sampleNear, yawOf } = circuit;
+  const s0 = samples[0];
 
   // Alfombra en el centro (visual, ligeramente elevada)
   const rug = new THREE.Mesh(new THREE.PlaneGeometry(30, 22), new THREE.MeshStandardMaterial({ map: rugTexture(), roughness: 1 }));
@@ -136,73 +92,28 @@ export function buildTrack(scene, world, RAPIER) {
   rug.receiveShadow = true;
   scene.add(rug);
 
-  // Bordes de pista: bloques de juguete de colores (instanciados)
-  const blockColors = ['#e63946', '#f1c40f', '#2a9df4', '#2ecc71', '#ff8c1a', '#9b59b6'];
-  const blockH = 1.0, blockT = 0.7;
-  const segs = [];
-  for (const side of [1, -1]) {
-    for (let i = 0; i < N; i++) {
-      const a = samples[i], b = samples[(i + 1) % N];
-      const pa = a.p.clone().addScaledVector(a.n, side * (TRACK_WIDTH / 2 + blockT / 2));
-      const pb = b.p.clone().addScaledVector(b.n, side * (TRACK_WIDTH / 2 + blockT / 2));
-      const mid = pa.clone().add(pb).multiplyScalar(0.5);
-      const dir = pb.clone().sub(pa);
-      const len = dir.length();
-      if (len < 0.2) continue;
-      segs.push({ mid, yaw: Math.atan2(dir.x, dir.z), len: len + 0.12 });
-    }
-  }
-  const blockGeo = new THREE.BoxGeometry(blockT, blockH, 1);
-  const blockMesh = new THREE.InstancedMesh(blockGeo, new THREE.MeshStandardMaterial({ roughness: 0.45, flatShading: true }), segs.length);
-  blockMesh.castShadow = true; blockMesh.receiveShadow = true;
-  const m4 = new THREE.Matrix4(), col = new THREE.Color();
-  segs.forEach((s, i) => {
-    tmpQ.setFromAxisAngle(new THREE.Vector3(0, 1, 0), s.yaw);
-    m4.compose(new THREE.Vector3(s.mid.x, blockH / 2, s.mid.z), tmpQ, new THREE.Vector3(1, 1, s.len - 0.08));
-    blockMesh.setMatrixAt(i, m4);
-    blockMesh.setColorAt(i, col.set(blockColors[i % blockColors.length]));
-    collider(RAPIER.ColliderDesc.cuboid(blockT / 2, blockH / 2 + 0.6, s.len / 2), { x: s.mid.x, y: blockH / 2 + 0.6, z: s.mid.z }, tmpQ,
-      { friction: 0.1, restitution: 0.35, groups: BARRIER_GROUPS });
-  });
-  scene.add(blockMesh);
-
-  // Línea de salida (cuadros)
-  const s0 = samples[0];
-  const startLine = new THREE.Mesh(new THREE.PlaneGeometry(TRACK_WIDTH, 1.6), new THREE.MeshStandardMaterial({ map: checkerTexture(10, 2), roughness: 0.6 }));
-  startLine.rotation.x = -Math.PI / 2;
-  startLine.rotation.z = Math.atan2(s0.t.x, s0.t.z);
-  startLine.position.set(s0.p.x, 0.04, s0.p.z);
-  startLine.receiveShadow = true;
-  scene.add(startLine);
   // Arco de salida con dos latas
   for (const side of [1, -1]) {
-    const c = s0.p.clone().addScaledVector(s0.n, side * (TRACK_WIDTH / 2 + 2.2));
+    const c = s0.p.clone().addScaledVector(s0.n, side * (W / 2 + 2.2));
     const can = cyl(1.3, 1.3, 5.2, c.x, 2.6, c.z, new THREE.MeshStandardMaterial({ map: canTexture(), roughness: 0.3, metalness: 0.6 }), { seg: 16 });
     can.rotation.y = side * 1.2;
     cyl(1.15, 1.3, 0.3, c.x, 5.35, c.z, mat('#c9ccd1', { metalness: 0.8, roughness: 0.3 }), { seg: 16, solid: false });
   }
 
-  function sampleNear(x, z) {
-    let best = 0, bd = Infinity;
-    samples.forEach((s, i) => { const d = (s.p.x - x) ** 2 + (s.p.z - z) ** 2; if (d < bd) { bd = d; best = i; } });
-    return samples[best];
-  }
-  function yawOf(t) { return Math.atan2(t.x, t.z); }
-
   // ---------- Rampa: libro gigante ----------
   {
     const s = sampleNear(4, 26.5);
-    const L = 7.5, H = 1.7, T = 0.6, W = TRACK_WIDTH - 0.2;
+    const L = 7.5, H = 1.7, T = 0.6, BW = W - 0.2;
     const a = Math.asin(H / L);
     const yaw = yawOf(s.t);
     const c = s.p.clone().addScaledVector(s.t, (L / 2) * Math.cos(a));
     const cover = bookCoverTexture('FÍSICA', '#1f4e8c');
     const bookMat = [mat('#f4ecd8'), mat('#f4ecd8'), new THREE.MeshStandardMaterial({ map: cover, roughness: 0.6 }), mat('#1f4e8c'), mat('#1f4e8c'), mat('#f4ecd8')];
-    const m = box(W, T, L, c.x, H / 2 - (T / 2) * Math.cos(a), c.z, bookMat, { rot: [-a, yaw, 0], phys: { friction: 0.8 } });
+    const m = box(BW, T, L, c.x, H / 2 - (T / 2) * Math.cos(a), c.z, bookMat, { rot: [-a, yaw, 0], phys: { friction: 0.8 } });
     m.userData.ramp = true;
     // Taco que sostiene el libro
     const back = s.p.clone().addScaledVector(s.t, L * Math.cos(a) - 0.9);
-    box(W - 1, H - 0.4, 1.2, back.x, (H - 0.4) / 2, back.z, '#c0392b', { rot: [0, yaw, 0] });
+    box(BW - 1, H - 0.4, 1.2, back.x, (H - 0.4) / 2, back.z, '#c0392b', { rot: [0, yaw, 0] });
   }
 
   // ---------- Lápices: badenes ----------
@@ -210,7 +121,7 @@ export function buildTrack(scene, world, RAPIER) {
     const s = sampleNear(x, z);
     const yaw = yawOf(s.t);
     const p = s.p.clone().addScaledVector(s.t, off);
-    const pencil = cyl(0.17, 0.17, TRACK_WIDTH + 1, p.x, 0.17, p.z, '#f4c430', { seg: 6, rot: [0, yaw, Math.PI / 2] });
+    const pencil = cyl(0.17, 0.17, W + 1, p.x, 0.17, p.z, '#f4c430', { seg: 6, rot: [0, yaw, Math.PI / 2] });
     pencil.updateMatrix();
   }
 
@@ -218,7 +129,7 @@ export function buildTrack(scene, world, RAPIER) {
   {
     const s = sampleNear(8, -25.5);
     const yaw = yawOf(s.t);
-    const top = 3.8, Lt = 13, Wt = TRACK_WIDTH + 4.5;
+    const top = 3.8, Lt = 13, Wt = W + 4.5;
     const fwd = s.t, side = s.n;
     const c = s.p;
     box(Wt, 0.7, Lt, c.x, top, c.z, '#c89b6d', { rot: [0, yaw, 0] });
@@ -325,14 +236,18 @@ export function buildTrack(scene, world, RAPIER) {
     box(6, 0.4, 8, -41.6, 0.6, 29.3, '#ecf0f1', { rot: [0, -0.15, 0] });
   }
 
-  const s1 = samples[1];
+
   return {
-    curve, samples, length,
-    lampPos,
-    start: { pos: samples[0].p.clone().addScaledVector(samples[0].t, -4), yaw: yawOf(s1.t) },
+    circuit,
     bounds: { x: ROOM.x - 1.5, z: ROOM.z - 1.5, h: ROOM.h - 1 },
-    sampleNear,
-    yawOf,
+    itemSpots: [0.2, 0.47, 0.75],
+    lights: {
+      background: '#1b1d2a',
+      hemi: ['#e3ecff', '#8a6a4a', 0.5],
+      sun: { color: '#fff0d6', intensity: 3.2, offset: [8, 34, -26] },
+      env: 0.35,
+      points: [{ color: '#ffc477', intensity: 260, distance: 70, decay: 1.4, pos: [lampPos.x, 18, lampPos.z] }],
+    },
   };
 }
 
@@ -344,3 +259,4 @@ function mulberry(a) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
+

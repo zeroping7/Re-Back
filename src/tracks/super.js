@@ -1,0 +1,189 @@
+import * as THREE from 'three';
+import { tileTexture, labelTexture, canTexture } from '../textures.js';
+import { buildCircuit, startArch, room, mat } from './common.js';
+
+// Circuito 2: "El supermercado". Pasillos, estanterías gigantes y carritos.
+const ROOM = { x: 64, z: 36, h: 34 };
+
+export default {
+  id: 'super',
+  name: 'Supermercado',
+  desc: 'Pasillos, cajas-rampa y naranjas por el suelo',
+  color: '#2bb673',
+  build,
+};
+
+const PRODUCT_COLORS = ['#e53935', '#fdd835', '#1e88e5', '#43a047', '#fb8c00', '#8e24aa', '#f06292', '#00acc1', '#ffffff', '#6d4c41'];
+
+function build(B) {
+  const { scene, box, cyl, ball } = B;
+  const rnd = mulberry(77);
+
+  room(B, {
+    ...ROOM,
+    floor: new THREE.MeshStandardMaterial({ map: tileTexture([32, 18]), roughness: 0.22, metalness: 0.05 }),
+    wall: new THREE.MeshStandardMaterial({ color: '#e8efe9', roughness: 0.9 }),
+    ceil: '#d9dde0',
+    baseboard: '#2e7d32',
+  });
+  // franja verde en las paredes y carteles
+  for (const [len, x, z, ry] of [[ROOM.x * 2, 0, -ROOM.z + 0.1, 0], [ROOM.x * 2, 0, ROOM.z - 0.1, Math.PI], [ROOM.z * 2, -ROOM.x + 0.1, 0, Math.PI / 2], [ROOM.z * 2, ROOM.x - 0.1, 0, -Math.PI / 2]]) {
+    box(len, 2, 0.2, x, 24, z, '#2bb673', { rot: [0, ry, 0], solid: false, shadow: false });
+  }
+  const sign = (text, sub, color, x, y, z, ry) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(14, 7), new THREE.MeshStandardMaterial({ map: labelTexture([text, sub], color), emissive: '#ffffff', emissiveIntensity: 0.15, emissiveMap: labelTexture([text, sub], color) }));
+    m.position.set(x, y, z); m.rotation.y = ry;
+    scene.add(m);
+  };
+  sign('OFERTAS', '¡2x1 en pilas!', '#e53935', -30, 16, -ROOM.z + 0.3, 0);
+  sign('FRUTA', 'fresca cada día', '#43a047', 20, 16, -ROOM.z + 0.3, 0);
+  sign('CAJAS', 'gracias por su visita', '#1e88e5', 0, 16, ROOM.z - 0.3, Math.PI);
+  // fluorescentes del techo
+  const tube = new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#f4fbff', emissiveIntensity: 1.4 });
+  for (let x = -48; x <= 48; x += 24) for (let z = -24; z <= 24; z += 16) box(12, 0.4, 1.4, x, ROOM.h - 0.5, z, tube, { solid: false, shadow: false });
+
+  // ---------- Trazado ----------
+  const circuit = buildCircuit(B, {
+    points: [[-35, 20], [-5, 21], [25, 19], [42, 21], [53, 10], [52, -8], [40, -20], [22, -22], [8, -15], [-8, -18], [-26, -24], [-46, -20], [-54, -6], [-52, 9], [-42, 18]],
+    start: [-22, 20.5],
+    width: 9,
+    barrier: { colors: ['#ffd400', '#222222'], height: 0.9, roughness: 0.35 },
+  });
+  const { samples, sampleNear, yawOf } = circuit;
+  const W = circuit.width;
+  startArch(B, circuit, { color: '#2bb673', text: 'SÚPER CARRERA' });
+
+  // ---------- Estantería central ----------
+  const shelf = (x0, x1, z, depth = 8, h = 12) => {
+    const len = x1 - x0, cx = (x0 + x1) / 2;
+    box(len, h, depth, cx, h / 2, z, '#cfd8dc');
+    for (const side of [1, -1]) {
+      for (let lv = 0; lv < 4; lv++) {
+        const y = 1 + lv * 2.9;
+        box(len, 0.25, 1.4, cx, y, z + side * (depth / 2 + 0.6), '#eceff1', { solid: false, shadow: false });
+        let x = x0 + 0.3;
+        while (x < x1 - 1) {
+          const w = 1.2 + rnd() * 1.6, hh = 1.2 + rnd() * 1.3, c = PRODUCT_COLORS[(rnd() * PRODUCT_COLORS.length) | 0];
+          box(w - 0.1, hh, 1.2, x + w / 2, y + 0.12 + hh / 2, z + side * (depth / 2 + 0.6), c, { solid: false, shadow: false });
+          x += w;
+        }
+      }
+    }
+  };
+  shelf(-32, 30, 0);
+  // cabeceras con ofertas
+  for (const x of [-34.5, 32.5]) {
+    box(3, 6, 8, x, 3, 0, '#e53935');
+    for (let k = 0; k < 6; k++) box(1.2, 1.2, 1.2, x + (rnd() - 0.5), 6.6 + k * 0, -3 + k * 1.2, PRODUCT_COLORS[k], { solid: false });
+  }
+
+  // ---------- Neveras al fondo ----------
+  const fridgeGlow = new THREE.MeshStandardMaterial({ color: '#cfefff', emissive: '#bfe8ff', emissiveIntensity: 0.6, roughness: 0.1, metalness: 0.3 });
+  for (let x = -56; x <= 56; x += 8) {
+    box(7.6, 14, 4, x, 7, -ROOM.z + 2.2, '#f5f5f5');
+    box(6.6, 11, 0.2, x, 7.5, -ROOM.z + 4.25, fridgeGlow, { solid: false, shadow: false });
+  }
+  // ---------- Cajas registradoras ----------
+  for (const x of [-40, -14, 12, 38]) {
+    box(10, 3.6, 3.6, x, 1.8, ROOM.z - 3, '#37474f');
+    box(10, 0.3, 3.8, x, 3.75, ROOM.z - 3, '#263238', { solid: false });
+    box(1.6, 1.8, 1.4, x + 3, 4.8, ROOM.z - 3, '#111', { solid: false });
+  }
+
+  // ---------- Rampa: caja de cartón aplastada ----------
+  {
+    const s = sampleNear(8, 20.5);
+    const L = 8, H = 1.8, T = 0.4, Wd = W - 0.2, a = Math.asin(H / L), yaw = yawOf(s.t);
+    const c = s.p.clone().addScaledVector(s.t, (L / 2) * Math.cos(a));
+    box(Wd, T, L, c.x, H / 2 - (T / 2) * Math.cos(a), c.z, '#c8a165', { rot: [-a, yaw, 0], phys: { friction: 0.8 } });
+    const back = s.p.clone().addScaledVector(s.t, L * Math.cos(a) - 1.2);
+    box(Wd - 0.6, H - 0.3, 2, back.x, (H - 0.3) / 2, back.z, '#b88d52', { rot: [0, yaw, 0] });
+    // flecha pintada
+    box(1.6, 0.05, 3, c.x, H / 2 + 0.25, c.z, '#ffffff', { rot: [-a, yaw, 0], solid: false, shadow: false });
+  }
+
+  // ---------- Túnel: tabla sobre dos cajas de cereales ----------
+  {
+    const s = sampleNear(24, -22);
+    const yaw = yawOf(s.t), top = 4.2, Lt = 7, side = s.n;
+    for (const sd of [1, -1]) {
+      const p = s.p.clone().addScaledVector(side, sd * (W / 2 + 2.6));
+      const cereal = box(3.4, top, 6, p.x, top / 2, p.z, new THREE.MeshStandardMaterial({ map: labelTexture(['CHOCO', 'crunchy'], sd > 0 ? '#ff7043' : '#7e57c2') }), { rot: [0, yaw, 0] });
+      cereal.castShadow = true;
+    }
+    box(W + 8.4, 0.5, Lt, s.p.x, top + 0.25, s.p.z, '#a1887f', { rot: [0, yaw, 0] });
+  }
+
+  // ---------- Naranjas por el suelo (baches) ----------
+  {
+    const s = sampleNear(4, -16);
+    for (let k = 0; k < 5; k++) {
+      const p = s.p.clone().addScaledVector(s.t, (k - 2) * 2.2).addScaledVector(s.n, (rnd() - 0.5) * (W - 3));
+      ball(0.42, p.x, 0.12, p.z, mat('#ff9800'), { detail: 0 });
+    }
+  }
+
+  // ---------- Carritos y pirámide de latas (fuera de pista) ----------
+  const cart = (x, z, ry) => {
+    const g = new THREE.Group();
+    const wire = mat('#b0bec5', { metalness: 0.8, roughness: 0.3 });
+    const add = (w, h, d, px, py, pz, m = wire) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); b.position.set(px, py, pz); b.castShadow = true; g.add(b); };
+    add(5, 0.2, 8, 0, 2.5, 0); add(0.2, 3.5, 8, 2.5, 4.2, 0); add(0.2, 3.5, 8, -2.5, 4.2, 0);
+    add(5, 3.5, 0.2, 0, 4.2, 4); add(5, 3.5, 0.2, 0, 4.2, -4); add(5.4, 0.3, 0.3, 0, 6.6, -5, mat('#e53935'));
+    for (const [px, pz] of [[2, 3], [-2, 3], [2, -3], [-2, -3]]) {
+      add(0.2, 2.2, 0.2, px, 1.4, pz);
+      const w = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.3, 10).rotateZ(Math.PI / 2), mat('#212121')); w.position.set(px, 0.4, pz); g.add(w);
+    }
+    g.position.set(x, 0, z); g.rotation.y = ry;
+    scene.add(g);
+    box(5.2, 6, 8.4, x, 3, z, '#000', { rot: [0, ry, 0] }).visible = false;
+  };
+  cart(58, 26, 0.6);
+  cart(-58, -28, -0.3);
+  cart(30, 2, 1.2);
+  {
+    const canMat = new THREE.MeshStandardMaterial({ map: canTexture(), roughness: 0.3, metalness: 0.6 });
+    const bx = -12, bz = 8;
+    for (let row = 0; row < 4; row++) {
+      for (let k = 0; k < 4 - row; k++) {
+        cyl(0.9, 0.9, 2.2, bx + (k - (3 - row) / 2) * 1.9, 1.1 + row * 2.2, bz, canMat, { seg: 12, solid: false });
+      }
+    }
+    box(8, 9, 2, bx, 4.5, bz, '#000').visible = false;
+  }
+  // cartel de suelo mojado
+  {
+    const s = sampleNear(53, 2);
+    const p = s.p.clone().addScaledVector(s.n, -(W / 2 + 2.5));
+    const g = new THREE.Group();
+    for (const sd of [1, -1]) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(2.4, 4, 0.12), mat('#ffd600'));
+      m.position.set(0, 2, sd * 0.7); m.rotation.x = sd * 0.3; m.castShadow = true; g.add(m);
+    }
+    g.position.copy(p); g.rotation.y = yawOf(s.t);
+    scene.add(g);
+  }
+
+  return {
+    circuit,
+    bounds: { x: ROOM.x - 1.5, z: ROOM.z - 1.5, h: ROOM.h - 1 },
+    itemSpots: [0.18, 0.45, 0.72],
+    dust: [0.85, 0.85, 0.85],
+    lights: {
+      background: '#cfd8dc',
+      hemi: ['#f2f7ff', '#9aa5ad', 0.75],
+      sun: { color: '#f4f8ff', intensity: 2.4, offset: [10, 40, 14] },
+      env: 0.45,
+      points: [],
+    },
+  };
+}
+
+function mulberry(a) {
+  return () => {
+    a |= 0; a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}

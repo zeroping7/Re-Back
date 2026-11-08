@@ -6,20 +6,29 @@
   <meta name="theme-color" content="#1b1d2a" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>Re-Back</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🏎️%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="./icon.png" />
   <link rel="stylesheet" href="./src/style.css" />
 </head>
 <body>
   <canvas id="game"></canvas>
 
+  <!-- ===== Marcador ===== -->
   <div id="hud" class="hidden">
-    <div id="speedo"><span id="speed">0</span><small>km/h</small></div>
+    <div id="h-left">
+      <div id="h-posbox"><span id="h-pos">1º</span><span id="h-postot">/4</span></div>
+      <div id="h-lap">VUELTA 1/3</div>
+      <div id="h-time">0:00.00</div>
+      <div id="h-best">Récord --:--.--</div>
+      <canvas id="h-map" width="150" height="110"></canvas>
+    </div>
+    <div id="h-msg"></div>
     <div id="topbar">
       <button id="btn-reset" class="icon" title="Recolocar coche">↺</button>
       <button id="btn-mode" class="icon" title="Botones / inclinación">🎮</button>
-      <button id="btn-sound" class="icon" title="Sonido">🔊</button>
       <button id="btn-tune" class="icon" title="Ajustes de conducción">⚙</button>
+      <button id="btn-pause" class="icon pause" title="Pausa">II</button>
     </div>
+    <div id="speedo"><span id="speed">0</span><small>km/h</small></div>
     <div id="fps"></div>
 
     <div id="steer-pad">
@@ -27,8 +36,11 @@
       <button id="btn-right" class="pad">▶</button>
     </div>
     <div id="pedals">
-      <button id="btn-brake" class="pad brake">▼</button>
-      <button id="btn-gas" class="pad gas">▲</button>
+      <button id="btn-item" class="item">·</button>
+      <div class="pedal-row">
+        <button id="btn-brake" class="pad brake">▼</button>
+        <button id="btn-gas" class="pad gas">▲</button>
+      </div>
     </div>
   </div>
 
@@ -44,13 +56,81 @@
     </div>
   </div>
 
-  <div id="start" class="overlay">
-    <h1>RE-BACK</h1>
-    <p>Fase 1 · El salón</p>
-    <button id="btn-start">Toca para jugar</button>
-    <p class="hint">Teclado: flechas/WASD · R recolocar</p>
+  <!-- ===== Menú principal ===== -->
+  <div id="m-main" class="menu hidden">
+    <div class="menu-col">
+      <h1>RE-BACK</h1>
+      <p class="sub">Carreras de coches teledirigidos</p>
+      <button class="big-btn" data-go="race">🏁 Carrera</button>
+      <button class="big-btn alt" data-go="practice">⏱ Contrarreloj</button>
+      <button class="big-btn alt" data-go="settings">⚙ Opciones</button>
+    </div>
   </div>
 
+  <!-- ===== Preparar carrera ===== -->
+  <div id="m-setup" class="menu hidden">
+    <div class="menu-wide">
+      <div class="menu-head">
+        <button class="icon back" data-go="main">←</button>
+        <h2 id="setup-title">Carrera</h2>
+      </div>
+      <h3>Circuito</h3>
+      <div id="tracks" class="cards"></div>
+      <h3>Coche</h3>
+      <div id="cars" class="cards"></div>
+      <div id="race-opts">
+        <div class="opt"><span>Vueltas</span><div class="seg" id="opt-laps"></div></div>
+        <div class="opt"><span>Rivales</span><div class="seg" id="opt-rivals"></div></div>
+        <div class="opt"><span>Dificultad</span><div class="seg" id="opt-diff"></div></div>
+      </div>
+      <button id="btn-go" class="big-btn">¡A correr!</button>
+    </div>
+  </div>
+
+  <!-- ===== Opciones ===== -->
+  <div id="m-settings" class="menu hidden">
+    <div class="menu-col">
+      <div class="menu-head">
+        <button class="icon back" data-go="main">←</button>
+        <h2>Opciones</h2>
+      </div>
+      <div class="opt"><span>Sonido</span><div class="seg" id="opt-sound"></div></div>
+      <div class="opt"><span>Música</span><div class="seg" id="opt-music"></div></div>
+      <div class="opt"><span>Dirección</span><div class="seg" id="opt-steer"></div></div>
+      <div class="opt"><span>Calidad</span><div class="seg" id="opt-quality"></div></div>
+      <button class="big-btn alt" id="btn-tune2">Ajustes de conducción</button>
+    </div>
+  </div>
+
+  <!-- ===== Pausa ===== -->
+  <div id="m-pause" class="menu dim hidden">
+    <div class="menu-col">
+      <h2>Pausa</h2>
+      <button class="big-btn" id="btn-resume">▶ Seguir</button>
+      <button class="big-btn alt" id="btn-restart">↻ Reiniciar</button>
+      <div class="opt"><span>Música</span><div class="seg" id="opt-music2"></div></div>
+      <button class="big-btn alt" id="btn-quit">Salir al menú</button>
+    </div>
+  </div>
+
+  <!-- ===== Resultados ===== -->
+  <div id="m-results" class="menu dim hidden">
+    <div class="menu-col">
+      <h2 id="res-title">Resultados</h2>
+      <table id="res-table"></table>
+      <p id="res-best"></p>
+      <div class="row">
+        <button class="big-btn" id="btn-again">↻ Otra vez</button>
+        <button class="big-btn alt" id="btn-menu">Menú</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="start" class="overlay">
+    <h1>RE-BACK</h1>
+    <button id="btn-start">Toca para empezar</button>
+    <p class="hint">Teclado: flechas/WASD · E objeto · R recolocar · P pausa</p>
+  </div>
   <div id="loading" class="overlay"><p>Cargando…</p></div>
   <div id="rotate" class="overlay"><p>📱↻ Gira el móvil en horizontal</p></div>
 

@@ -1,16 +1,17 @@
 import * as THREE from 'three';
-import { WHEEL_RAY_GROUPS } from './track.js';
+import { WHEEL_RAY_GROUPS, CAR_GROUPS } from './tracks/common.js';
 import { buildCarModel } from './carModel.js';
 
 // Coche RC: chasis de Rapier + controlador de vehículo por rayos (suspensión real).
 // Ejes locales: +Z adelante, +Y arriba, +X izquierda.
-const WHEELS = [
-  { x: 0.6, z: 0.74, front: true },
-  { x: -0.6, z: 0.74, front: true },
-  { x: 0.6, z: -0.72, front: false },
-  { x: -0.6, z: -0.72, front: false },
-];
-const WHEEL_R = 0.37;
+function wheelsFor(def) {
+  return [
+    { x: def.wheelX, z: def.wheelZf, front: true },
+    { x: -def.wheelX, z: def.wheelZf, front: true },
+    { x: def.wheelX, z: def.wheelZr, front: false },
+    { x: -def.wheelX, z: def.wheelZr, front: false },
+  ];
+}
 const CONN_Y = -0.02;
 const MASS = 8;
 
@@ -18,8 +19,14 @@ const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q = new THREE.Quater
 const UP = new THREE.Vector3(0, 1, 0);
 
 export class Car {
-  constructor(scene, world, RAPIER, tuning, color = '#e8202a') {
-    this.world = world; this.RAPIER = RAPIER; this.t = tuning;
+  constructor(scene, world, RAPIER, def, tuning, { color = def.color, index = 0, name = def.name } = {}) {
+    this.world = world; this.RAPIER = RAPIER; this.t = tuning; this.def = def;
+    this.index = index; this.name = name; this.color = color;
+    const WHEELS = (this.W = wheelsFor(def));
+    this.R = def.wheelR;
+    // efectos de objetos (segundos restantes)
+    this.fx = { boost: 0, oil: 0, stun: 0, wet: 0 };
+    this.item = null;
     this.steer = 0;
     this.spin = [0, 0, 0, 0];
     this.lastW = [0, 0, 0, 0];
@@ -45,7 +52,7 @@ export class Car {
     );
     const col = RAPIER.ColliderDesc.roundCuboid(0.62, 0.13, 0.92, 0.1)
       .setTranslation(0, 0.12, 0)
-      .setFriction(0.15).setRestitution(0.2)
+      .setFriction(0.15).setRestitution(0.2).setCollisionGroups(CAR_GROUPS)
       .setMassProperties(MASS, { x: 0, y: -0.58, z: 0 }, { x: 4.2, y: 5.0, z: 3.0 }, { x: 0, y: 0, z: 0, w: 1 });
     this.collider = world.createCollider(col, body);
     this.body = body;
@@ -54,13 +61,13 @@ export class Car {
     veh.indexUpAxis = 1;
     veh.setIndexForwardAxis = 2;
     WHEELS.forEach((w) => {
-      veh.addWheel({ x: w.x, y: CONN_Y, z: w.z }, { x: 0, y: -1, z: 0 }, { x: -1, y: 0, z: 0 }, tuning.suspRest, WHEEL_R);
+      veh.addWheel({ x: w.x, y: CONN_Y, z: w.z }, { x: 0, y: -1, z: 0 }, { x: -1, y: 0, z: 0 }, tuning.suspRest, def.wheelR);
     });
     this.vehicle = veh;
     this.applyTuning();
 
     // ----- Modelo low-poly -----
-    this.model = buildCarModel(color, WHEELS, WHEEL_R, CONN_Y);
+    this.model = buildCarModel(def, color, WHEELS, CONN_Y);
     this.hubY = [0, 0, 0, 0];
     this.wheelMeshes = this.model.userData.wheels;
     scene.add(this.model);
@@ -69,7 +76,7 @@ export class Car {
   applyTuning() {
     const t = this.t, v = this.vehicle;
     for (let i = 0; i < 4; i++) {
-      const front = WHEELS[i].front;
+      const front = this.W[i].front;
       v.setWheelSuspensionRestLength(i, t.suspRest);
       v.setWheelMaxSuspensionTravel(i, t.suspRest * 0.95);
       v.setWheelSuspensionStiffness(i, t.suspStiff);
@@ -79,7 +86,6 @@ export class Car {
       v.setWheelFrictionSlip(i, front ? t.gripFront : t.gripRear);
       v.setWheelSideFrictionStiffness(i, front ? t.sideFront : t.sideRear);
     }
-    this.world.gravity = { x: 0, y: -t.gravity, z: 0 };
   }
 
   reset(pos, yaw) {
@@ -123,10 +129,17 @@ export class Car {
     // --- Motor / freno / marcha atrás ---
     let engine = 0, brakeF = 0, brakeR = 0;
     this.drifting = false; this.braking = false; this.reversing = false;
-    const thr = input.throttle, brk = input.brake;
+    const fx = this.fx;
+    for (const k in fx) fx[k] = Math.max(0, fx[k] - dt);
+    const stunned = fx.stun > 0;
+    const thr = stunned ? 0 : input.throttle, brk = stunned ? 0 : input.brake;
+    const boost = fx.boost > 0;
+    const rb = this.rubber ?? 1;
+    const maxSpeed = t.maxSpeed * rb * (boost ? 1.35 : 1) * (fx.wet > 0 ? 0.7 : 1);
+    const power = t.engine * rb * (boost ? 1.8 : 1);
     if (thr > 0) {
-      const lim = THREE.MathUtils.clamp((t.maxSpeed - fwd) / (t.maxSpeed * 0.25), 0, 1);
-      engine = t.engine * thr * lim;
+      const lim = THREE.MathUtils.clamp((maxSpeed - fwd) / (maxSpeed * 0.25), 0, 1);
+      engine = power * thr * lim;
       if (fwd < -1) { brakeF = brakeR = t.brake / 4; engine *= 0.3; }
     }
     if (brk > 0) {
@@ -145,16 +158,20 @@ export class Car {
         this.reversing = true;
       }
     }
-    if (thr === 0 && brk === 0) brakeF = brakeR = 0.04; // resistencia a rodar
+    if (boost && thr === 0 && brk === 0) engine = power * THREE.MathUtils.clamp((maxSpeed - fwd) / (maxSpeed * 0.25), 0, 1);
+    if (thr === 0 && brk === 0 && !boost) brakeF = brakeR = 0.04; // resistencia a rodar
+    if (input.hold) { engine = 0; brakeF = brakeR = t.brake / 4; this.reversing = false; }
+    if (fx.wet > 0 && fwd > maxSpeed) brakeF = brakeR = 0.3;
     this.throttle = thr;
 
     const rear = t.rearBias / 100;
     for (let i = 0; i < 4; i++) {
-      const front = WHEELS[i].front;
+      const front = this.W[i].front;
       veh.setWheelEngineForce(i, (engine * (front ? 1 - rear : rear)) / 2);
       veh.setWheelBrake(i, front ? brakeF : brakeR);
       veh.setWheelSideFrictionStiffness(i, front ? t.sideFront : t.sideRear);
-      veh.setWheelFrictionSlip(i, front ? t.gripFront : t.gripRear * (this.drifting ? t.driftRear : 1));
+      const oil = fx.oil > 0 ? 0.22 : 1;
+      veh.setWheelFrictionSlip(i, (front ? t.gripFront : t.gripRear * (this.drifting ? t.driftRear : 1)) * oil);
     }
 
     veh.updateVehicle(dt, undefined, WHEEL_RAY_GROUPS);
@@ -173,13 +190,13 @@ export class Car {
       }
       // deslizamiento lateral aproximado en la rueda
       const lat = this.localVel.x;
-      const steerAng = WHEELS[i].front ? this.steer : 0;
+      const steerAng = this.W[i].front ? this.steer : 0;
       const wheelLat = Math.cos(steerAng) * lat - Math.sin(steerAng) * fwd;
       ws.slip = ws.contact ? Math.abs(wheelLat) : 0;
       // giro visual de la rueda (con patinazo al arrancar)
-      let w = fwd / WHEEL_R;
-      if (thr > 0 && !WHEELS[i].front && fwd < 6) w += 25 * thr;
-      if (!ws.contact) w = this.lastW[i] * 0.99 + (thr > 0 && !WHEELS[i].front ? 0.5 : 0);
+      let w = fwd / this.R;
+      if (thr > 0 && !this.W[i].front && fwd < 6) w += 25 * thr;
+      if (!ws.contact) w = this.lastW[i] * 0.99 + (thr > 0 && !this.W[i].front ? 0.5 : 0);
       this.lastW[i] = w;
       this.spin[i] += w * dt;
     }
@@ -264,9 +281,9 @@ export class Car {
     for (let i = 0; i < 4; i++) {
       const wm = this.wheelMeshes[i];
       const len = veh.wheelSuspensionLength(i) ?? this.t.suspRest;
-      wm.position.set(WHEELS[i].x, CONN_Y - len, WHEELS[i].z);
+      wm.position.set(this.W[i].x, CONN_Y - len, this.W[i].z);
       this.hubY[i] = CONN_Y - len;
-      wm.rotation.y = WHEELS[i].front ? this.steer : 0;
+      wm.rotation.y = this.W[i].front ? this.steer : 0;
       wm.children[0].rotation.x = this.spin[i];
     }
     const u = this.model.userData;
