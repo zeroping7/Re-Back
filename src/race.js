@@ -137,6 +137,7 @@ export class Race {
     if (steps === 5) this.acc = 0;
     if (this.started) this.time += dt;
 
+    this.T.update?.(this.clock);
     this.items.update(dt);
     this.effects.smoke.update(dt); this.effects.sparks.update(dt); this.effects.fire.update(dt);
     this.flashLight.intensity = Math.max(0, this.flashLight.intensity - dt * 1500);

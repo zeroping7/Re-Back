@@ -63,19 +63,21 @@ function build(B) {
 
   // ---------- Trazado ----------
   const circuit = buildCircuit(B, {
-    points: [[-40, 30], [-10, 34], [20, 28], [45, 30], [60, 15], [58, -10], [42, -24], [24, -20], [6, -30], [-15, -38], [-38, -30], [-55, -15], [-58, 5], [-52, 22]],
-    start: [-26, 32],
-    width: 9,
+    points: [[-40, 38], [-20, 40], [0, 34], [14, 40], [30, 36], [44, 40], [58, 30], [60, 14], [48, 6], [40, -6], [52, -18], [54, -32], [40, -40], [24, -34], [14, -22], [0, -18], [-10, -28], [-24, -38], [-42, -36], [-56, -24], [-58, -8], [-47, 0], [-40, 9], [-48, 19], [-56, 30]],
+    start: [-34, 39],
+    width: 7,
+    limits: [AREA.x - 2, AREA.z - 2],
     barrier: { colors: ['#8d6e63', '#795548', '#a1887f', '#6d4c41'], thick: 0.8, round: true, roughness: 0.9 },
   });
-  const { sampleNear, yawOf } = circuit;
+  const { sampleNear, yawOf, spot } = circuit;
+  const anim = [];
   const W = circuit.width;
   trackRibbon(B, circuit, new THREE.MeshStandardMaterial({ map: dirtTexture([1, 1]), roughness: 1 }), 0.8);
   startArch(B, circuit, { color: '#43a047', text: 'GRAN PREMIO JARDÍN' });
 
   // ---------- Rampa: tabla sobre un ladrillo ----------
   {
-    const s = sampleNear(4, 32);
+    const s = sampleNear(-26, 39.5);
     const L = 9, H = 2.2, T = 0.5, Wd = W - 1.5, a = Math.asin(H / L), yaw = yawOf(s.t);
     const c = s.p.clone().addScaledVector(s.t, (L / 2) * Math.cos(a));
     box(Wd, T, L, c.x, H / 2 - (T / 2) * Math.cos(a), c.z, '#b98a52', { rot: [-a, yaw, 0], phys: { friction: 0.8 } });
@@ -93,12 +95,6 @@ function build(B) {
     puddle.position.set(p.x, 0.04, p.z);
     scene.add(puddle);
     zones.push({ pos: p, r: 4.2, effect: 'wet' });
-  }
-
-  // ---------- Raíces (baches) ----------
-  for (const [x, z] of [[58, 2], [57, -4]]) {
-    const s = sampleNear(x, z);
-    cyl(0.12, 0.15, W + 1, s.p.x, 0.07, s.p.z, '#5d4037', { seg: 6, rot: [0, yawOf(s.t), Math.PI / 2] });
   }
 
   // ---------- Árboles, rocas, flores ----------
@@ -141,7 +137,7 @@ function build(B) {
 
   // ---------- Gnomo gigante ----------
   {
-    const x = 6, z = 4;
+    const [x, z] = spot(6, 4, 3) || [6, 4];
     cyl(2.2, 2.8, 5, x, 2.5, z, '#1e88e5', { seg: 8 });
     ball(2, x, 6.4, z, mat('#ffccbc'), { detail: 1, solid: false });
     const beard = new THREE.Mesh(new THREE.ConeGeometry(1.8, 3.5, 8), mat('#fafafa'));
@@ -152,27 +148,109 @@ function build(B) {
   }
   // regadera y manguera
   {
-    cyl(2.5, 3, 5, -6, 2.5, -8, '#43a047', { seg: 12 });
-    cyl(0.4, 0.5, 6, -9.5, 4.5, -8, '#43a047', { seg: 6, rot: [0, 0, 1.0], solid: false });
+    const [wx, wz] = spot(-6, 6, 4) || [-6, 6];
+    cyl(2.5, 3, 5, wx, 2.5, wz, '#43a047', { seg: 12 });
+    cyl(0.4, 0.5, 6, wx - 3.5, 4.5, wz, '#43a047', { seg: 6, rot: [0, 0, 1.0], solid: false });
+    const [hx, hz] = spot(-22, 20, 5) || [-22, 20];
     const hose = new THREE.Mesh(new THREE.TorusGeometry(4, 0.35, 6, 24), mat('#43a047'));
-    hose.rotation.x = Math.PI / 2; hose.position.set(-20, 0.35, 8); hose.castShadow = true; scene.add(hose);
+    hose.rotation.x = Math.PI / 2; hose.position.set(hx, 0.35, hz); hose.castShadow = true; scene.add(hose);
     const hose2 = hose.clone(); hose2.scale.setScalar(0.7); hose2.position.y = 1.0; scene.add(hose2);
   }
   // estanque
+  const [px, pz] = spot(22, 12, 11) || [22, 12];
   {
     const pond = new THREE.Mesh(new THREE.CircleGeometry(9, 24).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#2f78a8', roughness: 0.05, metalness: 0.5 }));
-    pond.position.set(24, 0.05, 4); scene.add(pond);
+    pond.position.set(px, 0.05, pz); scene.add(pond);
     for (let k = 0; k < 14; k++) {
       const a = (k / 14) * Math.PI * 2;
-      ball(1.2, 24 + Math.cos(a) * 9.5, 0.3, 4 + Math.sin(a) * 9.5, rockM, { detail: 0 });
+      ball(1.2, px + Math.cos(a) * 9.5, 0.3, pz + Math.sin(a) * 9.5, rockM, { detail: 0 });
     }
-    collider(RAPIER.ColliderDesc.cylinder(1, 9), { x: 24, y: 0, z: 4 });
+    collider(RAPIER.ColliderDesc.cylinder(1, 9), { x: px, y: 0, z: pz });
+  }
+
+  // ---------- Detalles animados ----------
+  // mariposas
+  {
+    const cols = ['#ff7eb6', '#ffd166', '#7bdff2', '#cdb4db', '#f9844a'];
+    const bs = [];
+    for (let k = 0; k < 10; k++) {
+      const g = new THREE.Group();
+      const wm = new THREE.MeshStandardMaterial({ color: cols[k % cols.length], side: THREE.DoubleSide, roughness: 0.6 });
+      const wl = new THREE.Mesh(new THREE.CircleGeometry(0.7, 6).translate(0.6, 0, 0), wm);
+      const wr = new THREE.Mesh(new THREE.CircleGeometry(0.7, 6).translate(-0.6, 0, 0), wm);
+      wl.rotation.x = wr.rotation.x = -Math.PI / 2;
+      const pl = new THREE.Group(); pl.add(wl); const pr = new THREE.Group(); pr.add(wr);
+      g.add(pl, pr, new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.9, 4).rotateX(Math.PI / 2), mat('#222')));
+      g.traverse((o) => { o.userData.dynamic = true; });
+      scene.add(g);
+      bs.push({ g, pl, pr, cx: (rnd() * 2 - 1) * 55, cz: (rnd() * 2 - 1) * 38, r: 6 + rnd() * 10, ph: rnd() * 10, sp: 0.2 + rnd() * 0.3 });
+    }
+    anim.push((t) => {
+      for (const b of bs) {
+        const a = t * b.sp + b.ph;
+        b.g.position.set(b.cx + Math.cos(a) * b.r, 3 + Math.sin(a * 3) * 1.2 + 2, b.cz + Math.sin(a * 1.3) * b.r);
+        b.g.rotation.y = -a;
+        const f = Math.sin(t * 18 + b.ph) * 0.9;
+        b.pl.rotation.z = f; b.pr.rotation.z = -f;
+      }
+    });
+  }
+  // aspersor girando con chorros de agua
+  {
+    const [sx, sz] = spot(-28, -6, 6) || [-28, -6];
+    cyl(0.4, 0.5, 1.4, sx, 0.7, sz, '#9e9e9e', { seg: 8 });
+    const head = new THREE.Group(); head.position.set(sx, 1.5, sz);
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.2, 0.2), mat('#607d8b')); head.add(arm);
+    const drops = [];
+    const dm = new THREE.MeshStandardMaterial({ color: '#9fd8ff', transparent: true, opacity: 0.75, roughness: 0.05 });
+    const dg = new THREE.SphereGeometry(0.18, 5, 4);
+    for (let k = 0; k < 36; k++) { const d = new THREE.Mesh(dg, dm); scene.add(d); d.userData.dynamic = true; drops.push(d); }
+    head.traverse((o) => { o.userData.dynamic = true; });
+    scene.add(head);
+    anim.push((t) => {
+      head.rotation.y = t * 2.5;
+      drops.forEach((d, k) => {
+        const side = k % 2 ? 1 : -1, u = ((t * 0.9 + k / 36) % 1);
+        const a = t * 2.5 - u * 0.6 + (side > 0 ? 0 : Math.PI);
+        const r = 1.2 + u * 9;
+        d.position.set(sx + Math.cos(-a) * r, 1.5 + u * 7 - u * u * 8.5, sz + Math.sin(-a) * r);
+      });
+    });
+  }
+  // molinillo de viento
+  {
+    const [mx, mz] = spot(30, -12, 3) || [30, -12];
+    cyl(0.2, 0.2, 8, mx, 4, mz, '#f5f5f5', { seg: 5 });
+    const rot = new THREE.Group(); rot.position.set(mx, 8, mz + 0.4);
+    const cols = ['#ff5252', '#ffeb3b', '#40c4ff', '#69f0ae'];
+    for (let k = 0; k < 4; k++) {
+      const b = new THREE.Mesh(new THREE.ConeGeometry(0.9, 2.6, 3).translate(0, 1.3, 0), mat(cols[k]));
+      b.rotation.z = (k * Math.PI) / 2; b.castShadow = true; rot.add(b);
+    }
+    rot.traverse((o) => { o.userData.dynamic = true; });
+    scene.add(rot);
+    anim.push((t) => { rot.rotation.z = -t * 4; });
+  }
+  // rana saltando junto al estanque
+  {
+    const frog = new THREE.Group();
+    const fm = mat('#4caf50');
+    const fb = new THREE.Mesh(new THREE.SphereGeometry(0.9, 8, 6), fm); fb.scale.set(1, 0.7, 1.2); frog.add(fb);
+    for (const e of [-0.4, 0.4]) { const ey = new THREE.Mesh(new THREE.SphereGeometry(0.3, 6, 4), mat('#ffffff')); ey.position.set(e, 0.6, 0.6); frog.add(ey); }
+    frog.traverse((o) => { o.castShadow = true; o.userData.dynamic = true; });
+    scene.add(frog);
+    anim.push((t) => {
+      const a = t * 0.6, hop = Math.abs(Math.sin(t * 3));
+      frog.position.set(px + Math.cos(a) * 11.5, 0.6 + hop * 2, pz + Math.sin(a) * 11.5);
+      frog.rotation.y = -a;
+    });
   }
 
   return {
     circuit,
+    update: (t) => { for (const f of anim) f(t); },
     bounds: { x: AREA.x - 1.5, z: AREA.z - 1.5, h: 80 },
-    itemSpots: [0.15, 0.42, 0.7],
+    itemSpots: [0.3, 0.72],
     zones,
     dust: [0.6, 0.48, 0.34],
     lights: {

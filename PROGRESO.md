@@ -48,6 +48,19 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Circuitos el doble de anchos (~17) y el doble de largos: el mundo de cada circuito se escala ×2
   (`trackDef.scale`), los coches mantienen su tamaño. Vueltas de ~17-28 s.
 
+### Más curvas, detalles y coches (v1.0.9+)
+- Trazados nuevos con muchas más curvas (salón 547 u, súper 609 u, jardín 808 u; vueltas de ~20-34 s).
+- Pista algo más estrecha: ~14 de ancho (antes ~17).
+- Menos objetos: 2 puntos de cajas con 3 cajas cada uno. Sin baches (lápices, naranjas, raíces).
+- Detalles animados (`update` de cada circuito):
+  - Salón: tren de juguete dando vueltas, gato dormido moviendo la cola, globos, robot que saluda, tele con dibujos, pato de goma.
+  - Súper: carteles de oferta girando, cintas de las cajas con productos, globos en la salida.
+  - Jardín: mariposas, aspersor girando con chorros, molinillo de viento, rana saltando.
+- Los decorados se colocan solos fuera de la pista (`circuit.spot`).
+- Coches nuevos: Fórmula (monoplaza con piloto), Rally (con focos y faldillas), Furgo (furgoneta de pizzas)
+  y Pulga (cochecito redondo con ojos). Todos con dorsal en los laterales, faros, neumáticos lisos o de tacos
+  y decoraciones (franjas, rally, llamas, lunares, pizza).
+
 ## Pendiente / ideas
 - Probar en el móvil: rendimiento (Opciones → Calidad si va lento) y sentido del modo inclinación.
 - Multijugador online (opcional, futuro).

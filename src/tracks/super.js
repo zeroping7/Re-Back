@@ -44,12 +44,14 @@ function build(B) {
 
   // ---------- Trazado ----------
   const circuit = buildCircuit(B, {
-    points: [[-35, 20], [-5, 21], [25, 19], [42, 21], [53, 10], [52, -8], [40, -20], [22, -22], [8, -15], [-8, -18], [-26, -24], [-46, -20], [-54, -6], [-52, 9], [-42, 18]],
-    start: [-22, 20.5],
-    width: 9,
+    points: [[-40, 21], [-26, 17], [-12, 23], [2, 16], [16, 22], [30, 17], [44, 23], [56, 13], [55, -1], [49, -12], [37, -21], [24, -14], [10, -22], [-4, -14], [-18, -22], [-32, -14], [-46, -22], [-57, -12], [-57, 3], [-51, 15]],
+    start: [-33, 19],
+    width: 7,
+    limits: [ROOM.x - 1, ROOM.z - 1],
     barrier: { colors: ['#ffd400', '#222222'], height: 0.9, roughness: 0.35 },
   });
-  const { samples, sampleNear, yawOf } = circuit;
+  const { samples, sampleNear, yawOf, spot } = circuit;
+  const anim = [];
   const W = circuit.width;
   startArch(B, circuit, { color: '#2bb673', text: 'SÚPER CARRERA' });
 
@@ -92,7 +94,7 @@ function build(B) {
 
   // ---------- Rampa: caja de cartón aplastada ----------
   {
-    const s = sampleNear(8, 20.5);
+    const s = sampleNear(-57, -7);
     const L = 8, H = 1.8, T = 0.4, Wd = W - 0.2, a = Math.asin(H / L), yaw = yawOf(s.t);
     const c = s.p.clone().addScaledVector(s.t, (L / 2) * Math.cos(a));
     box(Wd, T, L, c.x, H / 2 - (T / 2) * Math.cos(a), c.z, '#c8a165', { rot: [-a, yaw, 0], phys: { friction: 0.8 } });
@@ -104,23 +106,14 @@ function build(B) {
 
   // ---------- Túnel: tabla sobre dos cajas de cereales ----------
   {
-    const s = sampleNear(24, -22);
-    const yaw = yawOf(s.t), top = 4.2, Lt = 7, side = s.n;
+    const s = sampleNear(55.5, 4);
+    const yaw = yawOf(s.t), top = 4.2, Lt = 5, side = s.n;
     for (const sd of [1, -1]) {
       const p = s.p.clone().addScaledVector(side, sd * (W / 2 + 2.6));
       const cereal = box(3.4, top, 6, p.x, top / 2, p.z, new THREE.MeshStandardMaterial({ map: labelTexture(['CHOCO', 'crunchy'], sd > 0 ? '#ff7043' : '#7e57c2') }), { rot: [0, yaw, 0] });
       cereal.castShadow = true;
     }
     box(W + 8.4, 0.5, Lt, s.p.x, top + 0.25, s.p.z, '#a1887f', { rot: [0, yaw, 0] });
-  }
-
-  // ---------- Naranjas por el suelo (baches) ----------
-  {
-    const s = sampleNear(4, -16);
-    for (let k = 0; k < 5; k++) {
-      const p = s.p.clone().addScaledVector(s.t, (k - 2) * 2.2).addScaledVector(s.n, (rnd() - 0.5) * (W - 3));
-      ball(0.24, p.x, 0.05, p.z, mat('#ff9800'), { detail: 0 });
-    }
   }
 
   // ---------- Carritos y pirámide de latas (fuera de pista) ----------
@@ -138,12 +131,10 @@ function build(B) {
     scene.add(g);
     box(5.2, 6, 8.4, x, 3, z, '#000', { rot: [0, ry, 0] }).visible = false;
   };
-  cart(58, 26, 0.6);
-  cart(-58, -28, -0.3);
-  cart(30, 2, 1.2);
+  for (const [x, z, ry] of [[58, 27, 0.6], [-59, -28, -0.3], [40, 3, 1.2], [-44, 4, 0.4]]) { const p = spot(x, z, 5); if (p) cart(p[0], p[1], ry); }
   {
     const canMat = new THREE.MeshStandardMaterial({ map: canTexture(), roughness: 0.3, metalness: 0.6 });
-    const bx = -12, bz = 8;
+    const [bx, bz] = spot(-14, 9, 5) || [-14, 9];
     for (let row = 0; row < 4; row++) {
       for (let k = 0; k < 4 - row; k++) {
         cyl(0.9, 0.9, 2.2, bx + (k - (3 - row) / 2) * 1.9, 1.1 + row * 2.2, bz, canMat, { seg: 12, solid: false });
@@ -153,8 +144,8 @@ function build(B) {
   }
   // cartel de suelo mojado
   {
-    const s = sampleNear(53, 2);
-    const p = s.p.clone().addScaledVector(s.n, -(W / 2 + 2.5));
+    const s = sampleNear(-55, -4);
+    const p = s.p.clone().addScaledVector(s.n, (W / 2 + 2.8));
     const g = new THREE.Group();
     for (const sd of [1, -1]) {
       const m = new THREE.Mesh(new THREE.BoxGeometry(2.4, 4, 0.12), mat('#ffd600'));
@@ -164,10 +155,61 @@ function build(B) {
     scene.add(g);
   }
 
+  // ---------- Carteles de oferta giratorios colgados ----------
+  {
+    const starTex = labelTexture(['¡OFERTA!', '-50%'], '#e53935');
+    for (const [x, z] of [[-26, 19], [10, 19], [24, -17], [-18, -18]]) {
+      const s = sampleNear(x, z);
+      const g = new THREE.Group();
+      const sign = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 0.2, 12).rotateX(Math.PI / 2), [mat('#ffd600'), new THREE.MeshStandardMaterial({ map: starTex }), new THREE.MeshStandardMaterial({ map: starTex })]);
+      sign.castShadow = false; g.add(sign);
+      const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 20, 3), mat('#555'));
+      wire.position.y = 12.5; g.add(wire);
+      g.position.set(s.p.x, 10, s.p.z);
+      g.traverse((o) => { o.userData.dynamic = true; });
+      scene.add(g);
+      const ph = x * 0.1;
+      anim.push((t) => { g.rotation.y = t * 1.2 + ph; g.position.y = 10 + Math.sin(t * 1.5 + ph) * 0.3; });
+    }
+  }
+  // ---------- Cintas de las cajas con productos moviéndose ----------
+  {
+    const items = [];
+    for (const x of [-40, -14, 12, 38]) {
+      for (let k = 0; k < 3; k++) {
+        const it = new THREE.Mesh(new THREE.BoxGeometry(1, 0.9, 0.9), mat(PRODUCT_COLORS[(k * 3 + x) & 7 & 7]));
+        it.castShadow = true; it.userData.dynamic = true;
+        scene.add(it);
+        items.push({ it, x, k });
+      }
+    }
+    anim.push((t) => { for (const o of items) { const u = ((t * 0.25 + o.k / 3) % 1); o.it.position.set(o.x - 4.5 + u * 9, 4.4, ROOM.z - 3); } });
+  }
+  // ---------- Globos en la salida ----------
+  {
+    const s0 = samples[0];
+    const cols = ['#ff4d6d', '#4dabf7', '#ffd43b', '#69db7c', '#b197fc'];
+    const gs = [];
+    for (const side of [1, -1]) {
+      const base = s0.p.clone().addScaledVector(s0.n, side * (W / 2 + 1.6));
+      cols.forEach((c, k) => {
+        const g = new THREE.Group();
+        const b = new THREE.Mesh(new THREE.SphereGeometry(1.1, 10, 8), new THREE.MeshStandardMaterial({ color: c, roughness: 0.25 }));
+        b.scale.y = 1.2; b.position.y = 4 + (k % 2); g.add(b);
+        g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 4, 3).translate(0, 2, 0), mat('#eee')));
+        g.position.set(base.x + (k - 2) * 0.6, 7, base.z + ((k * 7) % 3 - 1) * 0.6);
+        g.traverse((o) => { o.userData.dynamic = true; });
+        scene.add(g); gs.push(g);
+      });
+    }
+    anim.push((t) => gs.forEach((g, k) => { g.rotation.z = Math.sin(t * 1.3 + k) * 0.2; g.rotation.x = Math.cos(t * 1.1 + k * 1.7) * 0.15; }));
+  }
+
   return {
     circuit,
+    update: (t) => { for (const f of anim) f(t); },
     bounds: { x: ROOM.x - 1.5, z: ROOM.z - 1.5, h: ROOM.h - 1 },
-    itemSpots: [0.18, 0.45, 0.72],
+    itemSpots: [0.3, 0.72],
     dust: [0.85, 0.85, 0.85],
     lights: {
       background: '#cfd8dc',

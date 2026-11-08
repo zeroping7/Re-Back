@@ -39,7 +39,7 @@ export class Items {
     const c = this.race.circuit;
     for (const f of spots) {
       const s = c.samples[Math.floor(f * c.N) % c.N];
-      for (const lane of [-0.6, -0.3, 0, 0.3, 0.6]) {
+      for (const lane of [-0.45, 0, 0.45]) {
         const g = new THREE.Group();
         const m = new THREE.Mesh(this.boxGeo, this.boxMat);
         m.castShadow = true;

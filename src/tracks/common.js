@@ -184,7 +184,27 @@ export function buildCircuit(B, def) {
     return { pos: s.p.clone().addScaledVector(s.n, col * C.width * 0.18), yaw: yawOf(s.t), idx: s.i };
   }
 
-  return Object.assign(C, { sampleNear, nearestFrom, yawOf, gridSlot });
+  // distancia de un punto al borde exterior de la pista (negativa = dentro)
+  function clearance(x, z) {
+    let bd = Infinity;
+    for (const s of samples) { const d = (s.p.x - x) ** 2 + (s.p.z - z) ** 2; if (d < bd) bd = d; }
+    return Math.sqrt(bd) - (C.width / 2 + blockT + 0.5);
+  }
+  // busca un hueco libre cerca de (x, z) para un objeto de radio r; null si no hay
+  function spot(x, z, r, lim = def.limits || [1e9, 1e9]) {
+    for (let rad = 0; rad < 40; rad += 1.5) {
+      const steps = rad === 0 ? 1 : Math.ceil(rad * 2);
+      for (let k = 0; k < steps; k++) {
+        const a = (k / steps) * Math.PI * 2;
+        const px = x + Math.cos(a) * rad, pz = z + Math.sin(a) * rad;
+        if (Math.abs(px) > lim[0] - r || Math.abs(pz) > lim[1] - r) continue;
+        if (clearance(px, pz) > r) return [px, pz];
+      }
+    }
+    return null;
+  }
+
+  return Object.assign(C, { sampleNear, nearestFrom, yawOf, gridSlot, clearance, spot });
 }
 
 function inRange(i, from, to, N) {

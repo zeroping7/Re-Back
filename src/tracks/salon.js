@@ -75,20 +75,22 @@ function build(B) {
   // ---------- Trazado ----------
   const circuit = buildCircuit(B, {
     points: [
-      [-18, 26], [4, 26.5], [24, 25], [36, 17], [39, 4], [37, -10], [29, -21], [15, -25.5],
-      [0, -25], [-13, -22], [-21, -14], [-29, -11], [-36, -4], [-38, 8], [-33, 20],
+      [-24, 27], [-4, 27.5], [14, 27], [27, 24], [33, 14], [25, 5], [29, -5], [38, -8], [41, -18], [33, -26],
+      [20, -27], [6, -26], [-5, -19], [-6, -9], [-13, -2], [-22, -7], [-29, -19], [-39, -17], [-41, -4], [-36, 8], [-40, 18], [-35, 26],
     ],
-    start: [-12, 26],
-    width: 8.5,
+    start: [-16, 27.2],
+    width: 7,
+    limits: [ROOM.x - 1, ROOM.z - 1],
     barrier: { colors: ['#e63946', '#f1c40f', '#2a9df4', '#2ecc71', '#ff8c1a', '#9b59b6'] },
   });
   const W = circuit.width;
-  const { samples, sampleNear, yawOf } = circuit;
+  const { samples, sampleNear, yawOf, spot } = circuit;
   const s0 = samples[0];
+  const anim = [];
 
-  // Alfombra en el centro (visual, ligeramente elevada)
+  // Alfombra (visual)
   const rug = new THREE.Mesh(new THREE.PlaneGeometry(30, 22), new THREE.MeshStandardMaterial({ map: rugTexture(), roughness: 1 }));
-  rug.rotation.x = -Math.PI / 2; rug.position.set(6, 0.03, 4);
+  rug.rotation.x = -Math.PI / 2; rug.position.set(10, 0.03, 12);
   rug.receiveShadow = true;
   scene.add(rug);
 
@@ -102,83 +104,125 @@ function build(B) {
 
   // ---------- Rampa: libro gigante ----------
   {
-    const s = sampleNear(4, 26.5);
+    const s = sampleNear(4, 27.5);
     const L = 7.5, H = 1.7, T = 0.6, BW = W - 0.2;
     const a = Math.asin(H / L);
     const yaw = yawOf(s.t);
     const c = s.p.clone().addScaledVector(s.t, (L / 2) * Math.cos(a));
     const cover = bookCoverTexture('FÍSICA', '#1f4e8c');
     const bookMat = [mat('#f4ecd8'), mat('#f4ecd8'), new THREE.MeshStandardMaterial({ map: cover, roughness: 0.6 }), mat('#1f4e8c'), mat('#1f4e8c'), mat('#f4ecd8')];
-    const m = box(BW, T, L, c.x, H / 2 - (T / 2) * Math.cos(a), c.z, bookMat, { rot: [-a, yaw, 0], phys: { friction: 0.8 } });
-    m.userData.ramp = true;
-    // Taco que sostiene el libro
+    box(BW, T, L, c.x, H / 2 - (T / 2) * Math.cos(a), c.z, bookMat, { rot: [-a, yaw, 0], phys: { friction: 0.8 } });
     const back = s.p.clone().addScaledVector(s.t, L * Math.cos(a) - 0.9);
     box(BW - 1, H - 0.4, 1.2, back.x, (H - 0.4) / 2, back.z, '#c0392b', { rot: [0, yaw, 0] });
   }
 
-  // ---------- Lápices: badenes ----------
-  for (const [x, z, off] of [[39, 7, 0], [39, 1, 0]]) {
-    const s = sampleNear(x, z);
-    const yaw = yawOf(s.t);
-    const p = s.p.clone().addScaledVector(s.t, off);
-    const pencil = cyl(0.1, 0.1, W + 1, p.x, 0.1, p.z, '#f4c430', { seg: 6, rot: [0, yaw, Math.PI / 2] });
-    pencil.updateMatrix();
-  }
-
   // ---------- Mesa de centro: túnel ----------
   {
-    const s = sampleNear(8, -25.5);
+    const s = sampleNear(13, -27);
     const yaw = yawOf(s.t);
-    const top = 3.8, Lt = 13, Wt = W + 4.5;
-    const fwd = s.t, side = s.n;
-    const c = s.p;
+    const top = 3.8, Lt = 9, Wt = W + 4.2;
+    const fwd = s.t, side = s.n, c = s.p;
     box(Wt, 0.7, Lt, c.x, top, c.z, '#c89b6d', { rot: [0, yaw, 0] });
     box(Wt - 0.6, 0.25, Lt - 0.6, c.x, top + 0.45, c.z, '#d8b088', { rot: [0, yaw, 0], solid: false });
     for (const sx of [1, -1]) for (const sz of [1, -1]) {
-      const lp = c.clone().addScaledVector(side, sx * (Wt / 2 - 0.6)).addScaledVector(fwd, sz * (Lt / 2 - 0.6));
-      box(0.8, top, 0.8, lp.x, top / 2, lp.z, '#5b3a22', { rot: [0, yaw, 0] });
+      const lp = c.clone().addScaledVector(side, sx * (Wt / 2 - 0.5)).addScaledVector(fwd, sz * (Lt / 2 - 0.6));
+      box(0.7, top, 0.7, lp.x, top / 2, lp.z, '#5b3a22', { rot: [0, yaw, 0] });
     }
-    // Objetos sobre la mesa
-    const mug = c.clone().addScaledVector(side, 2).addScaledVector(fwd, 2);
+    const mug = c.clone().addScaledVector(side, 2).addScaledVector(fwd, 1.5);
     cyl(1, 0.9, 2, mug.x, top + 1.35, mug.z, '#ffffff', { seg: 12 });
-    const book = c.clone().addScaledVector(side, -2).addScaledVector(fwd, -2);
+    const book = c.clone().addScaledVector(side, -2).addScaledVector(fwd, -1.5);
     box(4, 0.6, 5.5, book.x, top + 0.65, book.z, '#2e8b57', { rot: [0, yaw + 0.3, 0] });
   }
 
-  // ---------- Sofá (en el centro, mirando a la tele) ----------
+  // ---------- Sofá con gato dormido ----------
   {
-    const sx = 6, sz = 8, fab = '#3f7f8c', fabDark = '#346a75';
-    box(22, 2.2, 8, sx, 1.6, sz, fab);                 // base
-    box(22, 6.5, 2.2, sx, 3.8, sz + 4.2, fabDark);     // respaldo
-    box(2.2, 4.4, 9, sx - 12, 2.7, sz + 0.5, fabDark); // brazos
+    const [sx, sz] = spot(8, 13, 13) || [8, 13];
+    const fab = '#3f7f8c', fabDark = '#346a75';
+    box(22, 2.2, 8, sx, 1.6, sz, fab);
+    box(22, 6.5, 2.2, sx, 3.8, sz + 4.2, fabDark);
+    box(2.2, 4.4, 9, sx - 12, 2.7, sz + 0.5, fabDark);
     box(2.2, 4.4, 9, sx + 12, 2.7, sz + 0.5, fabDark);
     for (const k of [-7, 0, 7]) box(6.8, 1.2, 6.6, sx + k, 3.3, sz - 0.4, fab, { solid: false });
     for (const k of [-7, 0, 7]) box(6.4, 4, 1.4, sx + k, 5.6, sz + 2.8, fab, { rot: [0.15, 0, 0], solid: false });
     for (const a of [-1, 1]) for (const b of [-1, 1]) box(0.8, 0.5, 0.8, sx + a * 12, 0.25, sz + b * 3.8, '#2b1b10', { solid: false });
-    box(4.2, 4.2, 1, sx - 7.5, 5.6, sz + 2, '#f39c12', { rot: [0.3, 0.2, 0.2], solid: false }); // cojín
+    box(4.2, 4.2, 1, sx - 7.5, 5.6, sz + 2, '#f39c12', { rot: [0.3, 0.2, 0.2], solid: false });
+    // gato
+    const cat = new THREE.Group();
+    const fur = mat('#f0a04b'), dark = mat('#c46f22');
+    const body = new THREE.Mesh(new THREE.SphereGeometry(1.6, 10, 8), fur); body.scale.set(1.3, 0.75, 1); cat.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.95, 10, 8), fur); head.position.set(1.8, 0.1, 0.4); cat.add(head);
+    for (const e of [-0.45, 0.45]) {
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.7, 4), dark); ear.position.set(1.9, 0.95, 0.4 + e); cat.add(ear);
+    }
+    const tail = new THREE.Group(); tail.position.set(-1.9, 0, 0);
+    const tseg = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 2.6, 6).translate(0, 1.3, 0), dark);
+    tseg.rotation.z = 1.2; tail.add(tseg); cat.add(tail);
+    cat.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    cat.position.set(sx + 3, 4.6, sz - 0.6); cat.rotation.y = 0.3;
+    cat.userData.dynamic = true; cat.traverse((o) => { o.userData.dynamic = true; });
+    scene.add(cat);
+    anim.push((t) => { tail.rotation.y = Math.sin(t * 2.2) * 0.8; body.scale.y = 0.75 + Math.sin(t * 1.6) * 0.04; });
   }
 
-  // ---------- Mueble TV (pared del fondo, a la derecha de la ventana) ----------
+  // ---------- Tren de juguete dando vueltas sobre la alfombra ----------
   {
-    box(16, 4.5, 4.4, 26, 2.25, -31.8, '#f2f2f2');
-    box(15, 0.2, 4, 26, 4.6, -31.8, '#dcdcdc', { solid: false });
-    box(15, 8.5, 0.6, 26, 9.6, -32.6, '#111111', { solid: false });
-    const scr = new THREE.Mesh(new THREE.PlaneGeometry(14, 7.6), new THREE.MeshStandardMaterial({ color: '#1a2a3a', emissive: '#2a4a7a', emissiveIntensity: 0.6, roughness: 0.15 }));
-    scr.position.set(26, 9.6, -32.25); scene.add(scr);
-    box(2, 0.5, 1.6, 26, 4.95, -31.8, '#111111', { solid: false });
+    const [cx, cz] = spot(14, -4, 9) || [14, -4];
+    const R = 6.5;
+    const rail = new THREE.Mesh(new THREE.TorusGeometry(R, 0.18, 4, 48), mat('#7a5a3a'));
+    rail.rotation.x = Math.PI / 2; rail.position.set(cx, 0.12, cz); scene.add(rail);
+    const rail2 = rail.clone(); rail2.scale.setScalar((R + 0.9) / R); scene.add(rail2);
+    const cars = [];
+    const colors = ['#d32f2f', '#1976d2', '#fbc02d', '#388e3c'];
+    for (let k = 0; k < 4; k++) {
+      const g = new THREE.Group();
+      const c = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, 2.2), mat(colors[k]));
+      c.position.y = 0.9; c.castShadow = true; g.add(c);
+      if (k === 0) {
+        const chim = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.9, 6), mat('#222'));
+        chim.position.set(0, 1.9, 0.6); g.add(chim);
+        const cab = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.9, 0.8), mat('#222')); cab.position.set(0, 1.9, -0.6); g.add(cab);
+      }
+      for (const wz of [-0.7, 0.7]) for (const wx of [-0.75, 0.75]) {
+        const w = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.15, 8).rotateZ(Math.PI / 2), mat('#333'));
+        w.position.set(wx, 0.3, wz); g.add(w);
+      }
+      g.traverse((o) => { o.userData.dynamic = true; });
+      scene.add(g); cars.push(g);
+    }
+    anim.push((t) => {
+      cars.forEach((g, k) => {
+        const a = t * 0.45 - k * 0.38;
+        g.position.set(cx + Math.cos(a) * (R + 0.45), 0, cz + Math.sin(a) * (R + 0.45));
+        g.rotation.y = -a;
+      });
+    });
+  }
+
+  // ---------- Mueble TV con dibujos animados ----------
+  {
+    const [tx, tz] = spot(26, -31.8, 7) || [26, -31.8];
+    box(16, 4.5, 4.4, tx, 2.25, tz, '#f2f2f2');
+    box(15, 0.2, 4, tx, 4.6, tz, '#dcdcdc', { solid: false });
+    box(15, 8.5, 0.6, tx, 9.6, tz - 0.8, '#111111', { solid: false });
+    const scrMat = new THREE.MeshStandardMaterial({ color: '#1a2a3a', emissive: '#2a4a7a', emissiveIntensity: 0.9, roughness: 0.15 });
+    const scr = new THREE.Mesh(new THREE.PlaneGeometry(14, 7.6), scrMat);
+    scr.position.set(tx, 9.6, tz - 0.45); scr.userData.dynamic = true; scene.add(scr);
+    box(2, 0.5, 1.6, tx, 4.95, tz, '#111111', { solid: false });
+    const tvCols = ['#ff5a5f', '#3ec1d3', '#ffd23f', '#7bd389', '#a06cd5'];
+    anim.push((t) => { const k = Math.floor(t * 0.7) % tvCols.length; scrMat.emissive.set(tvCols[k]).multiplyScalar(0.55 + 0.1 * Math.sin(t * 9)); });
   }
 
   // ---------- Estantería (pared izquierda) ----------
   {
-    const x = -46, z0 = 8;
-    box(4, 22, 18, x, 11, z0, '#f5f5f5');
+    const x = -46, z0 = 10;
+    box(4, 22, 16, x, 11, z0, '#f5f5f5');
     const r = mulberry(11);
     const colors = ['#c0392b', '#2980b9', '#27ae60', '#8e44ad', '#f39c12', '#16a085', '#d35400'];
     for (let shelf = 0; shelf < 4; shelf++) {
       const y = 1 + shelf * 5.2;
-      box(4.1, 0.4, 18, x, y, z0, '#e6e6e6', { solid: false });
-      let z = z0 - 8.3;
-      while (z < z0 + 8) {
+      box(4.1, 0.4, 16, x, y, z0, '#e6e6e6', { solid: false });
+      let z = z0 - 7.3;
+      while (z < z0 + 7) {
         const w = 0.8 + r() * 0.9, h = 2.8 + r() * 1.6;
         box(3.2, h, w, x + 0.2, y + 0.2 + h / 2, z + w / 2, colors[(r() * colors.length) | 0], { solid: false, shadow: false });
         z += w + 0.05;
@@ -186,9 +230,9 @@ function build(B) {
     }
   }
 
-  // ---------- Planta en maceta (esquina) ----------
+  // ---------- Planta en maceta ----------
   {
-    const px = -42, pz = -29;
+    const [px, pz] = spot(-43, -29, 3.5) || [-43, -29];
     cyl(3, 2.2, 5, px, 2.5, pz, '#c0643b', { seg: 10 });
     cyl(2.8, 2.8, 0.3, px, 4.9, pz, '#4a3020', { seg: 10, solid: false });
     const leaf = mat('#3f8f3f'), leaf2 = mat('#2f7a35');
@@ -203,44 +247,96 @@ function build(B) {
     }
   }
 
-  // ---------- Lámpara de pie (luz cálida) ----------
-  const lampPos = new THREE.Vector3(42, 0, 28);
+  // ---------- Lámpara de pie con globos ----------
+  const [lx, lz] = spot(43, 29, 3) || [43, 29];
+  const lampPos = new THREE.Vector3(lx, 0, lz);
   {
-    cyl(2, 2.4, 0.5, lampPos.x, 0.25, lampPos.z, '#333333', { seg: 12 });
-    cyl(0.25, 0.25, 18, lampPos.x, 9, lampPos.z, '#333333', { seg: 6 });
-    const shade = cyl(2.2, 3.4, 3.4, lampPos.x, 19, lampPos.z, new THREE.MeshStandardMaterial({ color: '#fff3d6', emissive: '#ffcf80', emissiveIntensity: 0.8, side: THREE.DoubleSide }), { seg: 12, solid: false });
+    cyl(2, 2.4, 0.5, lx, 0.25, lz, '#333333', { seg: 12 });
+    cyl(0.25, 0.25, 18, lx, 9, lz, '#333333', { seg: 6 });
+    const shade = cyl(2.2, 3.4, 3.4, lx, 19, lz, new THREE.MeshStandardMaterial({ color: '#fff3d6', emissive: '#ffcf80', emissiveIntensity: 0.8, side: THREE.DoubleSide }), { seg: 12, solid: false });
     shade.castShadow = false;
+    const bcol = ['#ff4d6d', '#4dabf7', '#ffd43b'];
+    const balloons = bcol.map((c, k) => {
+      const g = new THREE.Group();
+      const b = new THREE.Mesh(new THREE.SphereGeometry(1.5, 12, 10), new THREE.MeshStandardMaterial({ color: c, roughness: 0.25, metalness: 0.1 }));
+      b.scale.y = 1.2; b.position.y = 7; b.castShadow = true; g.add(b);
+      const str = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 6, 3).translate(0, 3, 0), mat('#eeeeee'));
+      g.add(str);
+      g.position.set(lx - 1.2 + k * 1.2, 12, lz - 1);
+      g.traverse((o) => { o.userData.dynamic = true; });
+      scene.add(g);
+      return g;
+    });
+    anim.push((t) => balloons.forEach((g, k) => { g.rotation.z = Math.sin(t * 1.1 + k) * 0.18 - 0.15 + k * 0.15; g.rotation.x = Math.cos(t * 0.9 + k * 2) * 0.12; }));
   }
 
-  // ---------- Juguetes y detalles sueltos (fuera de pista) ----------
+  // ---------- Robot de juguete que saluda ----------
   {
-    // Cubos de juguete con letras
-    const cubes = [[-16, 4, '#e63946', 0.3], [-13.5, 6.5, '#2a9df4', 0.8], [-15, 5, '#f1c40f', 0.1]];
-    cubes.forEach(([x, z, c, ry], i) => box(2.4, 2.4, 2.4, x, 1.2 + (i === 2 ? 2.4 : 0), z, c, { rot: [0, ry, 0] }));
-    // Balón
-    const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(3, 1), mat('#f5f5f5'));
-    ball.position.set(-21, 3, 7); ball.castShadow = true; scene.add(ball);
-    const ball2 = new THREE.Mesh(new THREE.IcosahedronGeometry(3.02, 1), new THREE.MeshStandardMaterial({ color: '#e74c3c', flatShading: true, wireframe: true }));
-    ball2.position.copy(ball.position); scene.add(ball2);
-    collider(RAPIER.ColliderDesc.ball(3), ball.position, null, { restitution: 0.6 });
-    // Zapatilla
-    box(3, 1.4, 7, 30, 0.7, 31.5, '#4a6fa5', { rot: [0, 1.4, 0] });
-    box(3.1, 0.4, 7.1, 30, 0.2, 31.5, '#f5f5f5', { rot: [0, 1.4, 0], solid: false });
-    // Mando de la tele
-    box(1.6, 0.5, 5, 18, 0.25, -3, '#222222', { rot: [0, -0.7, 0] });
-    // Bloques apilados en la esquina
-    box(5, 2.5, 2.5, 41, 1.25, -28, '#2ecc71');
-    box(2.5, 2.5, 5, 41, 3.75, -28, '#9b59b6', { rot: [0, 0.3, 0] });
-    // Revistas
-    box(6, 0.4, 8, -42, 0.2, 29, '#e67e22', { rot: [0, 0.2, 0] });
-    box(6, 0.4, 8, -41.6, 0.6, 29.3, '#ecf0f1', { rot: [0, -0.15, 0] });
+    const [rx, rz] = spot(-22, 10, 2.5) || [-22, 10];
+    const g = new THREE.Group();
+    const metal = mat('#b0bec5', { metalness: 0.6, roughness: 0.35 });
+    const red = mat('#e53935');
+    const add = (geo, m, x, y, z) => { const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.castShadow = true; g.add(o); return o; };
+    add(new THREE.BoxGeometry(2.4, 2.8, 1.6), metal, 0, 3.4, 0);
+    add(new THREE.BoxGeometry(1.8, 1.5, 1.4), metal, 0, 5.6, 0);
+    for (const e of [-0.45, 0.45]) add(new THREE.SphereGeometry(0.25, 8, 6), new THREE.MeshStandardMaterial({ color: '#00e5ff', emissive: '#00e5ff', emissiveIntensity: 1 }), e, 5.7, 0.72);
+    add(new THREE.CylinderGeometry(0.06, 0.06, 0.8, 4), red, 0, 6.7, 0);
+    add(new THREE.SphereGeometry(0.2, 6, 4), red, 0, 7.15, 0);
+    for (const l of [-0.6, 0.6]) add(new THREE.BoxGeometry(0.7, 2, 0.8), red, l, 1, 0);
+    add(new THREE.BoxGeometry(0.5, 1.8, 0.5), metal, -1.5, 3.4, 0);
+    const arm = new THREE.Group(); arm.position.set(1.45, 4.5, 0); g.add(arm);
+    const a2 = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.8, 0.5).translate(0, 0.8, 0), metal); a2.castShadow = true; arm.add(a2);
+    g.position.set(rx, 0, rz);
+    g.rotation.y = Math.atan2(s0.p.x - rx, s0.p.z - rz);
+    g.traverse((o) => { o.userData.dynamic = true; });
+    scene.add(g);
+    B.collider(RAPIER.ColliderDesc.cuboid(1.3, 3.5, 1), { x: rx, y: 3.5, z: rz });
+    anim.push((t) => { arm.rotation.z = -0.4 - Math.abs(Math.sin(t * 3)) * 1.2; });
   }
 
+  // ---------- Detalles sueltos ----------
+  {
+    const put = (x, z, r, fn) => { const p = spot(x, z, r); if (p) fn(p[0], p[1]); };
+    put(-16, 2, 3, (x, z) => {
+      box(2.4, 2.4, 2.4, x, 1.2, z, '#e63946', { rot: [0, 0.3, 0] });
+      box(2.4, 2.4, 2.4, x + 2.5, 1.2, z + 1, '#2a9df4', { rot: [0, 0.8, 0] });
+      box(2.4, 2.4, 2.4, x + 1.2, 3.6, z + 0.5, '#f1c40f', { rot: [0, 0.1, 0] });
+    });
+    put(-26, -28, 3.2, (x, z) => {
+      const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(3, 1), mat('#f5f5f5'));
+      ball.position.set(x, 3, z); ball.castShadow = true; scene.add(ball);
+      const ball2 = new THREE.Mesh(new THREE.IcosahedronGeometry(3.02, 1), new THREE.MeshStandardMaterial({ color: '#e74c3c', flatShading: true, wireframe: true }));
+      ball2.position.copy(ball.position); ball2.userData.dynamic = true; scene.add(ball2);
+      collider(RAPIER.ColliderDesc.ball(3), ball.position, null, { restitution: 0.6 });
+    });
+    put(30, 32, 3.5, (x, z) => {
+      box(3, 1.4, 7, x, 0.7, z, '#4a6fa5', { rot: [0, 1.4, 0] });
+      box(3.1, 0.4, 7.1, x, 0.2, z, '#f5f5f5', { rot: [0, 1.4, 0], solid: false });
+    });
+    put(-42, 29, 4, (x, z) => {
+      box(6, 0.4, 8, x, 0.2, z, '#e67e22', { rot: [0, 0.2, 0] });
+      box(6, 0.4, 8, x + 0.4, 0.6, z + 0.3, '#ecf0f1', { rot: [0, -0.15, 0] });
+    });
+    put(43, -29, 3, (x, z) => {
+      box(5, 2.5, 2.5, x, 1.25, z, '#2ecc71');
+      box(2.5, 2.5, 5, x, 3.75, z, '#9b59b6', { rot: [0, 0.3, 0] });
+    });
+    // pato de goma gigante
+    put(-6, 12, 3, (x, z) => {
+      const y = mat('#ffd60a'), o = mat('#ff8800');
+      const b = new THREE.Mesh(new THREE.SphereGeometry(2.4, 12, 10), y); b.scale.set(1.2, 0.8, 1); b.position.set(x, 1.8, z); b.castShadow = true; scene.add(b);
+      const h = new THREE.Mesh(new THREE.SphereGeometry(1.4, 12, 10), y); h.position.set(x + 1.8, 3.9, z); h.castShadow = true; scene.add(h);
+      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.2, 6).rotateZ(-Math.PI / 2), o); beak.position.set(x + 3.3, 3.7, z); scene.add(beak);
+      for (const e of [-0.5, 0.5]) { const eye = new THREE.Mesh(new THREE.SphereGeometry(0.18, 6, 4), mat('#111')); eye.position.set(x + 2.7, 4.3, z + e); scene.add(eye); }
+      collider(RAPIER.ColliderDesc.ball(2.6), { x, y: 2, z });
+    });
+  }
 
   return {
     circuit,
     bounds: { x: ROOM.x - 1.5, z: ROOM.z - 1.5, h: ROOM.h - 1 },
-    itemSpots: [0.2, 0.47, 0.75],
+    itemSpots: [0.3, 0.7],
+    update: (t) => { for (const f of anim) f(t); },
     lights: {
       background: '#1b1d2a',
       hemi: ['#e3ecff', '#8a6a4a', 0.5],
