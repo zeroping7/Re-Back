@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1b1d2a" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <title>Re-Back</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🏎️%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="hud" class="hidden">
+    <div id="speedo"><span id="speed">0</span><small>km/h</small></div>
+    <div id="topbar">
+      <button id="btn-reset" class="icon" title="Recolocar coche">↺</button>
+      <button id="btn-mode" class="icon" title="Botones / inclinación">🎮</button>
+      <button id="btn-sound" class="icon" title="Sonido">🔊</button>
+      <button id="btn-tune" class="icon" title="Ajustes de conducción">⚙</button>
+    </div>
+    <div id="fps"></div>
+
+    <div id="steer-pad">
+      <button id="btn-left" class="pad">◀</button>
+      <button id="btn-right" class="pad">▶</button>
+    </div>
+    <div id="pedals">
+      <button id="btn-brake" class="pad brake">▼</button>
+      <button id="btn-gas" class="pad gas">▲</button>
+    </div>
+  </div>
+
+  <div id="tune-panel" class="hidden">
+    <div class="tune-head">
+      <b>Ajustes de conducción</b>
+      <button id="tune-close" class="icon">✕</button>
+    </div>
+    <div id="tune-list"></div>
+    <div class="tune-actions">
+      <button id="tune-copy">Copiar valores</button>
+      <button id="tune-default">Restaurar</button>
+    </div>
+  </div>
+
+  <div id="start" class="overlay">
+    <h1>RE-BACK</h1>
+    <p>Fase 1 · El salón</p>
+    <button id="btn-start">Toca para jugar</button>
+    <p class="hint">Teclado: flechas/WASD · R recolocar</p>
+  </div>
+
+  <div id="loading" class="overlay"><p>Cargando…</p></div>
+  <div id="rotate" class="overlay"><p>📱↻ Gira el móvil en horizontal</p></div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

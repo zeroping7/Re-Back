@@ -1,0 +1,76 @@
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; height: 100%; overflow: hidden; background: #1b1d2a;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #fff;
+  user-select: none; -webkit-user-select: none; touch-action: none; overscroll-behavior: none;
+}
+#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+.hidden { display: none !important; }
+
+button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action: none; }
+
+#hud { position: fixed; inset: 0; pointer-events: none; }
+#hud button { pointer-events: auto; }
+
+#speedo {
+  position: absolute; left: calc(14px + env(safe-area-inset-left)); top: 10px;
+  font-weight: 900; font-size: 34px; font-style: italic; letter-spacing: -1px;
+  text-shadow: 0 2px 0 #0008, 0 0 12px #0006;
+}
+#speedo small { font-size: 13px; margin-left: 4px; font-style: normal; opacity: .8; }
+#fps { position: absolute; left: calc(14px + env(safe-area-inset-left)); top: 52px; font-size: 11px; opacity: .55; }
+
+#topbar { position: absolute; right: calc(10px + env(safe-area-inset-right)); top: 8px; display: flex; gap: 8px; }
+.icon {
+  width: 44px; height: 44px; border-radius: 12px; font-size: 22px; line-height: 44px; padding: 0;
+  background: #0007; backdrop-filter: blur(4px); box-shadow: 0 2px 0 #0006;
+}
+.icon.off { opacity: .45; }
+
+.pad {
+  width: 92px; height: 92px; border-radius: 50%; font-size: 34px;
+  background: #ffffff26; border: 2px solid #ffffff55; box-shadow: 0 3px 0 #0006;
+  backdrop-filter: blur(3px);
+}
+.pad.active { background: #ffffff66; transform: scale(.94); }
+.pad.gas { background: #2ecc7140; border-color: #2ecc71aa; width: 110px; height: 110px; }
+.pad.gas.active { background: #2ecc71aa; }
+.pad.brake { background: #e74c3c40; border-color: #e74c3caa; }
+.pad.brake.active { background: #e74c3caa; }
+
+#steer-pad { position: absolute; left: calc(18px + env(safe-area-inset-left)); bottom: 18px; display: flex; gap: 14px; }
+#pedals { position: absolute; right: calc(18px + env(safe-area-inset-right)); bottom: 18px; display: flex; gap: 14px; align-items: flex-end; }
+
+.overlay {
+  position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 40%, #2c3150ee, #12131ccc); z-index: 20; text-align: center;
+}
+.overlay h1 {
+  margin: 0; font-size: 64px; font-style: italic; font-weight: 900; letter-spacing: -2px;
+  background: linear-gradient(#ffe259, #ff7a18); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 4px 0 #0008);
+}
+.overlay p { margin: 6px 0 18px; opacity: .85; }
+.overlay .hint { font-size: 12px; opacity: .5; margin-top: 18px; }
+#btn-start {
+  padding: 16px 34px; border-radius: 40px; font-size: 22px; font-weight: 800;
+  background: linear-gradient(#ffb347, #ff6a00); box-shadow: 0 5px 0 #a33f00; color: #fff;
+}
+#btn-start:active { transform: translateY(3px); box-shadow: 0 2px 0 #a33f00; }
+#loading { z-index: 30; }
+#rotate { display: none; z-index: 40; }
+@media (orientation: portrait) and (max-width: 900px) { #rotate { display: flex; } }
+
+#tune-panel {
+  position: fixed; right: 10px; top: 60px; bottom: 10px; width: min(340px, 60vw); z-index: 15;
+  background: #12131ced; border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column;
+  box-shadow: 0 6px 24px #0008; pointer-events: auto; touch-action: pan-y;
+}
+.tune-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.tune-head .icon { width: 34px; height: 34px; line-height: 34px; font-size: 16px; }
+#tune-list { overflow-y: auto; flex: 1; touch-action: pan-y; }
+.tune-row { margin: 8px 0; }
+.tune-row label { display: flex; justify-content: space-between; font-size: 13px; opacity: .9; }
+.tune-row input { width: 100%; touch-action: pan-x; }
+.tune-actions { display: flex; gap: 8px; margin-top: 8px; }
+.tune-actions button { flex: 1; padding: 10px; border-radius: 10px; background: #ffffff1f; font-size: 14px; }

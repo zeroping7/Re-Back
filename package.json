@@ -1,0 +1,31 @@
+{
+  "name": "re-back",
+  "version": "0.1.0",
+  "description": "Juego de carreras de coches RC inspirado en Re-Volt",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeroping7/re-back.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zeroping7/re-back/issues"
+  },
+  "homepage": "https://github.com/zeroping7/re-back#readme",
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.21.0",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "puppeteer-core": "^25.16.0",
+    "vite": "^8.3.6"
+  },
+  "private": true,
+  "type": "module"
+}

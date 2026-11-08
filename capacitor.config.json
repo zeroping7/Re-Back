@@ -1,0 +1,6 @@
+{
+  "appId": "com.zeroping7.reback",
+  "appName": "Re-Back",
+  "webDir": "dist",
+  "android": { "backgroundColor": "#1b1d2a" }
+}
