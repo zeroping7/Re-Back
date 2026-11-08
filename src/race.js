@@ -13,7 +13,8 @@ const RIVAL_NAMES = ['Turbo', 'Pila', 'Zumbi', 'Trasto', 'Muelle', 'Chapa', 'Tue
 
 // Una carrera completa: escena, física, coches, IA, objetos, vueltas y cámara.
 export class Race {
-  constructor({ renderer, envMap, sfx, controls, hud, trackDef, carDef, laps = 3, rivals = 3, difficulty = 1, baseTuning, onFinish, practice = false }) {
+  constructor({ renderer, envMap, sfx, controls, hud, trackDef, carDef, carUpgrades = {}, laps = 3, rivals = 3, difficulty = 1, baseTuning, onFinish, practice = false }) {
+    this.carUpgrades = carUpgrades;
     this.renderer = renderer; this.sfx = sfx; this.controls = controls; this.hud = hud;
     this.trackDef = trackDef; this.laps = laps; this.baseTuning = baseTuning; this.onFinish = onFinish;
     this.practice = practice;
@@ -59,7 +60,7 @@ export class Race {
       const isPlayer = i === total - 1; // el jugador sale el último
       const def = isPlayer ? carDef : rivalDefs[i % rivalDefs.length];
       const skill = isPlayer ? 1 : difficulty * (0.95 + 0.05 * (i / Math.max(1, total - 1)));
-      const tuning = isPlayer ? carTuning(baseTuning, def) : carTuning(baseTuningDefaults(baseTuning), def, skill);
+      const tuning = isPlayer ? carTuning(baseTuning, def, 1, carUpgrades) : carTuning(baseTuningDefaults(baseTuning), def, skill);
       const color = isPlayer ? def.color : RIVAL_COLORS[i % RIVAL_COLORS.length];
       const car = new Car(scene, this.world, RAPIER, def, tuning, { color, index: i, name: isPlayer ? 'Tú' : RIVAL_NAMES[i % RIVAL_NAMES.length] });
       const slot = this.circuit.gridSlot(i);
@@ -455,7 +456,7 @@ export class Race {
 
   applyTuning(base) {
     this.baseTuning = base;
-    this.player.t = carTuning(base, this.player.def);
+    this.player.t = carTuning(base, this.player.def, 1, this.carUpgrades);
     this.player.applyTuning();
     this.world.gravity = { x: 0, y: -base.gravity, z: 0 };
   }

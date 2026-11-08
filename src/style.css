@@ -158,3 +158,37 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 #btn-go { position: sticky; bottom: 6px; z-index: 2; }
 .card { padding: 8px; }
 .card .sw { height: 30px; }
+
+/* ===== Dinero y garaje ===== */
+#money {
+  position: fixed; top: 10px; right: calc(14px + env(safe-area-inset-right)); z-index: 25;
+  background: #0009; padding: 6px 14px; border-radius: 20px; font-weight: 900; font-size: 18px; color: #ffd166;
+  box-shadow: 0 3px 0 #0006;
+}
+#money.bump { animation: bump .4s; }
+@keyframes bump { 40% { transform: scale(1.25); } }
+.card .price { font-size: 12px; font-weight: 800; color: #ffd166; margin-top: 4px; }
+.card .own { font-size: 11px; font-weight: 800; color: #7dff8a; margin-top: 4px; }
+.card.locked { opacity: .75; }
+.card.locked .sw { filter: grayscale(.7) brightness(.7); }
+#g-detail { width: min(430px, 55vw); margin-top: 8px; }
+.g-title b { font-size: 24px; font-style: italic; margin-right: 10px; }
+.g-title span { opacity: .7; font-size: 13px; }
+#g-stats { margin: 6px 0; }
+#g-stats .bar { display: flex; align-items: center; gap: 8px; font-size: 12px; margin: 3px 0; }
+#g-stats .bar span { width: 70px; opacity: .8; }
+#g-stats .bar i { flex: 1; height: 7px; border-radius: 4px; background: #ffffff22; position: relative; overflow: hidden; }
+#g-stats .bar i::before { content: ''; position: absolute; inset: 0; width: var(--b); background: #ffd166; }
+#g-stats .bar i::after { content: ''; position: absolute; top: 0; bottom: 0; left: var(--b); width: var(--u); background: #7dff8a; }
+#g-actions { display: flex; gap: 8px; margin: 8px 0; }
+#g-actions button { flex: 1; padding: 10px; border-radius: 12px; font-weight: 800; font-size: 15px; background: #ffffff1c; }
+#g-actions button.buy { background: linear-gradient(#ffb347, #ff6a00); box-shadow: 0 3px 0 #a33f00; }
+#g-actions button.use { background: #2ecc71aa; }
+#g-actions button:disabled { opacity: .4; }
+.up-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid #ffffff12; }
+.up-row .nm { flex: 1; font-size: 13px; }
+.up-row .nm small { display: block; opacity: .6; font-size: 10px; }
+.up-row .pips { letter-spacing: 2px; color: #7dff8a; font-size: 14px; }
+.up-row button { padding: 7px 10px; border-radius: 10px; font-weight: 800; font-size: 13px; background: #ffb34755; min-width: 84px; }
+.up-row button:disabled { opacity: .4; }
+#res-reward { font-size: 20px; font-weight: 900; color: #ffd166; margin: 6px 0 0; }

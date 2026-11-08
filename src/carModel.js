@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries, toCreasedNormals } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 // Modelo de buggy RC 1:10 hecho por código.
 // Ejes: +Z adelante, +Y arriba, +X izquierda. Se anima la suspensión (trapecios, amortiguadores, palieres).
@@ -23,6 +23,7 @@ const STYLES = {
     tailX: 0.5, tailY: 0.34, tailZ: -1.06, headX: 0.45, headY: 0.3, headZ: 1.04,
     wing: { y: 0.66, z: -0.88, w: 1.3, strut: 0.2 },
     decal: { x: 0.71, y: 0.27, z: 0.0, size: 0.3 }, slick: true,
+    arches: true, archX: -0.02, plate: { y: 0.18, zf: 1.075, zr: -1.075 }, mirrors: { x: 0.66, y: 0.5, z: 0.35 }, doors: { z: [0.35, -0.3], y: 0.17, h: 0.2 },
   },
   truck: {
     profile: [[-1.0, -0.05], [-1.0, 0.2], [-0.35, 0.22], [-0.3, 0.24], [0.42, 0.24], [1.0, 0.2], [1.04, 0.02], [0.96, -0.06]],
@@ -31,6 +32,7 @@ const STYLES = {
     tailX: 0.4, tailY: 0.62, tailZ: -1.1, headX: 0.38, headY: 0.6, headZ: 1.1,
     wing: null,
     decal: { x: 0.56, y: 0.58, z: 0.55, size: 0.34 },
+    plate: { y: 0.36, zr: -1.08 }, mirrors: { x: 0.56, y: 0.92, z: 0.38 },
   },
   rally: {
     profile: [[-0.95, -0.12], [-0.98, 0.12], [-0.9, 0.18], [0.35, 0.2], [0.7, 0.14], [1.0, 0.06], [1.02, -0.08], [0.96, -0.13]],
@@ -39,6 +41,7 @@ const STYLES = {
     tailX: 0.45, tailY: 0.36, tailZ: -1.04, headX: 0.42, headY: 0.32, headZ: 1.03,
     wing: { y: 0.85, z: -0.92, w: 0.95, strut: 0.12, d: 0.22, tilt: 0.05 },
     decal: { x: 0.62, y: 0.27, z: 0.1, size: 0.3 },
+    arches: true, archX: 0.0, plate: { y: 0.2, zf: 1.08, zr: -1.06 }, mirrors: { x: 0.6, y: 0.62, z: 0.3 }, doors: { z: [0.32, -0.38], y: 0.22, h: 0.26 },
   },
   van: {
     profile: [[-1.0, -0.12], [-1.02, 0.62], [-0.95, 0.7], [0.45, 0.7], [0.78, 0.36], [1.02, 0.26], [1.04, -0.06], [0.96, -0.13]],
@@ -47,6 +50,7 @@ const STYLES = {
     tailX: 0.45, tailY: 0.45, tailZ: -1.1, headX: 0.42, headY: 0.4, headZ: 1.1,
     wing: null,
     decal: { x: 0.625, y: 0.5, z: 0.25, size: 0.3 }, slick: true,
+    arches: true, archX: 0.01, plate: { y: 0.22, zf: 1.12, zr: -1.08 }, mirrors: { x: 0.64, y: 0.62, z: 0.6 }, doors: { z: [0.55, -0.05], y: 0.4, h: 0.55 },
   },
   f1: {
     profile: null, cab: null,
@@ -61,12 +65,27 @@ const STYLES = {
   },
 };
 
+// suaviza un perfil poligonal (Chaikin): esquinas redondeadas como una carrocería real
+function chaikin(pts, it = 2) {
+  for (let k = 0; k < it; k++) {
+    const out = [];
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i], b = pts[(i + 1) % pts.length];
+      out.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25], [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]);
+    }
+    pts = out;
+  }
+  return pts;
+}
+const smooth = (geo, ang = 0.7) => toCreasedNormals(geo, ang);
+
 function extrudeProfile(points, width, bt, bs) {
+  points = chaikin(points);
   const sh = new THREE.Shape();
   sh.moveTo(points[0][0], points[0][1]);
   for (let i = 1; i < points.length; i++) sh.lineTo(points[i][0], points[i][1]);
   sh.closePath();
-  const geo = new THREE.ExtrudeGeometry(sh, { depth: width, bevelEnabled: true, bevelThickness: bt, bevelSize: bs, bevelSegments: 3, curveSegments: 4 });
+  const geo = new THREE.ExtrudeGeometry(sh, { depth: width, bevelEnabled: true, bevelThickness: bt, bevelSize: bs, bevelSegments: 4, curveSegments: 4 });
   geo.translate(0, 0, -width / 2);
   geo.rotateY(-Math.PI / 2);
   return geo;
@@ -81,6 +100,10 @@ function mats(color, number, pattern) {
     M.spring = new THREE.MeshStandardMaterial({ color: '#ffd400', metalness: 0.5, roughness: 0.35 });
     M.tire = new THREE.MeshStandardMaterial({ color: '#161616', roughness: 0.92, flatShading: true });
     M.rim = new THREE.MeshStandardMaterial({ color: '#f1f1f1', metalness: 0.2, roughness: 0.35 });
+    M.lens = new THREE.MeshStandardMaterial({ color: '#ffffff', transparent: true, opacity: 0.28, roughness: 0.05, metalness: 0.6 });
+    M.arch = new THREE.MeshStandardMaterial({ color: '#1c1c1e', roughness: 0.8 });
+    M.disc = new THREE.MeshStandardMaterial({ color: '#8a8f96', metalness: 0.9, roughness: 0.35 });
+    M.caliper = new THREE.MeshStandardMaterial({ color: '#d32f2f', metalness: 0.4, roughness: 0.4 });
     M.head = new THREE.MeshStandardMaterial({ color: '#fffbe6', emissive: '#fff2b0', emissiveIntensity: 1.3 });
     M.helmet = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.25, metalness: 0.1 });
     M.wheel = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0.15, flatShading: true });
@@ -141,15 +164,47 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
       const top = THREE.MathUtils.clamp((v.y - S.topStart) / 0.2, 0, 1);
       v.x *= 1 - S.noseTaper * nose - (S.topTaper ?? 0.12) * top;
     });
-    planarUV(body, 1.05, S.width / 2 + 0.1);
-    add(body, paint, 0, PLATE_Y + S.y, 0);
+    const sb = smooth(body);
+    planarUV(sb, 1.05, S.width / 2 + 0.1);
+    add(sb, paint, 0, PLATE_Y + S.y, 0);
   }
   if (S.cab) {
     const cabGeo = extrudeProfile(S.cab, S.cabWidth, 0.06, 0.04);
     shape(cabGeo, (v) => { if (v.y > S.cab[1][1] * 0.5) v.x *= S.cabTaper ?? 0.84; });
-    add(cabGeo, M.glass, 0, PLATE_Y + S.cabY, S.cabZ);
+    add(smooth(cabGeo), M.glass, 0, PLATE_Y + S.cabY, S.cabZ);
   }
-  EXTRAS[style]?.({ add, paint, P: PLATE_Y, S, g, def, color });
+  EXTRAS[style]?.({ add, paint, P: PLATE_Y, S, g, def, color, W: WHEELS, R: WHEEL_R });
+  // pasos de rueda (aletas) en carrocerías cerradas
+  if (S.arches) {
+    const hubY = CONN_Y - 0.26;
+    for (const w of WHEELS) {
+      const sx = Math.sign(w.x);
+      const a = add(new THREE.TorusGeometry(WHEEL_R + 0.07, 0.05, 6, 18, Math.PI), M.arch, sx * (S.width / 2 + S.archX), hubY, w.z, g, false);
+      a.rotation.y = Math.PI / 2;
+    }
+  }
+  // matrícula
+  if (S.plate) {
+    for (const z of [S.plate.zf, S.plate.zr]) {
+      if (z === undefined) continue;
+      const pl = add(new THREE.PlaneGeometry(0.34, 0.1), plateMat(def.number || '7'), 0, PLATE_Y + S.plate.y, z, g, false);
+      if (z < 0) pl.rotation.y = Math.PI;
+    }
+  }
+  // retrovisores
+  if (S.mirrors) {
+    for (const sx of [1, -1]) {
+      const m = add(new THREE.BoxGeometry(0.1, 0.07, 0.05), paint, sx * S.mirrors.x, PLATE_Y + S.mirrors.y, S.mirrors.z, g, false);
+      add(new THREE.PlaneGeometry(0.08, 0.05), M.chrome, sx * S.mirrors.x, PLATE_Y + S.mirrors.y, S.mirrors.z - 0.026, g, false).rotation.y = Math.PI;
+      m.castShadow = true;
+    }
+  }
+  // líneas de puertas
+  if (S.doors) {
+    for (const sx of [1, -1]) for (const z of S.doors.z) {
+      add(new THREE.BoxGeometry(0.005, S.doors.h, 0.012), M.carbon, sx * (S.width / 2 + 0.052), PLATE_Y + S.doors.y, z, g, false);
+    }
+  }
 
   // calcomanías laterales con el dorsal
   if (S.decal) {
@@ -163,10 +218,16 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
   // pilotos traseros
   const tailMat = new THREE.MeshStandardMaterial({ color: '#550000', emissive: '#ff1a1a', emissiveIntensity: 0.6 });
   const revMat = new THREE.MeshStandardMaterial({ color: '#777', emissive: '#ffffff', emissiveIntensity: 0 });
-  for (const s2 of [1, -1]) add(new THREE.BoxGeometry(0.12, 0.05, 0.03), tailMat, s2 * S.tailX, PLATE_Y + S.tailY, S.tailZ, g, false);
+  for (const s2 of [1, -1]) {
+    add(new THREE.BoxGeometry(0.14, 0.06, 0.03), tailMat, s2 * S.tailX, PLATE_Y + S.tailY, S.tailZ, g, false);
+    add(new THREE.BoxGeometry(0.16, 0.08, 0.02), M.lens, s2 * S.tailX, PLATE_Y + S.tailY, S.tailZ - 0.02, g, false);
+  }
   add(new THREE.BoxGeometry(0.08, 0.04, 0.03), revMat, 0, PLATE_Y + S.tailY, S.tailZ, g, false);
   if (S.headY !== undefined) {
-    for (const s2 of [1, -1]) add(new THREE.BoxGeometry(0.16, 0.07, 0.03), M.head, s2 * S.headX, PLATE_Y + S.headY, S.headZ, g, false);
+    for (const s2 of [1, -1]) {
+      add(new THREE.BoxGeometry(0.17, 0.08, 0.03), M.head, s2 * S.headX, PLATE_Y + S.headY, S.headZ, g, false);
+      add(new THREE.BoxGeometry(0.19, 0.1, 0.02), M.lens, s2 * S.headX, PLATE_Y + S.headY, S.headZ + 0.02, g, false);
+    }
   }
 
   // ---------- Alerón ----------
@@ -205,6 +266,12 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
     wheel.castShadow = true; wheel.receiveShadow = true;
     spin.add(wheel);
     pivot.add(spin);
+    // disco y pinza de freno (no giran)
+    const sx = Math.sign(w.x), k = WHEEL_R / 0.37;
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.15 * k, 0.15 * k, 0.025, 16).rotateZ(Math.PI / 2), M.disc);
+    disc.position.x = -sx * 0.02; pivot.add(disc);
+    const cal = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.1 * k, 0.12 * k), M.caliper);
+    cal.position.set(sx * 0.0, 0.1 * k, -0.06 * k); pivot.add(cal);
     pivot.position.set(w.x, CONN_Y - 0.3, w.z);
     g.add(pivot);
     wheels.push(pivot);
@@ -284,7 +351,7 @@ function wheelGeometry(R, side, slick = false, rimColor = '#eeeeee') {
     return geo;
   };
   const tire = paint(makeTire(R, slick), '#161616');
-  const rimG = makeRim();
+  const rimG = makeRim(R, slick ? 10 : 6);
   if (side < 0) { rimG.scale(-1, 1, 1); flipWinding(rimG); }
   const rim = paint(rimG, rimColor);
   const nut = new THREE.CylinderGeometry(0.04, 0.04, 0.05, 6).rotateZ(Math.PI / 2).translate(side * 0.14, 0, 0).toNonIndexed();
@@ -300,7 +367,7 @@ function makeTire(R, slick = false) {
   const r0 = R - 0.025;
   const prof = [[0.2, -0.15], [0.29, -0.155], [r0 - 0.015, -0.135], [r0, -0.1], [r0, 0.1], [r0 - 0.015, 0.135], [0.29, 0.155], [0.2, 0.15]]
     .map(([x, y]) => new THREE.Vector2(x, y));
-  const base = new THREE.LatheGeometry(prof, 20);
+  const base = new THREE.LatheGeometry(prof, 28);
   base.rotateZ(Math.PI / 2);
   const parts = [base.toNonIndexed()];
   const n = 16;
@@ -318,21 +385,24 @@ function makeTire(R, slick = false) {
 }
 
 // Llanta de plato con 6 radios (cara exterior hacia +X)
-function makeRim() {
+function makeRim(R = 0.37, spokes = 6) {
+  const k = R / 0.37;
   const parts = [];
   const dish = new THREE.CylinderGeometry(0.21, 0.21, 0.26, 16, 1, true); dish.rotateZ(Math.PI / 2);
   parts.push(dish);
   const face = new THREE.CylinderGeometry(0.16, 0.16, 0.02, 16); face.rotateZ(Math.PI / 2); face.translate(0.06, 0, 0);
   parts.push(face);
-  for (let i = 0; i < 6; i++) {
-    const sp = new THREE.BoxGeometry(0.04, 0.17, 0.045);
+  for (let i = 0; i < spokes; i++) {
+    const sp = new THREE.BoxGeometry(0.04, 0.17, spokes > 6 ? 0.026 : 0.045);
     sp.translate(0.11, 0.1, 0);
-    sp.rotateX((i / 6) * Math.PI * 2);
+    sp.rotateX((i / spokes) * Math.PI * 2);
     parts.push(sp);
   }
+  const hub = new THREE.CylinderGeometry(0.06, 0.06, 0.05, 8); hub.rotateZ(Math.PI / 2); hub.translate(0.11, 0, 0);
+  parts.push(hub);
   const lip = new THREE.TorusGeometry(0.205, 0.014, 6, 18); lip.rotateY(Math.PI / 2); lip.translate(0.12, 0, 0);
   parts.push(lip);
-  return mergeGeometries(parts.map((p) => { const q = p.index ? p.toNonIndexed() : p; q.deleteAttribute('uv'); return q; }));
+  return mergeGeometries(parts.map((p) => { const q = p.index ? p.toNonIndexed() : p; q.deleteAttribute('uv'); return q; })).scale(1, k, k);
 }
 
 // Amortiguador de longitud 1 a lo largo de -Y: cuerpo + muelle helicoidal
@@ -581,4 +651,20 @@ function pizzaMat() {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
   pizzaM = new THREE.MeshStandardMaterial({ map: t, emissive: '#ffffff', emissiveMap: t, emissiveIntensity: 0.4 });
   return pizzaM;
+}
+
+const plateCache = new Map();
+function plateMat(n) {
+  if (plateCache.has(n)) return plateCache.get(n);
+  const c = document.createElement('canvas'); c.width = 256; c.height = 76;
+  const x = c.getContext('2d');
+  x.fillStyle = '#f5f5f5'; x.fillRect(0, 0, 256, 76);
+  x.fillStyle = '#1e40af'; x.fillRect(0, 0, 34, 76);
+  x.strokeStyle = '#222'; x.lineWidth = 4; x.strokeRect(2, 2, 252, 72);
+  x.fillStyle = '#111'; x.font = 'bold 46px monospace'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText(`RB ${n}${n}${n} RC`, 145, 40);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.MeshStandardMaterial({ map: t, roughness: 0.4, polygonOffset: true, polygonOffsetFactor: -2 });
+  plateCache.set(n, m);
+  return m;
 }

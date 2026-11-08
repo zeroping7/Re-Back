@@ -11,12 +11,12 @@ await page.goto(process.argv[2], { waitUntil: 'load' });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 await sleep(2500);
 await page.click('#btn-start'); await sleep(800);
-await page.click('[data-go="race"]'); await sleep(800);
-await page.evaluate(() => { document.getElementById('m-setup').style.opacity = 0; });
-const n = await page.evaluate(() => document.querySelectorAll('#cars .card').length);
+await page.click('[data-go="garage"]'); await sleep(800);
+await page.evaluate(() => { document.getElementById('m-garage').style.opacity = 0; });
+const n = await page.evaluate(() => document.querySelectorAll('#g-cars .card').length);
 for (let i = 0; i < n; i++) {
-  await page.evaluate((i) => document.querySelectorAll('#cars .card')[i].click(), i);
-  await page.evaluate(() => { document.getElementById('m-setup').style.opacity = 0; });
+  await page.evaluate((i) => document.querySelectorAll('#g-cars .card')[i].click(), i);
+  await page.evaluate(() => { document.getElementById('m-garage').style.opacity = 0; });
   await sleep(1800);
   await page.screenshot({ path: `tests/shots/car${i}.png`, clip: { x: 330, y: 40, width: 520, height: 330 } });
 }

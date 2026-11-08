@@ -3,7 +3,8 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { Race, FIXED, fmtTime, getBest } from './race.js';
 import { TRACKS, trackById } from './tracks/index.js';
-import { CARS, carById } from './cars.js';
+import { CARS, carById, UPGRADES, MAX_LEVEL, carTuning } from './cars.js';
+import { profile, isOwned, upgradesOf, upgradeCost, sellValue, buyCar, sellCar, buyUpgrade, selectCar, raceReward, addMoney, onProfileChange } from './profile.js';
 import { buildCarModel } from './carModel.js';
 import { Controls } from './controls.js';
 import { Hud } from './hud.js';
@@ -75,10 +76,12 @@ async function init() {
   }
 
   // ---------- Pantallas ----------
-  const screens = ['m-main', 'm-setup', 'm-settings', 'm-pause', 'm-results'];
+  const screens = ['m-main', 'm-setup', 'm-settings', 'm-pause', 'm-results', 'm-garage'];
   function showScreen(id) {
     for (const s of screens) $(s).classList.toggle('hidden', s !== id);
-    if (id === 'm-setup' || id === 'm-main' || id === 'm-settings') showCar(settings.car);
+    $('money').classList.toggle('hidden', !['m-main', 'm-setup', 'm-garage', 'm-results'].includes(id));
+    if (id === 'm-setup' || id === 'm-main' || id === 'm-settings') showCar(profile.selected);
+    if (id === 'm-garage') { gSel = gSel || profile.selected; buildGarage(); }
   }
   let mode = 'race';
   document.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => {
@@ -92,6 +95,12 @@ async function init() {
       showScreen('m-setup');
     } else showScreen('m-' + go);
   }));
+  function updateMoney(bump) {
+    $('money-n').textContent = profile.money.toLocaleString('es-ES');
+    if (bump) { $('money').classList.remove('bump'); void $('money').offsetWidth; $('money').classList.add('bump'); }
+  }
+  onProfileChange(() => updateMoney(true));
+  updateMoney();
 
   function seg(id, options, get, set) {
     const el = $(id);
@@ -121,13 +130,20 @@ async function init() {
       tracks.append(c);
     }
     const cars = $('cars'); cars.innerHTML = '';
-    for (const d of CARS) {
+    for (const d of CARS.filter((x) => isOwned(x.id))) {
       const c = document.createElement('button');
-      c.className = 'card' + (settings.car === d.id ? ' sel' : '');
+      c.className = 'card' + (profile.selected === d.id ? ' sel' : '');
       const bar = (n, v) => `<div class="bar">${n}<i style="--v:${v * 20}%"></i></div>`;
       c.innerHTML = `<div class="sw" style="background:linear-gradient(135deg,${d.color},#0004)"></div><b>${d.name}</b><small>${d.desc}</small>` +
         bar('Vel', d.stats.vel) + bar('Ace', d.stats.acel) + bar('Man', d.stats.manejo);
-      c.addEventListener('click', () => { settings.car = d.id; saveSettings(); sfx.play('click'); showCar(d.id); buildSetup(); });
+      c.addEventListener('click', () => { selectCar(d.id); sfx.play('click'); showCar(d.id); buildSetup(); });
+      cars.append(c);
+    }
+    if (CARS.some((x) => !isOwned(x.id))) {
+      const c = document.createElement('button');
+      c.className = 'card locked';
+      c.innerHTML = '<div class="sw" style="background:#ffffff22"></div><b>🔒 Más coches</b><small>Gana carreras y cómpralos en el Garaje</small>';
+      c.addEventListener('click', () => { sfx.play('click'); showScreen('m-garage'); });
       cars.append(c);
     }
     seg('opt-laps', [[2, '2'], [3, '3'], [5, '5']], () => settings.laps, (v) => { settings.laps = v; saveSettings(); });
@@ -145,6 +161,56 @@ async function init() {
   buildSettings();
   $('btn-tune2').addEventListener('click', () => $('tune-panel').classList.remove('hidden'));
 
+  // ---------- Garaje ----------
+  let gSel = null;
+  const statVals = (def, up) => {
+    const t = carTuning({ engine: 1, maxSpeed: 1, gripFront: 1, gripRear: 1, steerMax: 1, steerSpeed: 1, suspStiff: 1 }, def, 1, up);
+    return [['Velocidad', t.maxSpeed, 0.85, 1.25], ['Aceleración', t.engine, 0.9, 1.6], ['Agarre', t.gripFront, 0.9, 1.4], ['Giro', t.steerMax, 0.85, 1.4]];
+  };
+  function buildGarage() {
+    const list = $('g-cars'); list.innerHTML = '';
+    for (const d of CARS) {
+      const own = isOwned(d.id);
+      const c = document.createElement('button');
+      c.className = 'card' + (gSel === d.id ? ' sel' : '') + (own ? '' : ' locked');
+      c.innerHTML = `<div class="sw" style="background:linear-gradient(135deg,${d.color},#0004)"></div><b>${own ? '' : '🔒 '}${d.name}</b>` +
+        (own ? `<div class="own">${profile.selected === d.id ? '✔ En uso' : 'Tuyo'}</div>` : `<div class="price">🪙 ${d.price.toLocaleString('es-ES')}</div>`);
+      c.addEventListener('click', () => { gSel = d.id; sfx.play('click'); showCar(d.id); buildGarage(); });
+      list.append(c);
+    }
+    const d = carById(gSel), own = isOwned(gSel), up = upgradesOf(gSel);
+    $('g-name').textContent = d.name;
+    $('g-desc').textContent = d.desc;
+    const base = statVals(d, {}), now = statVals(d, up);
+    $('g-stats').innerHTML = base.map(([n, v, lo, hi], i) => {
+      const b = Math.max(4, Math.min(100, ((v - lo) / (hi - lo)) * 100));
+      const u = Math.max(0, Math.min(100 - b, ((now[i][1] - v) / (hi - lo)) * 100));
+      return `<div class="bar"><span>${n}</span><i style="--b:${b}%;--u:${u}%"></i></div>`;
+    }).join('');
+    const act = $('g-actions'); act.innerHTML = '';
+    const btn = (label, cls, ok, fn) => { const b = document.createElement('button'); b.innerHTML = label; b.className = cls; b.disabled = !ok; b.onclick = fn; act.append(b); };
+    if (!own) {
+      btn(`Comprar · 🪙 ${d.price.toLocaleString('es-ES')}`, 'buy', profile.money >= d.price, () => { if (buyCar(d.id)) { sfx.play('finish'); buildGarage(); } });
+    } else {
+      btn(profile.selected === d.id ? '✔ En uso' : 'Usar este', 'use', profile.selected !== d.id, () => { selectCar(d.id); sfx.play('click'); buildGarage(); });
+      const many = Object.keys(profile.owned).length > 1;
+      btn(`Vender · +🪙 ${sellValue(d.id).toLocaleString('es-ES')}`, '', many, () => {
+        if (confirm(`¿Vender ${d.name} por ${sellValue(d.id)} monedas?`) && sellCar(d.id)) { sfx.play('pass'); showCar(profile.selected); buildGarage(); }
+      });
+    }
+    const ups = $('g-ups'); ups.innerHTML = '';
+    for (const u of UPGRADES) {
+      const lvl = up[u.id] || 0, cost = upgradeCost(d.id, u.id);
+      const row = document.createElement('div'); row.className = 'up-row';
+      row.innerHTML = `<div class="nm">${u.icon} ${u.name}<small>${u.desc}</small></div><div class="pips">${'●'.repeat(lvl)}${'○'.repeat(MAX_LEVEL - lvl)}</div>`;
+      const b = document.createElement('button');
+      b.textContent = cost === null ? 'MÁX' : `🪙 ${cost.toLocaleString('es-ES')}`;
+      b.disabled = !own || cost === null || profile.money < cost;
+      b.onclick = () => { if (buyUpgrade(d.id, u.id)) { sfx.play('pickup'); buildGarage(); } };
+      row.append(b); ups.append(row);
+    }
+  }
+
   // ---------- Carrera ----------
   let race = null;
   function startRace() {
@@ -159,7 +225,7 @@ async function init() {
       const q = QUALITY[settings.quality] || QUALITY.alta;
       race = new Race({
         renderer, envMap, sfx, controls, hud,
-        trackDef: trackById(settings.track), carDef: carById(settings.car),
+        trackDef: trackById(settings.track), carDef: carById(profile.selected), carUpgrades: { ...upgradesOf(profile.selected) },
         laps: settings.laps, rivals: settings.rivals, difficulty: settings.diff, practice,
         baseTuning: tuning, onFinish: showResults,
       });
@@ -207,6 +273,12 @@ async function init() {
       `<td>${r.finished ? fmtTime(r.time) : '—'}</td><td>⏱ ${fmtTime(r.best)}</td></tr>`).join('');
     const me = res.find((r) => r.player);
     $('res-title').textContent = me.place === 1 ? '🏆 ¡Has ganado!' : `Has quedado ${me.place}º`;
+    let reward = 0;
+    if (mode === 'race') reward = raceReward(me.place, res.length, settings.laps, settings.diff);
+    if (reward) {
+      addMoney(reward);
+      $('res-reward').textContent = `+ 🪙 ${reward.toLocaleString('es-ES')}`;
+    } else $('res-reward').textContent = '';
     const best = getBest(settings.track);
     $('res-best').textContent = `Récord del circuito: vuelta ${fmtTime(best.lap)} · carrera ${fmtTime(best.race)}`;
     showScreen('m-results');
@@ -276,7 +348,7 @@ async function init() {
   if (params.has('test')) {
     $('start').classList.add('hidden');
     if (params.get('track')) settings.track = params.get('track');
-    if (params.get('car')) settings.car = params.get('car');
+    if (params.get('car')) { profile.owned[params.get('car')] ??= {}; profile.selected = params.get('car'); }
     if (params.has('rivals')) settings.rivals = +params.get('rivals');
     if (params.has('laps')) settings.laps = +params.get('laps');
     mode = params.has('practice') ? 'practice' : 'race';

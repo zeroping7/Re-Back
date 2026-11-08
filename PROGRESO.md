@@ -61,6 +61,15 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
   y Pulga (cochecito redondo con ojos). Todos con dorsal en los laterales, faros, neumáticos lisos o de tacos
   y decoraciones (franjas, rally, llamas, lunares, pizza).
 
+### Economía, garaje y modelos más realistas (v1.0.10+)
+- `src/profile.js`: partida guardada con monedas 🪙, coches comprados y mejoras.
+- Al empezar: 500 🪙 y solo Furgo y Pulga. El resto se compra en el **Garaje** (de 1.500 a 10.000 🪙).
+- Premio por carrera según puesto, nº de coches, vueltas y dificultad (ganar con 4 coches a 3 vueltas en Normal ≈ 1.100 🪙).
+- Mejoras por coche (3 niveles): Motor, Velocidad punta, Neumáticos, Dirección. Precio según el coche.
+- Vender un coche devuelve el 60 % de lo gastado (coche + mejoras). Siempre te queda al menos uno.
+- Modelos: perfiles suavizados (Chaikin) con normales suaves, pasos de rueda, matrículas, retrovisores,
+  líneas de puertas, faros y pilotos con cristal, discos y pinzas de freno, llantas a escala con buje.
+
 ## Pendiente / ideas
 - Probar en el móvil: rendimiento (Opciones → Calidad si va lento) y sentido del modo inclinación.
 - Multijugador online (opcional, futuro).
