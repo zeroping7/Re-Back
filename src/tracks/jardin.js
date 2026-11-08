@@ -98,7 +98,7 @@ function build(B) {
   // ---------- Raíces (baches) ----------
   for (const [x, z] of [[58, 2], [57, -4]]) {
     const s = sampleNear(x, z);
-    cyl(0.25, 0.3, W + 1, s.p.x, 0.15, s.p.z, '#5d4037', { seg: 6, rot: [0, yawOf(s.t), Math.PI / 2] });
+    cyl(0.12, 0.15, W + 1, s.p.x, 0.07, s.p.z, '#5d4037', { seg: 6, rot: [0, yawOf(s.t), Math.PI / 2] });
   }
 
   // ---------- Árboles, rocas, flores ----------

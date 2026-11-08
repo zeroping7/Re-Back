@@ -119,7 +119,7 @@ function build(B) {
     const s = sampleNear(4, -16);
     for (let k = 0; k < 5; k++) {
       const p = s.p.clone().addScaledVector(s.t, (k - 2) * 2.2).addScaledVector(s.n, (rnd() - 0.5) * (W - 3));
-      ball(0.42, p.x, 0.12, p.z, mat('#ff9800'), { detail: 0 });
+      ball(0.24, p.x, 0.05, p.z, mat('#ff9800'), { detail: 0 });
     }
   }
 

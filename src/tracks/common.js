@@ -19,12 +19,18 @@ export function mat(color, opts = {}) {
 export function clearMatCache() { matCache.clear(); }
 
 // Ayudante para crear mallas estáticas con colisión
-export function createBuilder(scene, world, RAPIER) {
+// S = escala del mundo: los circuitos se diseñan en unidades "pequeñas" y se amplían
+export function createBuilder(scene, world, RAPIER, S = 1) {
   const fixed = world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
   const tmpE = new THREE.Euler();
 
   function collider(desc, pos, quat, { friction = 0.6, restitution = 0.1, groups } = {}) {
-    desc.setTranslation(pos.x, pos.y, pos.z);
+    const sh = desc.shape;
+    if (sh.halfExtents) sh.halfExtents = { x: sh.halfExtents.x * S, y: sh.halfExtents.y * S, z: sh.halfExtents.z * S };
+    if (sh.halfHeight !== undefined) sh.halfHeight *= S;
+    if (sh.radius !== undefined) sh.radius *= S;
+    if (sh.borderRadius !== undefined) sh.borderRadius *= S;
+    desc.setTranslation(pos.x * S, pos.y * S, pos.z * S);
     if (quat) desc.setRotation({ x: quat.x, y: quat.y, z: quat.z, w: quat.w });
     desc.setFriction(friction).setRestitution(restitution);
     if (groups !== undefined) desc.setCollisionGroups(groups);
@@ -152,6 +158,7 @@ export function buildCircuit(B, def) {
   line.receiveShadow = true;
   scene.add(line);
 
+  const C = { curve, samples, N, length, width, spacing: 1.6 };
   function sampleNear(x, z) {
     let best = 0, bd = Infinity;
     for (const s of samples) { const d = (s.p.x - x) ** 2 + (s.p.z - z) ** 2; if (d < bd) { bd = d; best = s.i; } }
@@ -172,12 +179,12 @@ export function buildCircuit(B, def) {
   // Parrilla de salida: 2 columnas detrás de la línea
   function gridSlot(i) {
     const row = Math.floor(i / 2), col = i % 2 ? -1 : 1;
-    const back = Math.round((3.5 + row * 4.2) / 1.6);
+    const back = Math.max(2, Math.round((4 + row * 4.5) / C.spacing));
     const s = samples[(N - back) % N];
-    return { pos: s.p.clone().addScaledVector(s.n, col * width * 0.22), yaw: yawOf(s.t), idx: s.i };
+    return { pos: s.p.clone().addScaledVector(s.n, col * C.width * 0.18), yaw: yawOf(s.t), idx: s.i };
   }
 
-  return { curve, samples, N, length, width, sampleNear, nearestFrom, yawOf, gridSlot };
+  return Object.assign(C, { sampleNear, nearestFrom, yawOf, gridSlot });
 }
 
 function inRange(i, from, to, N) {
@@ -297,4 +304,16 @@ export function mergeStatic(scene) {
     victims.push(...g.list);
   }
   for (const o of victims) o.parent?.remove(o);
+}
+
+// Pasa el circuito (diseñado en unidades pequeñas) a coordenadas del mundo
+export function scaleTrack(T, S) {
+  const c = T.circuit;
+  for (const s of c.samples) { s.p.multiplyScalar(S); s.radius *= S; }
+  c.width *= S; c.spacing *= S; c.length *= S;
+  T.bounds = { x: T.bounds.x * S, z: T.bounds.z * S, h: T.bounds.h * S };
+  for (const z of T.zones || []) { z.pos = z.pos.clone().multiplyScalar(S); z.r *= S; }
+  const L = T.lights;
+  if (L.fog) L.fog = [L.fog[0], L.fog[1] * S, L.fog[2] * S];
+  for (const p of L.points || []) { p.pos = p.pos.map((v) => v * S); p.distance *= S; p.intensity *= Math.pow(S, p.decay ?? 2); }
 }

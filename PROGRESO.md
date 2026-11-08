@@ -43,13 +43,20 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Icono propio (adaptativo), pantalla de carga, nombre "Re-Back", versión 1.0.N, horizontal, pantalla completa.
 - Firma fija (debug) para actualizar sin desinstalar. Cada push publica web + APK.
 
+### Cambios tras probar en el móvil
+- Coches más lentos: velocidad máx. 25 (antes 33), potencia 130 (antes 150). Ajustes guardados reiniciados (clave v2).
+- Circuitos el doble de anchos (~17) y el doble de largos: el mundo de cada circuito se escala ×2
+  (`trackDef.scale`), los coches mantienen su tamaño. Vueltas de ~17-28 s.
+
 ## Pendiente / ideas
 - Probar en el móvil: rendimiento (Opciones → Calidad si va lento) y sentido del modo inclinación.
 - Multijugador online (opcional, futuro).
 - Más circuitos y coches; logros.
 
 ## Notas técnicas
-- Escala: 1 unidad ≈ 22 cm. Gravedad de juego 28.
+- Escala: 1 unidad ≈ 22 cm (coches). Los circuitos se diseñan en unidades "pequeñas" y se amplían ×2
+  (`createBuilder(…, S)` escala colisiones; un grupo con `scale` escala lo visual; `scaleTrack` pasa el trazado al mundo).
+- Gravedad de juego 28.
 - Grupos de colisión (`tracks/common.js`): los rayos de las ruedas ignoran bordes y coches; la cámara ignora coches.
 - Las mallas estáticas del circuito se fusionan por material (`mergeStatic`) para reducir llamadas de dibujo.
 - Depuración: `?test=1&track=super&rivals=3&auto=1&cam=top` (auto = el jugador conduce solo).

@@ -1,9 +1,9 @@
 // Parámetros de conducción ajustables en vivo (se guardan en localStorage).
-const KEY = 'reback.tuning.v1';
+const KEY = 'reback.tuning.v2';
 
 export const TUNING_DEFS = [
-  { key: 'engine',      label: 'Potencia',              min: 40,  max: 400, step: 5,    def: 150 },
-  { key: 'maxSpeed',    label: 'Velocidad máx.',        min: 10,  max: 70,  step: 1,    def: 33 },
+  { key: 'engine',      label: 'Potencia',              min: 40,  max: 400, step: 5,    def: 130 },
+  { key: 'maxSpeed',    label: 'Velocidad máx.',        min: 10,  max: 70,  step: 1,    def: 25 },
   { key: 'rearBias',    label: 'Tracción trasera (%)',  min: 0,   max: 100, step: 5,    def: 90 },
   { key: 'brake',       label: 'Freno',                 min: 0.5, max: 12,  step: 0.5,  def: 10 },
   { key: 'steerMax',    label: 'Giro máx. (rad)',       min: 0.2, max: 0.9, step: 0.01, def: 0.3 },

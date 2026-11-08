@@ -39,7 +39,7 @@ export class Items {
     const c = this.race.circuit;
     for (const f of spots) {
       const s = c.samples[Math.floor(f * c.N) % c.N];
-      for (const lane of [-0.5, 0, 0.5]) {
+      for (const lane of [-0.6, -0.3, 0, 0.3, 0.6]) {
         const g = new THREE.Group();
         const m = new THREE.Mesh(this.boxGeo, this.boxMat);
         m.castShadow = true;
@@ -202,7 +202,7 @@ export class Items {
     const tg = pr.target;
     if (tg && tg.currPos.distanceTo(pr.pos) < 26) want = tg.currPos.clone().sub(pr.pos).setY(0).normalize();
     else {
-      const a = c.samples[(pr.idx + 5) % c.N];
+      const a = c.samples[(pr.idx + Math.ceil(8 / c.spacing)) % c.N];
       want = a.p.clone().sub(pr.pos).setY(0).normalize();
     }
     const turn = 4 * dt;

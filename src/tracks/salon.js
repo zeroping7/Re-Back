@@ -121,7 +121,7 @@ function build(B) {
     const s = sampleNear(x, z);
     const yaw = yawOf(s.t);
     const p = s.p.clone().addScaledVector(s.t, off);
-    const pencil = cyl(0.17, 0.17, W + 1, p.x, 0.17, p.z, '#f4c430', { seg: 6, rot: [0, yaw, Math.PI / 2] });
+    const pencil = cyl(0.1, 0.1, W + 1, p.x, 0.1, p.z, '#f4c430', { seg: 6, rot: [0, yaw, Math.PI / 2] });
     pencil.updateMatrix();
   }
 

@@ -52,7 +52,8 @@ export class AIDriver {
     this.lane += THREE.MathUtils.clamp(this.laneTarget - this.lane, -dt * 0.8, dt * 0.8);
 
     // punto objetivo
-    const look = Math.round(3 + speed * 0.22);
+    const sp = this.c.spacing;
+    const look = Math.max(2, Math.round((5 + speed * 0.35) / sp));
     const ts = S[(idx + look) % N];
     // en curvas, tirar hacia el interior
     const inner = ts.radius < 25 ? -ts.turn * 0.25 : 0;
@@ -65,10 +66,11 @@ export class AIDriver {
     // velocidad: no pasarse en las curvas que vienen
     const aLat = 62 * this.skill, decel = 30;
     let vAllowed = Infinity;
-    for (let j = 1; j < 26; j += 1) {
+    const nAhead = Math.ceil(42 / sp);
+    for (let j = 1; j < nAhead; j += 1) {
       const s = S[(idx + j) % N];
       const vRec = Math.sqrt(aLat * s.radius);
-      const v = Math.sqrt(vRec * vRec + 2 * decel * j * 1.6);
+      const v = Math.sqrt(vRec * vRec + 2 * decel * j * sp);
       if (v < vAllowed) vAllowed = v;
     }
     let throttle = 1, brake = 0;
@@ -97,7 +99,7 @@ export class AIDriver {
     const car = this.car, S = this.c.samples, N = this.c.N;
     if (item === 'turbo') {
       // en recta
-      for (let j = 0; j < 20; j++) if (S[(state.idx + j) % N].radius < 22) return false;
+      for (let j = 0; j < Math.ceil(32 / this.c.spacing); j++) if (S[(state.idx + j) % N].radius < 30) return false;
       return true;
     }
     if (item === 'rocket' || item === 'water') {

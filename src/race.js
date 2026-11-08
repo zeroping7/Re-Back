@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
-import { createBuilder, clearMatCache, mergeStatic, CAMERA_RAY_GROUPS } from './tracks/common.js';
+import { createBuilder, clearMatCache, mergeStatic, scaleTrack, CAMERA_RAY_GROUPS } from './tracks/common.js';
 import { Car } from './car.js';
 import { CARS, carTuning } from './cars.js';
 import { AIDriver } from './ai.js';
@@ -25,14 +25,19 @@ export class Race {
     scene.environment = envMap;
     this.world = new RAPIER.World({ x: 0, y: -baseTuning.gravity, z: 0 });
     this.world.timestep = FIXED;
-    const B = createBuilder(scene, this.world, RAPIER);
+    const S = (this.S = trackDef.scale ?? 2);
+    const root = new THREE.Group();
+    root.scale.setScalar(S);
+    scene.add(root);
+    const B = createBuilder(root, this.world, RAPIER, S);
     const T = (this.T = trackDef.build(B));
+    scaleTrack(T, S);
     this.circuit = T.circuit;
     this.bounds = T.bounds;
     this.setupLights(T.lights);
     mergeStatic(scene);
 
-    this.camera = new THREE.PerspectiveCamera(62, 1, 0.1, 600);
+    this.camera = new THREE.PerspectiveCamera(62, 1, 0.1, 1400);
 
     // ---------- Efectos ----------
     this.effects = {
@@ -200,9 +205,10 @@ export class Race {
     }
 
     // IA atascada sin avanzar
-    if (!car.isPlayer && this.started && !st.finished) {
+    if (this.started && (!st.finished || car.isPlayer)) {
       if (st.progress > (st.bestProg ?? -1e9)) { st.bestProg = st.progress; st.noProgT = 0; } else st.noProgT = (st.noProgT || 0) + dt;
-      if (st.noProgT > 5) { st.noProgT = 0; this.respawn(car); }
+      const limit = car.isPlayer && !st.finished && !this.autoPlayer ? 10 : 5;
+      if (st.noProgT > limit) { st.noProgT = 0; st.bestProg = st.progress; this.respawn(car); }
     }
     // fuera de la pista (por ejemplo tras una explosión)
     const sc = c.samples[st.idx];
