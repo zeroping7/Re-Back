@@ -95,6 +95,7 @@ export class Race {
     // ---------- Objetos ----------
     this.items = new Items(this);
     if (!practice) this.items.createPickups(T.itemSpots);
+    if (T.itemPoints) this.items.createPickupsAt(T.itemPoints);
 
     // ---------- Estrella oculta (solo Contrarreloj) ----------
     this.onStar = onStar;
@@ -235,7 +236,7 @@ export class Race {
     if (this.battle) { // arena: sin vueltas ni sentido; solo recolocar si vuelca o se sale del cuarto
       st.idx = c.sampleNear(p.x, p.z).i;
       const b = this.bounds;
-      if (car.upsideTime > 1.4 || p.y < -4 || Math.abs(p.x) > b.x + 2 || Math.abs(p.z) > b.z + 2) this.respawn(car);
+      if ((car.upsideTime > 1.4 && !car.fx.stick) || p.y < -4 || Math.abs(p.x) > b.x + 6 || Math.abs(p.z) > b.z + 6) this.respawn(car);
       return;
     }
     const ni = c.nearestFrom(st.idx, p.x, p.z, 8, 20);
@@ -285,7 +286,7 @@ export class Race {
     if (lat > c.width / 2 + 2 && car.contacts > 0) st.offT = (st.offT || 0) + dt; else st.offT = 0;
     // recolocar si vuelca o se sale
     const b = this.bounds;
-    if (car.upsideTime > 1.4 || p.y < -4 || Math.abs(p.x) > b.x + 2 || Math.abs(p.z) > b.z + 2 || st.offT > (car.isPlayer ? 2.5 : 1.5)) {
+    if (car.upsideTime > 1.4 || p.y < -4 || Math.abs(p.x) > b.x + 6 || Math.abs(p.z) > b.z + 6 || st.offT > (car.isPlayer ? 2.5 : 1.5)) {
       st.offT = 0;
       this.respawn(car);
     }
@@ -409,6 +410,13 @@ export class Race {
   respawn(car) {
     const st = this.state(car), c = this.circuit;
     if (this.battle && this.battleState?.holder === car) dropStar(this, car.currPos);
+    if (this.battle && this.T.spawns) { // arena: al punto libre más cercano
+      const p = car.currPos;
+      const sp = this.T.spawns.reduce((a, q) => (q.distanceToSquared(p) < a.distanceToSquared(p) ? q : a));
+      car.reset(sp.clone().setY(0.6), Math.atan2(-sp.x, -sp.z));
+      if (car.isPlayer) this.trauma = 0;
+      return;
+    }
     const s = c.samples[st.idx];
     // altura real del suelo en ese punto (rampas, cuestas…)
     const ray = new RAPIER.Ray({ x: s.p.x, y: s.p.y + 20, z: s.p.z }, { x: 0, y: -1, z: 0 });
@@ -684,7 +692,7 @@ export class Race {
     const vflat = new THREE.Vector3().copy(car.velocity).setY(0);
     if (vflat.length() > 6 && car.fwdSpeed > 0) tmp.lerp(vflat.normalize(), 0.35).normalize();
     if (car.fwdSpeed < -3) tmp.negate().lerp(this.camDir, 0.5);
-    this.camDir.lerp(tmp, 1 - Math.exp(-dt * 4.5)).normalize();
+    if (!car.rail) this.camDir.lerp(tmp, 1 - Math.exp(-dt * 4.5)).normalize(); // en el looping la cámara no da la vuelta
 
     const intro = this.phase === 'countdown' ? THREE.MathUtils.smoothstep(this.countdown, 0, 3.2) : 0;
     const far = this.camMode === 'far';

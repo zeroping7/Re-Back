@@ -51,6 +51,8 @@ Inicio (toca para empezar)
 | UX-14 | **Batalla de la Estrella**: arena cerrada; la estrella aparece en el centro, quien la lleva gasta su reloj (60 s); se roba tocando al que la lleva; gana quien vacía su reloj; rivales con IA de persecución/huida | ✅ |
 | UX-15 | **Arena de batalla rehecha**: rampas de mesa (subida, plataforma, bajada) con pasillo libre delante y detrás; bloques solo en las islas entre pasillos | ✅ |
 | UX-16 | Lista de relojes de la batalla arriba a la derecha, bajo los botones, compacta: no tapa el centro de la pantalla | ✅ |
+| UX-17 | **Arena con looping y subida a la mesa**: rampas sin plataformas sueltas encima; looping de juguete (con velocidad ≥12 entra "en el carril" y lo recorre entero, turbo en la entrada); suelo → silla → mesa → bajada al suelo, todo enlazado; cajas de energía también en la silla y la mesa (`tests/loop.mjs`, `tests/arena.mjs`) | ✅ |
+| UX-18 | Chocar con las esquinas o paredes ya no recoloca el coche: solo si se sale de verdad del escenario (+6 u) o vuelca | ✅ |
 
 ## Marcador en carrera
 

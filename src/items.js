@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
-import { PROP_GROUPS } from './tracks/common.js';
+import { PROP_GROUPS, CAMERA_RAY_GROUPS } from './tracks/common.js';
 
 export const ITEMS = {
   rocket: { icon: '🚀', name: 'Cohete' },
@@ -73,6 +73,20 @@ export class Items {
     }
   }
 
+  // cajas sueltas en puntos fijos (arena de batalla)
+  createPickupsAt(points) {
+    for (const p of points) {
+      const g = new THREE.Group();
+      const m = new THREE.Mesh(this.boxGeo, this.boxMat), core = new THREE.Mesh(this.coreGeo, this.coreMat);
+      const ring = new THREE.Mesh(this.ringGeo, this.ringMat), halo = new THREE.Mesh(this.haloGeo, this.haloMat);
+      halo.position.y = -0.94;
+      g.add(core, m, ring, halo);
+      g.position.copy(p); g.position.y = p.y + 1.0;
+      this.scene.add(g);
+      this.pickups.push({ g, m, ring, core, halo, base: g.position.clone(), respawn: 0 });
+    }
+  }
+
   randomItem(car) {
     const r = this.race.positionRatio(car); // 0 = primero, 1 = último
     const w = {
@@ -110,7 +124,7 @@ export class Items {
       const dir = new THREE.Vector3(f.x, 0, f.z).normalize();
       this.projectiles.push({
         type: 'rocket', mesh, owner: car, t: 0, pos: p.clone().addScaledVector(dir, 1.6).setY(p.y + 0.6), dir,
-        speed: Math.max(55, car.speed + 25), target: R.carAhead(car), idx: R.state(car).idx,
+        speed: Math.max(55, car.speed + 25), target: this.rocketTarget(car, dir), idx: R.state(car).idx,
       });
       R.sound('rocket', p);
     } else if (item === 'water') {
@@ -290,32 +304,44 @@ export class Items {
     const R = this.race, c = R.circuit;
     pr.idx = c.nearestFrom(pr.idx, pr.pos.x, pr.pos.z, 4, 12);
     const s = c.samples[pr.idx];
-    // dirección deseada: hacia el objetivo si está cerca, si no siguiendo la pista
+    // si el objetivo se queda detrás del cohete, lo suelta (así nunca da la vuelta hacia quien lo lanzó)
+    let tg = pr.target;
+    if (tg) {
+      const dx = tg.currPos.x - pr.pos.x, dz = tg.currPos.z - pr.pos.z, d = Math.hypot(dx, dz) || 1;
+      if ((dx * pr.dir.x + dz * pr.dir.z) / d < -0.2) tg = pr.target = null;
+    }
+    // dirección deseada: hacia el objetivo si está cerca; si no, en carrera sigue la pista y en la arena va recto
     let want;
-    const tg = pr.target;
-    if (tg && tg.currPos.distanceTo(pr.pos) < 26) want = tg.currPos.clone().sub(pr.pos).setY(0).normalize();
-    else {
+    if (tg && tg.currPos.distanceTo(pr.pos) < 30) want = tg.currPos.clone().sub(pr.pos).setY(0).normalize();
+    else if (!R.battle) {
       const a = c.samples[(pr.idx + Math.ceil(8 / c.spacing)) % c.N];
       want = a.p.clone().sub(pr.pos).setY(0).normalize();
-    }
+    } else want = pr.dir.clone();
     const turn = 4 * dt;
     const ang = Math.atan2(pr.dir.z * want.x - pr.dir.x * want.z, pr.dir.dot(want));
     pr.dir.applyAxisAngle(UP, THREE.MathUtils.clamp(ang, -turn, turn));
-    pr.pos.addScaledVector(pr.dir, pr.speed * dt);
-    pr.pos.y += ((tg ? tg.currPos.y + 0.5 : 0.9) - pr.pos.y) * Math.min(1, dt * 4);
+    const step = pr.speed * dt;
+    // choque con paredes y decorado (rayo en la dirección de vuelo)
+    const ray = (this._ray ||= new RAPIER.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 1 }));
+    ray.origin = { x: pr.pos.x, y: pr.pos.y, z: pr.pos.z }; ray.dir = { x: pr.dir.x, y: 0, z: pr.dir.z };
+    const hitWall = pr.t > 0.08 && R.world.castRay(ray, step + 0.4, true, undefined, CAMERA_RAY_GROUPS);
+    pr.pos.addScaledVector(pr.dir, step);
+    const floorY = R.battle ? 0.9 : s.p.y + 0.9;
+    pr.pos.y += ((tg ? tg.currPos.y + 0.5 : Math.max(floorY, pr.pos.y - 0.5)) - pr.pos.y) * Math.min(1, dt * 4);
     pr.mesh.position.copy(pr.pos);
     pr.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), pr.dir);
     // estela
     const back = pr.pos.clone().addScaledVector(pr.dir, -0.8);
     R.effects.fire.emit(back.x, back.y, back.z, -pr.dir.x * 4, 0.5, -pr.dir.z * 4, { life: 0.25, size: 0.6, size1: 0.1, alpha: 0.9, color: [1, 0.6, 0.2], drag: 3 });
     R.effects.smoke.emit(back.x, back.y, back.z, (Math.random() - 0.5), 0.8, (Math.random() - 0.5), { life: 0.9, size: 0.4, size1: 1.6, alpha: 0.25, color: [0.85, 0.85, 0.85], drag: 2 });
-    // impactos
+    // impactos (nunca contra quien lo ha lanzado)
     for (const car of R.cars) {
-      if (car === pr.owner && pr.t < 0.5) continue;
-      if (car.currPos.distanceToSquared(pr.pos) < 1.6 * 1.6) { this.explode(pr.pos.clone(), 4.5, 1); return true; }
+      if (car === pr.owner) continue;
+      if (car.currPos.distanceToSquared(pr.pos) < 1.6 * 1.6) { this.explode(pr.pos.clone(), 4.5, 1, pr.owner); return true; }
     }
+    if (hitWall) { this.explode(pr.pos.clone(), 4, 0.8, pr.owner); return true; }
     const lat = Math.abs((pr.pos.x - s.p.x) * s.n.x + (pr.pos.z - s.p.z) * s.n.z);
-    if (lat > c.width / 2 + 0.6 || pr.t > 5) { this.explode(pr.pos.clone(), 4, 0.8); return true; }
+    if ((!R.battle && lat > c.width / 2 + 0.6) || pr.t > 5) { this.explode(pr.pos.clone(), 4, 0.8, pr.owner); return true; }
     return false;
   }
 
@@ -360,9 +386,28 @@ export class Items {
     R.sound('splash', pos);
   }
 
-  explode(pos, radius, power) {
+  // Objetivo del cohete: siempre un rival que esté por delante del que dispara (nunca uno de detrás).
+  // En la batalla prefiere al que lleva la estrella; en carrera, al de delante en la clasificación si está a tiro.
+  rocketTarget(car, dir) {
+    const R = this.race, p = car.currPos;
+    const inFront = (o) => { const dx = o.currPos.x - p.x, dz = o.currPos.z - p.z, d = Math.hypot(dx, dz) || 1; return { ok: (dx * dir.x + dz * dir.z) / d > 0.35 && d < 80, d }; };
+    const holder = R.battleState?.holder;
+    if (holder && holder !== car && inFront(holder).ok) return holder;
+    const ahead = R.battle ? null : R.carAhead(car);
+    if (ahead && inFront(ahead).ok) return ahead;
+    let best = null, bd = Infinity;
+    for (const o of R.cars) {
+      if (o === car) continue;
+      const f = inFront(o);
+      if (f.ok && f.d < bd) { bd = f.d; best = o; }
+    }
+    return best;
+  }
+
+  explode(pos, radius, power, owner = null) {
     const R = this.race;
     for (const car of R.cars) {
+      if (car === owner) continue; // tu propio cohete no te hace daño
       const d = car.currPos.distanceTo(pos);
       if (d > radius) continue;
       const k = 1 - d / radius;

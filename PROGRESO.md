@@ -152,3 +152,8 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Rampas de salto con rampa de aterrizaje y plataforma (sirven al revés); estrella oculta sobre la plataforma.
 - Arena de batalla rehecha con pasillos libres para las rampas.
 - Parado, freno + giro ya no hace arrancar el coche (la marcha atrás se mete con el freno solo).
+
+### Arena nueva y cohetes (petición 18)
+- Arena de batalla: looping de juguete, subida suelo → silla → mesa → bajada, caja central sin plataformas sueltas.
+- Ya no se recoloca el coche al chocar con esquinas.
+- Cohetes: siempre a un rival de delante, explotan en paredes y no dañan a quien los lanza.

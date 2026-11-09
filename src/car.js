@@ -27,8 +27,8 @@ export class Car {
     const WHEELS = (this.W = wheelsFor(def));
     this.R = def.wheelR;
     // efectos de objetos (segundos restantes)
-    this.fx = { boost: 0, oil: 0, stun: 0, wet: 0, slide: 0, zap: 0 };
-    this.dirt = 0; this.surface = null; this.trail = null;
+    this.fx = { boost: 0, oil: 0, stun: 0, wet: 0, slide: 0, zap: 0, stick: 0 };
+    this.dirt = 0; this.surface = null; this.trail = null; this.rail = null;
     this.item = null;
     this.health = 100;
     this.pullDir = Math.random() < 0.5 ? -1 : 1;
@@ -99,7 +99,7 @@ export class Car {
     this.body.setRotation({ x: _q.x, y: _q.y, z: _q.z, w: _q.w }, true);
     this.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
     this.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
-    this.steer = 0; this.airTime = 0; this.upsideTime = 0;
+    this.steer = 0; this.airTime = 0; this.upsideTime = 0; this.rail = null;
     this.lastVel.set(0, 0, 0);
     this.snapshot(); this.prevPos.copy(this.currPos); this.prevQuat.copy(this.currQuat);
   }
@@ -233,7 +233,7 @@ export class Car {
         b.applyTorqueImpulse({ x: 0, y: -k, z: 0 }, true);
       }
     }
-    if (contacts > 0) {
+    if (contacts > 0 && !this.rail) {
       // carga aerodinámica
       const down = t.downforce * speed * speed / 10 * m * dt;
       b.applyImpulse({ x: -this.up.x * down, y: -this.up.y * down, z: -this.up.z * down }, true);
@@ -284,14 +284,14 @@ export class Car {
 
     if (this.contacts === 0) this.airTime += dt;
     else {
-      if (this.airTime > 0.25) {
+      if (this.airTime > 0.25 && !this.rail) {
         const ls = Math.min(1, this.airTime * 1.2 + Math.abs(this.velocity.y) / 30);
         this.events.push({ type: 'land', strength: ls, pos: this.currPos.clone() });
         if (ls > 0.85) this.damage((ls - 0.85) * 20, new THREE.Vector3(0, -0.15, 0), 0.3);
       }
       this.airTime = 0;
     }
-    const horiz = Math.hypot(dv.x, dv.z);
+    const horiz = this.rail ? 0 : Math.hypot(dv.x, dv.z); // en el looping no hay golpes
     if (horiz > 5) {
       const dir = new THREE.Vector3(-dv.x, 0, -dv.z).normalize();
       const pos = this.currPos.clone().addScaledVector(dir, 1.0); pos.y += 0.2;

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { groundTex, rugTexture } from './textures.js';
-import { buildCircuit, room, mat, CAMERA_RAY_GROUPS } from './tracks/common.js';
+import { buildCircuit, room, mat, chevronTexture, CAMERA_RAY_GROUPS } from './tracks/common.js';
 import { haloTexture } from './items.js';
 
 // ---------- Batalla de la Estrella (UX-14) ----------
@@ -21,64 +21,76 @@ export const ARENA = {
 };
 
 function build(B) {
-  const { scene, box, cyl } = B;
+  const { scene, box, cyl, RAPIER } = B;
+  const S = B.S;
   const pq = groundTex('parquet', [24, 18]);
   const floorMat = new THREE.MeshStandardMaterial({ map: pq.map, normalMap: pq.normalMap, roughness: 0.35 });
   room(B, { ...ROOM, floor: floorMat, wall: new THREE.MeshStandardMaterial({ color: '#b3e5fc', roughness: 0.9 }), ceil: '#fffde7', baseboard: '#ffffff' });
-  // alfombra
-  const rug = new THREE.Mesh(new THREE.PlaneGeometry(56, 38), new THREE.MeshStandardMaterial({ map: rugTexture(), roughness: 0.95 }));
-  rug.rotation.x = -Math.PI / 2; rug.position.y = 0.03; rug.receiveShadow = true; scene.add(rug);
+  const rug = new THREE.Mesh(new THREE.PlaneGeometry(40, 24), new THREE.MeshStandardMaterial({ map: rugTexture(), roughness: 0.95 }));
+  rug.rotation.x = -Math.PI / 2; rug.position.set(4, 0.03, 2); rug.receiveShadow = true; scene.add(rug);
 
-  // recorrido de referencia (sin bordes): sirve para el minimapa, las cajas de energía y recolocar
+  // contorno de referencia (sin bordes): solo para el minimapa
   const circuit = buildCircuit(B, {
-    points: [[-34, 22], [0, 26], [34, 22], [40, 0], [34, -22], [0, -26], [-34, -22], [-40, 0]],
-    start: [-20, 24],
-    width: 7,
-    limits: [ROOM.x - 1, ROOM.z - 1],
-    barrier: false,
-    chevrons: false,
-    noLine: true,
+    points: [[-44, 30], [0, 32], [44, 30], [46, 0], [44, -30], [0, -32], [-44, -30], [-46, 0]],
+    start: [-20, 31], width: 7, limits: [ROOM.x - 1, ROOM.z - 1], barrier: false, chevrons: false, noLine: true,
   });
 
-  // ---------- Obstáculos colocados con pasillos libres (UX-15) ----------
-  // Rampa "de mesa": subida, plataforma y bajada, en línea recta y con espacio libre delante y detrás
-  // para coger carrerilla y aterrizar. ry = orientación; a = distancia a lo largo del eje.
+  // ---------- Rampas (UX-17): losas inclinadas, sin plataformas sueltas encima ----------
+  // slab: superficie desde (a0, h0) hasta (a1, h1) a lo largo del eje que marca ry, centrada en (cx, cz)
   const slab = (cx, cz, ry, a0, a1, h0, h1, w, color) => {
     const da = a1 - a0, dh = h1 - h0, L = Math.hypot(da, dh), ang = Math.atan2(dh, da), t = 0.8;
     const ma = (a0 + a1) / 2 + Math.sin(ang) * t / 2, my = (h0 + h1) / 2 - Math.cos(ang) * t / 2;
-    const x = cx + Math.cos(ry) * ma, z = cz - Math.sin(ry) * ma;
-    box(L + 0.6, t, w, x, my, z, color, { rot: [0, ry, ang] });
+    box(L + 0.6, t, w, cx + Math.cos(ry) * ma, my, cz - Math.sin(ry) * ma, color, { rot: [0, ry, ang] });
   };
-  const tableTop = (cx, cz, ry, { ramp, deck, h, w, rampCol = '#8d6e63', deckCol = '#ef6c00' }) => {
-    slab(cx, cz, ry, -deck / 2 - ramp, -deck / 2, 0, h, w, rampCol);
-    slab(cx, cz, ry, deck / 2, deck / 2 + ramp, h, 0, w, rampCol);
-    box(deck, h, w, cx, h / 2, cz, deckCol, { rot: [0, ry, 0] });
-    box(deck + 0.4, 0.3, w + 0.4, cx, h + 0.1, cz, '#ffb74d', { rot: [0, ry, 0], solid: false });
-  };
-  // caja de juguetes central: rampas este-oeste, pasillo libre |z| < 6 hasta las paredes
-  tableTop(0, 0, 0, { ramp: 11, deck: 10, h: 3, w: 9 });
-  // dos saltos pequeños en las rectas largas del recorrido (norte y sur), pasillo libre |x| < 22
-  tableTop(0, 25, 0, { ramp: 6, deck: 4, h: 1.4, w: 7, deckCol: '#1e88e5' });
-  tableTop(0, -25, 0, { ramp: 6, deck: 4, h: 1.4, w: 7, deckCol: '#43a047' });
-  // bloques de construcción: solo en las cuatro "islas" entre pasillos (|z| entre 10 y 17)
+  const ramp = '#8d6e63';
+
+  // 1) caja de juguetes central: subida, caja y bajada (pasillo libre |z| < 6)
+  slab(0, 0, 0, -16, -5, 0, 3, 9, ramp);
+  slab(0, 0, 0, 5, 16, 3, 0, 9, ramp);
+  box(10, 3, 9, 0, 1.5, 0, '#ef6c00');
+
+  // 2) subida a lo alto: suelo → silla → mesa → bajada al suelo (todo encadenado)
+  const wood = new THREE.MeshStandardMaterial({ map: groundTex('plank', [2, 2]).map, color: '#c79a6a', roughness: 0.7 });
+  slab(0, 24, 0, -10, 4, 4.5, 0, 7, ramp);                    // suelo → asiento de la silla
+  box(10, 0.8, 10, -15, 4.1, 24, '#d84315');                  // asiento
+  for (const [x, z] of [[-10.6, 19.6], [-19.4, 19.6], [-10.6, 28.4], [-19.4, 28.4]]) box(0.8, 3.7, 0.8, x, 1.85, z, '#bf360c');
+  box(10, 9, 0.8, -15, 9, 29.6, '#d84315');                   // respaldo (lado de la pared, fuera del camino)
+  slab(0, 24, 0, -30, -20, 9, 4.5, 7, ramp);                  // silla → mesa
+  box(18, 1, 26, -39, 8.5, 21, wood);                          // tablero de la mesa (arriba a 9)
+  for (const [x, z] of [[-47, 9], [-31, 9], [-47, 33], [-31, 33]]) cyl(0.8, 0.8, 8, x, 4, z, '#6d4c41', { seg: 8 });
+  slab(-39, 0, Math.PI / 2, -8, 12, 9, 0, 7, ramp);           // mesa → suelo (hacia el norte)
+  // tazas y libro de adorno en la mesa (en el borde, sin estorbar)
+  cyl(1.2, 1, 2.2, -46, 10.1, 30, '#ffffff', { seg: 12 });
+  box(5, 1.2, 4, -45, 9.6, 14, '#1e88e5');
+
+  // 3) looping (rizo completo) al noreste: se entra hacia el oeste por z=-27 y se sale por z=-19
+  const loopInfo = loop(B, { cx: 24, z0: -27, z1: -19, R: 5, w: 6 });
+  // placa de turbo antes de la entrada
+  const pad = new THREE.Mesh(new THREE.PlaneGeometry(8, 6), new THREE.MeshStandardMaterial({ map: chevronTexture(), emissive: '#ffffff', emissiveMap: chevronTexture(), emissiveIntensity: 0.8 }));
+  pad.rotation.x = -Math.PI / 2; pad.rotation.z = Math.PI / 2; pad.position.set(36, 0.05, -27); scene.add(pad);
+
+  // bloques de construcción solo fuera de los pasillos
   const cols = ['#e53935', '#1e88e5', '#fdd835', '#43a047', '#8e24aa'];
-  const blocks = [[-10, 13], [10, -13], [-30, 13], [30, -13], [30, 14], [-30, -14]];
-  blocks.forEach(([x, z], k) => {
+  [[22, 12], [38, 13], [8, -12], [-14, -10]].forEach(([x, z], k) => {
     box(4, 4, 4, x, 2, z, cols[k % cols.length], { rot: [0, k * 0.4, 0] });
     for (const [dx, dz] of [[-0.9, -0.9], [0.9, -0.9], [-0.9, 0.9], [0.9, 0.9]]) cyl(0.5, 0.5, 0.5, x + dx, 4.25, z + dz, cols[k % cols.length], { seg: 8, solid: false });
   });
-  // pelotas para empujar
-  for (const [x, z, c] of [[-20, 12, '#ff5252'], [20, -12, '#40c4ff'], [10, 13, '#ffd740']]) B.dynBall(1.4, x, 1.6, z, c, { density: 0.02 });
-  // estanterías con juguetes en las paredes (decorado)
-  for (const x of [-30, 0, 30]) {
-    box(14, 0.6, 3, x, 10, -ROOM.z + 1.5, '#8d6e63', { solid: false });
-    for (let k = 0; k < 4; k++) box(2, 2 + k % 2, 2, x - 5 + k * 3.3, 11.3 + (k % 2) * 0.5, -ROOM.z + 1.5, cols[(k + x) & 3], { solid: false });
+  for (const [x, z, c] of [[30, 4, '#ff5252'], [-6, 14, '#40c4ff']]) B.dynBall(1.4, x, 1.6, z, c, { density: 0.02 });
+  // estanterías de pared (decorado)
+  for (const x of [-10, 20]) {
+    box(14, 0.6, 3, x, 12, -ROOM.z + 1.5, '#8d6e63', { solid: false });
+    for (let k = 0; k < 4; k++) box(2, 2 + k % 2, 2, x - 5 + k * 3.3, 13.3 + (k % 2) * 0.5, -ROOM.z + 1.5, cols[k % 4], { solid: false });
   }
+  void RAPIER;
 
+  const W = (a) => a.map(([x, z, y = 0]) => new THREE.Vector3(x * S, y * S, z * S));
   return {
     circuit,
     bounds: { x: ROOM.x - 1.5, z: ROOM.z - 1.5, h: ROOM.h - 1 },
-    itemSpots: [0.2, 0.32, 0.68, 0.8],
+    itemSpots: [],
+    itemPoints: W([[30, -4], [-24, 8], [10, -28], [-39, 21, 9], [-15, 24, 4.5], [40, 26]]),
+    spawns: W([[32, 2], [-26, -2], [12, 16], [-8, -28], [44, 26], [-24, 10], [0, -14], [40, -6]]),
+    loops: [loopInfo],
     zones: [],
     dust: [0.85, 0.8, 0.7],
     lights: {
@@ -88,6 +100,44 @@ function build(B) {
       env: 0.4,
       points: [{ color: '#ffd59a', intensity: 200, distance: 70, decay: 1.4, pos: [0, 22, 0] }],
     },
+  };
+}
+
+// Looping estilo pista de juguete: cinta de plástico naranja con bordes, recorrida hacia -x.
+// Entra por z0 y sale por z1 (desplazado para que la entrada y la salida no se crucen).
+function loop(B, { cx, z0, z1, R, w }) {
+  const S = B.S, n = 72, pos = [], phys = [], idx = [], tri = [];
+  const rail = 1.2;
+  for (let k = 0; k <= n; k++) {
+    const th = (k / n) * Math.PI * 2, u = k / n, sm = u * u * (3 - 2 * u);
+    const x = cx - R * Math.sin(th), y = R * (1 - Math.cos(th)) + 0.04, z = z0 + (z1 - z0) * sm;
+    const nx = (cx - x) / R, ny = (R - y) / R; // hacia el centro del rizo
+    for (const [dz, up] of [[-w / 2, rail], [-w / 2, 0], [w / 2, 0], [w / 2, rail]]) {
+      const v = [x + nx * up, y + ny * up, z + dz];
+      pos.push(...v); phys.push(v[0] * S, v[1] * S, v[2] * S);
+    }
+    if (k < n) for (let j = 0; j < 3; j++) {
+      const a = k * 4 + j, b = a + 4;
+      idx.push(a, b, a + 1, a + 1, b, b + 1);
+      tri.push(a, b, a + 1, a + 1, b, b + 1);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setIndex(idx); g.computeVertexNormals();
+  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: '#ff6d00', roughness: 0.35, side: THREE.DoubleSide }));
+  m.castShadow = true; m.receiveShadow = true;
+  B.scene.add(m);
+  const desc = B.RAPIER.ColliderDesc.trimesh(new Float32Array(phys), new Uint32Array(tri)).setFriction(0.9);
+  B.world.createCollider(desc, B.fixed);
+  // soportes
+  for (const sd of [-1, 1]) B.cyl(0.4, 0.4, 2 * R, cx + sd * (R + 0.6), R, (z0 + z1) / 2, '#424242', { seg: 6, solid: false });
+  const zl = Math.min(z0, z1) - w / 2 - 1, zh = Math.max(z0, z1) + w / 2 + 1;
+  return {
+    cx: cx * S, R: R * S, z0: z0 * S, z1: z1 * S, w: w * S,
+    min: new THREE.Vector3((cx - R - 2) * S, -1, zl * S), max: new THREE.Vector3((cx + R + 2) * S, (2 * R + 2) * S, zh * S),
+    // carril de entrada: turbo para coger velocidad
+    pad: { min: new THREE.Vector3((cx + R + 6) * S, -1, (z0 - w / 2) * S), max: new THREE.Vector3((cx + R + 14) * S, 3, (z0 + w / 2) * S) },
   };
 }
 
@@ -111,11 +161,13 @@ export function starMesh() {
 export function setupBattle(race) {
   const c = race.circuit, N = c.N, n = race.cars.length;
   // coches repartidos alrededor de la arena
+  const sp = race.T.spawns;
   race.cars.forEach((car, k) => {
-    const s = c.samples[Math.floor(((k + 0.5) / n) * N) % N];
-    car.reset(s.p.clone().setY(s.p.y + 0.6), c.yawOf(s.t));
-    race.state(car).idx = s.i;
+    const p = sp[k % sp.length];
+    car.reset(p.clone().setY(0.6), Math.atan2(-p.x, -p.z)); // mirando al centro
+    race.state(car).idx = c.sampleNear(p.x, p.z).i;
   });
+  void N; void n;
   const { mesh, halo } = starMesh();
   mesh.scale.setScalar(1.3);
   const light = new THREE.PointLight('#ffd23f', 60, 18, 1.6);
@@ -132,8 +184,27 @@ const flat = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 
 export function battleStep(race, dt) {
   const B = race.battleState;
-  if (!race.started || B.over) return;
+  if (B.over) return;
+  if (!race.started) return;
   B.lastT = Math.max(0, B.lastT - dt);
+  // looping (UX-17): con velocidad suficiente el coche entra "en el carril" y lo recorre entero,
+  // como en las pistas de juguete; si entra lento, sube un poco y cae hacia atrás
+  for (const L of race.T.loops || []) {
+    for (const c of race.cars) {
+      if (c.rail) { railStep(c, L, dt); continue; }
+      const p = c.currPos, P = L.pad;
+      if (p.x > P.min.x && p.x < P.max.x && p.z > P.min.z && p.z < P.max.z && p.y < 3 && c.velocity.x < -2) {
+        if (c.fx.boost < 0.3 && c.isPlayer) race.sound('turbo', p);
+        c.fx.boost = Math.max(c.fx.boost, 0.9);
+      }
+      if (p.y > 2 || c.speed < 12) continue;
+      const dx = p.x - L.cx;
+      // entrada normal (hacia -x por el carril z0) o al revés (hacia +x por el carril z1)
+      if (dx > 0 && dx < 3 && Math.abs(p.z - L.z0) < L.w / 2 - 0.5 && c.velocity.x < -6) c.rail = { th: 0, dir: 1, v: c.speed };
+      else if (dx < 0 && dx > -3 && Math.abs(p.z - L.z1) < L.w / 2 - 0.5 && c.velocity.x > 6) c.rail = { th: Math.PI * 2, dir: -1, v: c.speed };
+      if (c.rail && c.isPlayer) race.shake(0.15);
+    }
+  }
   // quien lleva la estrella va algo más lento (si no, nadie le alcanzaría)
   for (const c of race.cars) c.rubber = c === B.holder ? 0.84 : 1;
   if (B.holder) {
@@ -216,6 +287,26 @@ export function battleRender(race) {
   B.light.position.copy(p);
 }
 
+const _m = new THREE.Matrix4(), _q = new THREE.Quaternion();
+function railStep(c, L, dt) {
+  const r = c.rail;
+  r.v = Math.max(r.v, 24);
+  r.th += (r.dir * r.v * dt) / L.R;
+  const done = r.dir > 0 ? r.th >= Math.PI * 2 : r.th <= 0;
+  const th = THREE.MathUtils.clamp(r.th, 0, Math.PI * 2), u = th / (Math.PI * 2), sm = u * u * (3 - 2 * u), dsm = 6 * u * (1 - u);
+  const ride = 0.62; // altura del centro del coche sobre la cinta
+  const nIn = new THREE.Vector3(Math.sin(th), Math.cos(th), 0); // hacia el centro del rizo
+  const pos = new THREE.Vector3(L.cx - L.R * Math.sin(th), L.R * (1 - Math.cos(th)) + 0.08, L.z0 + (L.z1 - L.z0) * sm).addScaledVector(nIn, ride);
+  const T = new THREE.Vector3(-Math.cos(th) * L.R, Math.sin(th) * L.R, (L.z1 - L.z0) * dsm / (Math.PI * 2)).normalize().multiplyScalar(r.dir);
+  const side = new THREE.Vector3().crossVectors(nIn, T).normalize(); // eje X local del coche
+  const up = new THREE.Vector3().crossVectors(T, side).normalize();
+  _m.makeBasis(side, up, T); _q.setFromRotationMatrix(_m);
+  c.body.setTranslation(pos, true); c.body.setRotation(_q, true);
+  c.body.setLinvel({ x: T.x * r.v, y: T.y * r.v, z: T.z * r.v }, true); c.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+  c.fx.stick = 0.2;
+  if (done) c.rail = null;
+}
+
 // ---------- Piloto de batalla: persigue la estrella o a quien la lleva; si la tiene, huye ----------
 export class BattleDriver {
   constructor(car, race, { skill = 1, seed = 1 } = {}) {
@@ -234,10 +325,10 @@ export class BattleDriver {
     this.fleeT -= 1 / 60;
     if (!this.flee || this.fleeT <= 0) {
       this.fleeT = 1.2 + this.r();
-      const S = R.circuit.samples;
+      const S = R.T.spawns.concat(R.T.itemPoints || []);
       let best = null, bd = -1;
-      for (let i = 0; i < S.length; i += 6) {
-        const p = S[i].p;
+      for (let i = 0; i < S.length; i++) {
+        const p = S[i];
         let near = Infinity;
         for (const o of R.cars) if (o !== car) near = Math.min(near, flat(o.currPos, p));
         const score = near - flat(car.currPos, p) * 0.25;
