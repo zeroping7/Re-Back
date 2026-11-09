@@ -26,6 +26,7 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 20 | Mejorar el sonido de todos los motores y quitar los ajustes de conducción (velocidad, etc.) para evitar trampas | AUD-10, AUD-11; panel ⚙ eliminado (02-fisicas, 07-ui-ux) |
 | 21 | Icono nuevo de la app (propuesta A: buggy rojo saltando sobre rayos naranjas, título amarillo), original | PLA-05 |
 | 22 | Dirección demasiado sensible/brusca en todos los coches; que gire más porque en parado cuesta maniobrar | FIS-24 (giro ×1,6 en parado), FIS-25 (entrada de dirección más progresiva) |
+| 23 | Dos modalidades nuevas con sus circuitos y coches: Drift (por puntos) y Obstáculos (en solitario y con rivales); se desbloquean con copas; algunos coches actuales valen en ellas; adaptar los menús | [11-disciplinas.md](11-disciplinas.md): DIS-*, DRI-*, OBS-*, DCO-*, DEC-* |
 
 ## Preferencias del usuario
 

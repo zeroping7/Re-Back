@@ -46,4 +46,5 @@ Todo requisito se valora con una pregunta: *¿esto acerca el juego a cómo se si
 | [08-audio.md](08-audio.md) | Motor, efectos, música, ambiente |
 | [09-economia.md](09-economia.md) | Dinero, garaje, premios, copas |
 | [10-plataforma.md](10-plataforma.md) | Tecnología, compilación, pruebas, rendimiento |
+| [11-disciplinas.md](11-disciplinas.md) | Disciplinas: Carrera, Drift y Obstáculos (menús, modos, coches, circuitos) |
 | [historial.md](historial.md) | Todo lo pedido y decidido, por orden |
