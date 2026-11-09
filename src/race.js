@@ -3,10 +3,11 @@ import { rumble } from './gamepad.js';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { createBuilder, clearMatCache, mergeStatic, scaleTrack, CAMERA_RAY_GROUPS, WHEEL_RAY_GROUPS } from './tracks/common.js';
 import { Car } from './car.js';
-import { CARS, carTuning, rivalPool } from './cars.js';
+import { CARS, carById, carTuning, rivalPool } from './cars.js';
 import { AIDriver } from './ai.js';
 import { Items, haloTexture } from './items.js';
 import { Particles, SkidMarks, Ripples } from './effects.js';
+import { loadGhost, saveGhost, ghostModel, poseAt, poseLerp, ReplayRecorder, Director, GHOST_HZ } from './replay.js';
 
 export const FIXED = 1 / 60;
 const RIVAL_COLORS = ['#ff7a00', '#00b8a9', '#ff4f9a', '#7cb342', '#5c6bc0', '#fdd835', '#8d6e63'];
@@ -97,8 +98,37 @@ export class Race {
     this.camDist = 16;
     this.camRay = new RAPIER.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 1 });
     this.best = loadBest(this.trackKey);
+
+    // ---------- Fantasma (Contrarreloj) y grabación para la repetición ----------
+    this.stepN = 0;
+    if (practice) {
+      this.ghostRec = [];
+      this.setGhost(loadGhost(this.trackKey));
+    } else this.replayRec = new ReplayRecorder(this);
     this.updatePlaces();
     this.hud.setupMinimap(this.circuit);
+  }
+
+  setGhost(g) {
+    if (this.ghostMesh) { this.scene.remove(this.ghostMesh); this.ghostMesh = null; }
+    this.ghost = g;
+    if (!g) return;
+    this.ghostMesh = ghostModel(carById(g.car), g.color);
+    this.ghostMesh.visible = false;
+    this.scene.add(this.ghostMesh);
+  }
+
+  // vuelta del jugador en Contrarreloj: si es la mejor, pasa a ser el fantasma
+  playerLap(lapTime) {
+    const rec = this.ghostRec;
+    this.ghostRec = [];
+    if (!rec || rec.length < 7 * GHOST_HZ * 3) return;
+    if (this.ghost && this.ghost.time <= lapTime) return;
+    const frames = Float32Array.from(rec);
+    const g = { time: lapTime, car: this.player.def.id, color: this.player.def.color, frames, n: frames.length / 7 };
+    saveGhost(this.trackKey, g);
+    this.setGhost(g);
+    setTimeout(() => this.hud.message('👻 Nuevo fantasma: tu mejor vuelta', 1.6), 1700);
   }
 
   setupLights(L) {
@@ -127,6 +157,7 @@ export class Race {
   // ---------- Bucle ----------
   update(dt) {
     if (this.paused) return;
+    if (this.replay) return this.updateReplay(dt);
     this.clock += dt;
     if (this.phase === 'countdown') {
       const prev = Math.ceil(this.countdown);
@@ -182,6 +213,11 @@ export class Race {
       this.carEffects(car);
     }
     this.updatePlaces();
+    // 30 Hz: fantasma y repetición
+    if (this.started && (this.stepN++ & 1) === 0) {
+      if (this.ghostRec) { const p = this.player.currPos, q = this.player.currQuat; this.ghostRec.push(p.x, p.y, p.z, q.x, q.y, q.z, q.w); }
+      this.replayRec?.capture();
+    }
   }
 
   trackProgress(car, dt) {
@@ -201,6 +237,7 @@ export class Race {
         const lapTime = this.time - st.lapStart;
         st.lastLap = lapTime; st.lapStart = this.time;
         if (!st.bestLap || lapTime < st.bestLap) st.bestLap = lapTime;
+        if (car.isPlayer && this.practice) this.playerLap(lapTime);
         if (car.isPlayer) {
           if (!this.best.lap || lapTime < this.best.lap) { this.best.lap = lapTime; saveBest(this.trackKey, this.best); this.hud.message(`¡Récord de vuelta! ${fmtTime(lapTime)}`, 2); }
         }
@@ -435,7 +472,7 @@ export class Race {
     if (!this.best.race || st.finishTime < this.best.race) { this.best.race = st.finishTime; }
     this.best.wins = (this.best.wins || 0) + (st.place === 1 ? 1 : 0);
     saveBest(this.trackKey, this.best);
-    setTimeout(() => this.onFinish?.(this.results()), 2500);
+    setTimeout(() => { if (this.replayRec) this.replayRec.on = false; this.onFinish?.(this.results()); }, 2500);
   }
 
   results() {
@@ -551,6 +588,7 @@ export class Race {
 
   // ---------- Render ----------
   render(alpha, dt) {
+    if (this.replay) return this.renderReplay(dt);
     const S = this.S;
     const mx = this.mirror ? -1 : 1;
     for (const d of this.dynamics) {
@@ -563,6 +601,12 @@ export class Race {
       // menos detalle en coches lejanos
       const far = car !== this.player && car.model.position.distanceToSquared(this.camera.position) > 30 * 30;
       for (const m of car.model.userData.detail) m.visible = !far;
+    }
+    if (this.ghostMesh) {
+      const st0 = this.state(this.player), gt = this.time - st0.lapStart;
+      const show = this.started && gt <= this.ghost.time;
+      this.ghostMesh.visible = show;
+      if (show) poseAt(this.ghostMesh, this.ghost.frames, this.ghost.n, gt);
     }
     this.updateCamera(dt);
     const pp = this.player.model.position;
@@ -686,6 +730,68 @@ export class Race {
     const fov = 72 + Math.min(Math.max(car.fwdSpeed, 0), 45) * 0.35 + (car.fx.boost > 0 ? 8 : 0);
     cam.fov += (fov - cam.fov) * (1 - Math.exp(-dt * 3));
     cam.updateProjectionMatrix();
+  }
+
+  // ---------- Repetición (UX-12) ----------
+  get canReplay() { return !!this.replayRec && this.replayRec.frames.length > GHOST_HZ * 3; }
+
+  startReplay(onEnd) {
+    if (!this.canReplay) return false;
+    this.replayRec.on = false;
+    this.replay = { t: 0, dur: this.replayRec.frames.length / GHOST_HZ - 0.05, onEnd, ev: 0, idx: this.circuit.gridSlot(0).idx, last: this.cars.map((c) => c.model.position.clone()) };
+    this.director = new Director(this);
+    if (this.ghostMesh) this.ghostMesh.visible = false;
+    this.hud.lookBack(false);
+    for (const k of ['smoke', 'sparks', 'fire', 'chunks']) this.effects[k].p.forEach((p) => { p.life = 0; });
+    return true;
+  }
+
+  endReplay() {
+    const r = this.replay;
+    if (!r) return;
+    this.replay = null;
+    this.sfx.stopEngine();
+    r.onEnd?.();
+  }
+
+  updateReplay(dt) {
+    const r = this.replay, F = this.replayRec.frames;
+    r.t += dt;
+    if (r.t >= r.dur) { this.endReplay(); return; }
+    this.clock += dt;
+    const x = r.t * GHOST_HZ, i = Math.floor(x), k = x - i, fa = F[i], fb = F[Math.min(i + 1, F.length - 1)];
+    let o = 0;
+    this.cars.forEach((car, ci) => {
+      const m = car.model;
+      poseLerp(m, fa, fb, k, o); o += 7;
+      const prev = r.last[ci], d = prev.distanceTo(m.position);
+      car.speed = d / Math.max(dt, 1e-3);
+      for (const w of car.wheelMeshes) w.children[0].rotation.x += d / car.def.wheelR;
+      prev.copy(m.position);
+      car.currPos.copy(m.position);
+    });
+    const S = this.S, mx = this.mirror ? -1 : 1;
+    for (const d of this.dynamics) {
+      poseLerp(d.mesh, fa, fb, k, o); o += 7;
+      d.mesh.position.set(mx * d.mesh.position.x / S, d.mesh.position.y / S, d.mesh.position.z / S);
+      const q = d.mesh.quaternion; q.set(q.x, mx * q.y, mx * q.z, q.w);
+    }
+    const ev = this.replayRec.events;
+    while (r.ev < ev.length && ev[r.ev].t <= r.t) { this.items.explosionFx(ev[r.ev].pos); r.ev++; }
+    this.T.update?.(this.clock);
+    for (const k2 of ['smoke', 'sparks', 'fire', 'chunks', 'ripples']) this.effects[k2].update(dt);
+    this.flashLight.intensity = Math.max(0, this.flashLight.intensity - dt * 1500);
+    const P = this.player;
+    r.idx = this.circuit.nearestFrom(r.idx, P.model.position.x, P.model.position.z, 10, 30);
+    this.sfx.update(Math.min(P.speed, 40), 0.7, 0);
+  }
+
+  renderReplay(dt) {
+    const P = this.player.model.position;
+    this.sun.target.position.copy(P);
+    this.sun.position.copy(P).add(this.sunOffset);
+    this.director.update(dt, this.player, this.replay.idx);
+    this.renderer.render(this.scene, this.camera);
   }
 
   resize(w, h, pr) {

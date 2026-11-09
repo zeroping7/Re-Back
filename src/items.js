@@ -376,6 +376,13 @@ export class Items {
       const local = pos.clone().sub(car.currPos).applyQuaternion(car.currQuat.clone().invert()).clampLength(0, 0.9);
       car.damage(20 * k * power, local, k);
     }
+    this.explosionFx(pos);
+  }
+
+  // Solo lo visual y el sonido (también se usa en la repetición)
+  explosionFx(pos) {
+    const R = this.race;
+    R.replayRec?.event('boom', pos);
     // fuego, humo y chispas
     for (let k = 0; k < 36; k++) {
       const v = new THREE.Vector3(Math.random() - 0.5, Math.random() * 0.8, Math.random() - 0.5).normalize().multiplyScalar(4 + Math.random() * 8);

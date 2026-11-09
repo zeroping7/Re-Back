@@ -45,8 +45,8 @@ Inicio (toca para empezar)
 | UX-08 | Botón de **cámara** en carrera: Normal → Lejos → Parachoques (también en Opciones; se guarda) | ✅ |
 | UX-09 | Monedas visibles en los menús y premio animado en resultados | ✅ |
 | UX-10 | **Previews** en las tarjetas de coche (render 3D del modelo) y de circuito (vista aérea del trazado con los coches en la salida) en vez de un color; imágenes en `public/previews/`, generadas con `node tests/previews.mjs`; si falta una, se usa el color | ✅ |
-| UX-11 | **Fantasma** en Contrarreloj: coche translúcido que repite tu mejor vuelta en ese circuito y variante (se guarda en el móvil) | 🚧 |
-| UX-12 | **Repetición** al acabar la carrera: botón en resultados; cámaras de TV a ras de suelo junto a la pista que cambian con cortes, alguna toma aérea y de persecución; explosiones repetidas; se sale tocando o con B | 🚧 |
+| UX-11 | **Fantasma** en Contrarreloj: coche translúcido que repite tu mejor vuelta en ese circuito y variante (se guarda en el móvil) | ✅ |
+| UX-12 | **Repetición** al acabar la carrera: botón en resultados; cámaras de TV a ras de suelo junto a la pista que cambian con cortes, alguna toma aérea y de persecución; explosiones repetidas; se sale tocando o con B | ✅ |
 | UX-13 | **Variantes de circuito**: Normal, Al revés (se abre con la Copa Plata) y Espejo (con la Copa Oro); récords y fantasmas por variante | ✅ |
 | UX-14 | **Batalla de la Estrella**: arena cerrada; la estrella aparece en el centro, quien la lleva gasta su reloj (60 s); se roba tocando al que la lleva; gana quien vacía su reloj; rivales con IA de persecución/huida | 🚧 |
 

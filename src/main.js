@@ -417,8 +417,24 @@ async function init() {
       btn('↻ Otra vez', '', () => startRace());
       btn('Menú', 'alt', quit);
     }
+    if (race.canReplay) btn('🎬 Repetición', 'alt', playReplay);
     showScreen('m-results');
   }
+
+  // ---------- Repetición (UX-12) ----------
+  function playReplay() {
+    if (!race || !race.startReplay(endReplayUi)) return;
+    showScreen(null);
+    $('hud').classList.add('hidden');
+    $('replay-ui').classList.remove('hidden');
+  }
+  function endReplayUi() {
+    $('replay-ui').classList.add('hidden');
+    $('hud').classList.remove('hidden');
+    showScreen('m-results');
+  }
+  $('btn-replay-skip').addEventListener('click', (e) => { e.stopPropagation(); race?.endReplay(); });
+  $('replay-ui').addEventListener('click', () => race?.endReplay());
 
   function showPodium() {
     const c = cupById(cup.id), table = standings(cup);
