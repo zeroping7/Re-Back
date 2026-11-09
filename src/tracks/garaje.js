@@ -3,14 +3,17 @@ import { buildCircuit, startArch, mat } from './common.js';
 import { indoor, placer, mulberry } from './kit.js';
 
 // Drift 2: "El garaje" (DRI-08). Cemento pulido, manchas de aceite, neumáticos y un coche de verdad aparcado.
-const R = { x: 88, z: 62, h: 34 };
+const R = { x: 68, z: 48, h: 32 };
+// DRI-08: trazado compacto (curvas más seguidas) y pista estrecha
+const K = 0.7;
+const k2 = ([x, z]) => [x * K, z * K];
 
 export default {
   id: 'garaje', disc: 'drift',
   name: 'El garaje', short: 'Garaje',
   desc: 'Cemento pulido, horquillas y neumáticos',
   color: '#ffb300',
-  medals: [3000, 6000, 10000],
+  medals: [1200, 3000, 5500],
   music: 'museo', ambient: 'salon',
   build,
 };
@@ -22,9 +25,9 @@ function build(B) {
 
   const circuit = buildCircuit(B, {
     points: [[-24, 42], [18, 36], [50, 42], [68, 28], [60, 8], [36, 6], [14, 18], [-8, 10], [-8, -6], [16, -18], [44, -14], [60, -18], [67, -30], [56, -43],
-      [20, -42], [-6, -30], [-28, -42], [-56, -44], [-70, -30], [-66, -15], [-50, -12], [-39, -5], [-36, 4], [-40, 13], [-51, 19], [-65, 21], [-73, 31], [-62, 41]],
-    start: [-44, 40],
-    width: 11,
+      [20, -42], [-6, -30], [-28, -42], [-56, -44], [-70, -30], [-66, -15], [-50, -12], [-39, -5], [-36, 4], [-40, 13], [-51, 19], [-65, 21], [-73, 31], [-62, 41]].map(k2),
+    start: k2([-44, 40]),
+    width: 5.5,
     limits: [R.x - 2, R.z - 2],
     hillMaterial: floorMat, groundUV,
     barrier: { colors: ['#ffb300', '#212121'], thick: 0.7, roughness: 0.6 },

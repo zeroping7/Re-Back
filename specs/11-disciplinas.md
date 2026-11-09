@@ -30,7 +30,7 @@ Las monedas y el garaje son comunes. Código: `src/disciplines.js`.
 | DRI-05 | Modos: **Puntuación** (solo, 2 vueltas, medallas 🥉🥈🥇 por puntos) y **Duelo** (1-3 rivales, gana quien más puntos tenga al acabar las vueltas el jugador; a los rivales que no han acabado se les proyecta la puntuación) | ✅ |
 | DRI-06 | Marcador: puntos totales, combo en curso con su multiplicador (parpadea al cobrarse o perderse) y, en Duelo, puesto por puntos | ✅ |
 | DRI-07 | La IA derrapa: no levanta el gas en las curvas (el gas sostiene el derrape) y entra más rápido; no usa objetos. En simulación hace 2.400–8.700 puntos en 2 vueltas según el coche | ✅ |
-| DRI-08 | Circuitos anchos (11 u) de curvas enlazadas, sin rampas, armas ni turbos: **La cocina encerada** y **El garaje** | ✅ |
+| DRI-08 | Circuitos de drift **compactos y estrechos** (ancho 5,5 u, la mitad que antes; trazado encogido ×0,7 para que las curvas vayan seguidas), sin rampas, armas ni turbos: **La cocina encerada** y **El garaje** | ✅ |
 
 ## Obstáculos
 
@@ -68,8 +68,8 @@ para reutilizar vueltas, minimapa, IA, recolocación y variantes al revés/espej
 
 | Circuito | 🥉 | 🥈 | 🥇 | Referencia (IA con el coche básico, en solitario) |
 |---|---|---|---|---|
-| La cocina encerada | 3.000 pts | 6.000 | 10.000 | ~5.200 pts |
-| El garaje | 3.000 pts | 6.000 | 10.000 | ~3.400 pts |
+| La cocina encerada | 1.200 pts | 3.000 | 5.500 | ~1.700 pts |
+| El garaje | 1.200 pts | 3.000 | 5.500 | ~1.550 pts |
 | El escritorio | 1:22 | 1:10 | 1:01 | 1:00 |
 | El fregadero | 1:22 | 1:10 | 1:01 | 1:00 |
 

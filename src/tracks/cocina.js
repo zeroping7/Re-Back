@@ -4,14 +4,17 @@ import { buildCircuit, startArch, mat } from './common.js';
 import { indoor, windowWall, placer, mulberry } from './kit.js';
 
 // Drift 1: "La cocina encerada" (DRI-08). Baldosas recién fregadas, ancho y de curvas enlazadas.
-const R = { x: 76, z: 62, h: 36 };
+const R = { x: 60, z: 48, h: 34 };
+// DRI-08: trazado compacto (curvas más seguidas) y pista estrecha
+const K = 0.7;
+const k2 = ([x, z]) => [x * K, z * K];
 
 export default {
   id: 'cocina', disc: 'drift',
   name: 'La cocina encerada', short: 'Cocina',
   desc: 'Baldosas brillantes y curvas enlazadas',
   color: '#4dd0e1',
-  medals: [3000, 6000, 10000],
+  medals: [1200, 3000, 5500],
   music: 'super', ambient: 'salon',
   build,
 };
@@ -24,9 +27,9 @@ function build(B) {
 
   const circuit = buildCircuit(B, {
     points: [[-48, 36], [-28, 38], [-6, 32], [16, 38], [40, 36], [58, 26], [60, 8], [46, -4], [26, 2], [8, 12], [-10, 4], [-6, -14], [16, -24], [38, -24],
-      [52, -22], [61, -30], [58, -41], [44, -45], [14, -42], [-14, -36], [-38, -42], [-56, -38], [-63, -26], [-58, -14], [-47, -8], [-42, 2], [-47, 12], [-58, 17], [-64, 26], [-60, 34]],
-    start: [-40, 36],
-    width: 11,
+      [52, -22], [61, -30], [58, -41], [44, -45], [14, -42], [-14, -36], [-38, -42], [-56, -38], [-63, -26], [-58, -14], [-47, -8], [-42, 2], [-47, 12], [-58, 17], [-64, 26], [-60, 34]].map(k2),
+    start: k2([-40, 36]),
+    width: 5.5,
     limits: [R.x - 2, R.z - 2],
     hillMaterial: floorMat, groundUV,
     barrier: { colors: ['#00acc1', '#ffffff'], thick: 0.7, round: true, roughness: 0.5 },
