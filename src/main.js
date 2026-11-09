@@ -349,7 +349,7 @@ async function init() {
       resize();
       $('loading').classList.add('hidden');
       $('hud').classList.remove('hidden');
-      sfx.startMusic('race');
+      sfx.startMusic('race', def.id);
       sfx.startAmbient(def.id);
     }, 30));
   }
@@ -517,7 +517,7 @@ async function init() {
   requestAnimationFrame(frame);
 
   window.__game = {
-    renderer, controls, pad, settings, room, profile, showScreen, startRace, quit,
+    renderer, controls, pad, sfx, settings, room, profile, showScreen, startRace, quit,
     get race() { return race; }, get cup() { return cup; },
     startCup(id) { mode = 'cup'; cup = { id, idx: 0, table: {} }; startRace(); },
     // fotos para las tarjetas (tests/previews.mjs)

@@ -292,47 +292,81 @@ export class Sfx {
     if (this.musicGain) this.musicGain.gain.value = on ? 0.16 : 0;
   }
 
-  startMusic(mode = 'race') {
+  // mode: 'menu' | 'race'; theme: id del circuito (o 'batalla') → canción propia (AUD-09)
+  startMusic(mode = 'race', theme = null) {
     if (!this.ctx) return;
     if (!this.musicGain) {
       this.musicGain = this.ctx.createGain();
       this.musicGain.gain.value = this.musicOn ? 0.16 : 0;
       this.musicGain.connect(this.master);
     }
-    this.musicMode = mode;
-    if (this.musicTimer) return;
+    const key = mode === 'menu' ? 'menu' : (SONGS[theme] ? theme : 'salon');
+    const changed = key !== this.songKey;
+    this.musicMode = mode; this.songKey = key; this.song = SONGS[key];
+    if (this.musicTimer && !changed) return;
     this.step16 = 0;
-    this.nextNote = this.ctx.currentTime + 0.1;
-    this.musicTimer = setInterval(() => this.schedule(), 50);
+    this.nextNote = Math.max(this.nextNote || 0, this.ctx.currentTime + 0.1);
+    if (!this.musicTimer) this.musicTimer = setInterval(() => this.schedule(), 50);
   }
 
-  stopMusic() { clearInterval(this.musicTimer); this.musicTimer = null; }
+  stopMusic() { clearInterval(this.musicTimer); this.musicTimer = null; this.songKey = null; }
 
+  // Estructura: 2 compases de entrada, 8 de estrofa, 8 de estribillo (melodía), y a repetir;
+  // cada 3.ª vuelta, 2 compases de respiro sin bombo antes del estribillo.
   schedule() {
-    const ctx = this.ctx;
-    const tempo = this.musicMode === 'menu' ? 104 : 132;
-    const dur16 = 60 / tempo / 4;
-    // progresión: Am F C G (en semitonos sobre A2=110)
-    const prog = [[0, 3, 7], [-4, 0, 3], [3, 7, 10], [-2, 2, 5]];
+    const ctx = this.ctx, S = this.song;
+    const dur16 = 60 / S.tempo / 4;
     while (this.nextNote < ctx.currentTime + 0.2) {
-      const s = this.step16 % 16, bar = Math.floor(this.step16 / 16) % 4;
-      const chord = prog[bar];
-      const t = this.nextNote;
-      const n = (semi, oct) => 110 * Math.pow(2, semi / 12 + oct);
-      // bajo
-      if (s % 4 === 0 || s === 14) this.mnote(n(chord[0], 0), dur16 * 1.8, 'sawtooth', 0.5, t, 600);
-      // arpegio
-      if (this.musicMode !== 'menu' || s % 2 === 0) {
-        const semi = chord[s % 3] + (s % 6 < 3 ? 12 : 24);
-        this.mnote(n(semi, 0), dur16 * 0.9, 'square', 0.16, t, 2500);
-      }
+      const step = this.step16, s = step % 16, barAbs = Math.floor(step / 16);
+      const intro = barAbs < 2;
+      const b = intro ? 0 : (barAbs - 2) % 16, chorus = !intro && b >= 8, cycle = Math.floor((barAbs - 2) / 16);
+      const breakdown = !intro && cycle % 3 === 2 && (b === 6 || b === 7);
+      const prog = chorus ? S.chorus || S.prog : S.prog;
+      const chord = prog[b % prog.length];
+      const swing = s % 2 === 1 ? dur16 * (S.swing || 0) : 0;
+      const t = this.nextNote + swing;
+      const n = (semi, oct) => S.root * Math.pow(2, semi / 12 + oct);
+      const on = (pat) => pat && pat[s] === 'x';
       // batería
-      if (s % 4 === 0) this.mkick(t);
-      if (s % 8 === 4) this.mhat(t, 0.35, 1500);
-      if (s % 2 === 1) this.mhat(t, 0.12, 7000);
+      if (!breakdown && !intro && on(chorus && S.kick2 ? S.kick2 : S.kick)) this.mkick(t);
+      if (!breakdown && on(S.snare) && !intro) this.msnare(t, S.snareVol ?? 0.5);
+      if (on(chorus && S.hat2 ? S.hat2 : S.hat)) this.mhat(t, intro ? 0.08 : 0.13, 7000);
+      if (chorus && S.clap && on(S.clap)) this.msnare(t, 0.25, 1800);
+      // bajo
+      if (!intro && on(S.bass)) {
+        const oct = S.bassOct && S.bassOct[s] === 'o' ? 1 : 0;
+        this.mnote(n(chord[0], oct), dur16 * (S.bassLen || 1.6), S.bassWave || 'sawtooth', 0.48, t, S.bassCut || 650);
+      }
+      // acordes o arpegio
+      if (S.stab && on(S.stab)) for (const c of chord) this.mnote(n(c + 12, 0), dur16 * (S.stabLen || 1.2), S.stabWave || 'square', 0.06, t, 2200);
+      if (S.arp && (!chorus || S.arpInChorus) && (S.arpEvery ? s % S.arpEvery === 0 : true)) {
+        const semi = chord[s % 3] + (s % 6 < 3 ? 12 : 24);
+        this.mnote(n(semi, 0), dur16 * 0.9, S.arpWave || 'square', intro ? 0.08 : 0.13, t, S.arpCut || 2600);
+      }
+      // melodía del estribillo (y un eco suave en la estrofa)
+      const mel = S.lead && S.lead[b % S.lead.length];
+      if (mel && (chorus || (S.leadVerse && !intro))) {
+        const tok = mel[s];
+        if (tok !== null && tok !== undefined) {
+          const len = (mel[s + 1] === undefined || mel[s + 1] === null ? 1.7 : 0.95) * dur16 * (S.leadLen || 1);
+          this.mnote(n(tok + 24, 0), len, S.leadWave || 'square', chorus ? 0.17 : 0.07, t, chorus ? 3600 : 1800);
+          if (S.leadHarm && chorus) this.mnote(n(tok + 24 + S.leadHarm, 0), len, 'triangle', 0.08, t, 3000);
+        }
+      }
       this.nextNote += dur16;
       this.step16++;
     }
+  }
+
+  msnare(t, vol = 0.5, freq = 1200) {
+    const sN = this.ctx.createBufferSource(); sN.buffer = this.noiseBuf;
+    const f = this.ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 0.7;
+    const g = this.ctx.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.16);
+    sN.connect(f).connect(g).connect(this.musicGain); sN.start(t, Math.random()); sN.stop(t + 0.18);
+    const o = this.ctx.createOscillator(), g2 = this.ctx.createGain();
+    o.frequency.setValueAtTime(220, t); o.frequency.exponentialRampToValueAtTime(140, t + 0.08);
+    g2.gain.setValueAtTime(vol * 0.5, t); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+    o.connect(g2).connect(this.musicGain); o.start(t); o.stop(t + 0.12);
   }
 
   mnote(freq, dur, type, vol, t, cutoff) {
@@ -358,3 +392,49 @@ export class Sfx {
     s.connect(f).connect(g).connect(this.musicGain); s.start(t, Math.random()); s.stop(t + 0.08);
   }
 }
+
+// ---------- Canciones (AUD-09). Patrones de 16 pasos: 'x' suena, '.' calla. Melodía: semitonos sobre la tónica, null = silencio ----------
+const _ = null;
+const mel = (str) => str.trim().split(/\s+/).map((v) => (v === '.' ? null : +v));
+const SONGS = {
+  // menú: tranquilo, la menor
+  menu: { tempo: 104, root: 110, prog: [[0, 3, 7], [-4, 0, 3], [3, 7, 10], [-2, 2, 5]],
+    kick: 'x.......x.......', snare: '....x.......x...', hat: '..x...x...x...x.', bass: 'x.....x.x.......', snareVol: 0.25,
+    arp: true, arpEvery: 2, arpWave: 'triangle',
+    lead: [mel('7 . . . 5 . 3 . . . 0 . . . . .'), mel('. . . . 3 . 5 . 7 . . . . . . .'), mel('10 . . . 7 . 5 . . . 3 . . . . .'), mel('5 . . . 2 . 0 . . . . . . . . .')] },
+  // salón: funk alegre de casa, re mayor
+  salon: { tempo: 124, root: 73.42, swing: 0.12, prog: [[0, 4, 7], [-3, 0, 4], [5, 9, 12], [7, 11, 14]], chorus: [[5, 9, 12], [7, 11, 14], [4, 7, 11], [-3, 0, 4]],
+    kick: 'x..x..x...x..x..', snare: '....x.......x...', hat: 'x.x.x.x.x.x.x.x.', hat2: 'xxx.xxx.xxx.xxx.', clap: '....x..x....x...',
+    bass: 'x..x..x.x.x..x.x', bassOct: '.......o.....o..', bassWave: 'square', bassCut: 900, stab: '..x...x...x...x.', stabLen: 0.6,
+    lead: [mel('12 . 14 . 16 . . 14 . 12 . . 9 . . .'), mel('9 . 12 . 14 . . 12 . 9 . 7 . . . .'), mel('16 . 19 . 16 . 14 . 12 . 14 . 16 . . .'), mel('14 . 12 . 9 . . . 12 . . . . . . .')], leadHarm: -5 },
+  // supermercado: disco de hilo musical, fa mayor
+  super: { tempo: 126, root: 87.31, prog: [[0, 4, 7], [-1, 2, 7], [-3, 0, 4], [5, 9, 12]], chorus: [[5, 9, 12], [0, 4, 7], [7, 11, 14], [7, 11, 14]],
+    kick: 'x...x...x...x...', snare: '....x.......x...', hat: '..x...x...x...x.', hat2: 'x.xxx.xxx.xxx.xx', clap: '....x.......x...',
+    bass: 'x.x.x.x.x.x.x.x.', bassOct: '..o...o...o...o.', bassLen: 0.9, arp: true, arpWave: 'sawtooth', arpCut: 1800,
+    lead: [mel('12 . . 11 12 . 16 . . . 14 . 12 . . .'), mel('9 . . 7 9 . 12 . . . 11 . 9 . . .'), mel('12 . 14 . 16 . 17 . 19 . 17 . 16 . 14 .'), mel('12 . . . . . 7 . . . . . . . . .')], leadWave: 'sawtooth', leadHarm: 4 },
+  // jardín: soleado con guitarreo a contratiempo, sol mayor
+  jardin: { tempo: 140, root: 98, prog: [[0, 4, 7], [5, 9, 12], [7, 11, 14], [5, 9, 12]], chorus: [[-3, 0, 4], [5, 9, 12], [0, 4, 7], [7, 11, 14]],
+    kick: 'x.....x.x.......', snare: '....x.......x...', hat: 'x.x.x.x.x.x.x.x.', bass: 'x...x.x.x...x.x.', bassWave: 'triangle', bassCut: 1200,
+    stab: '..x...x...x...x.', stabLen: 0.5, stabWave: 'sawtooth',
+    lead: [mel('7 . 9 . 11 . 12 . . . 11 . 9 . 7 .'), mel('4 . . . 7 . . . 9 . . . . . . .'), mel('12 . 11 . 9 . 7 . 9 . 11 . 12 . . .'), mel('14 . . . 12 . . . 11 . . . . . . .')], leadWave: 'triangle', leadVerse: true, leadHarm: -3 },
+  // museo de noche: misterio con ritmo rápido, mi menor
+  museo: { tempo: 148, root: 82.41, prog: [[0, 3, 7], [-4, 0, 3], [-2, 2, 5], [-5, -1, 2]], chorus: [[0, 3, 7], [3, 7, 10], [-2, 2, 5], [-1, 3, 6]],
+    kick: 'x.........x.....', kick2: 'x.....x...x.....', snare: '....x.......x..x', hat: 'xxxxxxxxxxxxxxxx', bass: 'x..x..x...x..x..', bassWave: 'sawtooth', bassCut: 500,
+    arp: true, arpWave: 'triangle', arpInChorus: true, arpCut: 2000,
+    lead: [mel('12 . . . 15 . . . 14 . 12 . 11 . . .'), mel('12 . . . 7 . . . . . . . . . . .'), mel('15 . 17 . 19 . . . 17 . 15 . 14 . . .'), mel('15 . . . 14 . . . 11 . . . . . . .')], leadWave: 'sawtooth', leadLen: 1.4 },
+  // muelle: atardecer marinero, la dórico
+  muelle: { tempo: 116, root: 110, swing: 0.18, prog: [[0, 3, 7], [5, 9, 12], [0, 3, 7], [-2, 2, 5]], chorus: [[3, 7, 10], [-2, 2, 5], [0, 3, 7], [5, 9, 12]],
+    kick: 'x.......x.....x.', snare: '....x.......x...', hat: 'x..x..x.x..x..x.', bass: 'x.....x.x.....x.', bassWave: 'triangle', bassCut: 900,
+    stab: 'x.....x.....x...', stabWave: 'triangle', stabLen: 2,
+    lead: [mel('7 . . 9 10 . 12 . . . 10 . 9 . 7 .'), mel('5 . . . 7 . . . 9 . . . . . . .'), mel('12 . . 10 9 . 7 . . . 9 . 10 . . .'), mel('7 . . . . . 0 . . . . . . . . .')], leadWave: 'triangle', leadVerse: true, leadHarm: -5 },
+  // parque infantil: chiptune saltarín, do mayor
+  parque: { tempo: 152, root: 130.81, prog: [[0, 4, 7], [-3, 0, 4], [-7, -3, 0], [-5, -1, 2]], chorus: [[5, 9, 12], [7, 11, 14], [0, 4, 7], [-3, 0, 4]],
+    kick: 'x...x...x...x...', snare: '....x.......x...', hat: '..x...x...x...x.', bass: 'x.x.x.x.x.x.x.x.', bassOct: '.o.o.o.o.o.o.o.o', bassWave: 'square', bassLen: 0.8, bassCut: 1400,
+    arp: true, arpWave: 'square', arpEvery: 1,
+    lead: [mel('12 . 12 . 16 . 19 . 16 . 12 . 14 . . .'), mel('11 . 11 . 14 . 17 . 14 . 11 . 12 . . .'), mel('17 . 16 . 14 . 12 . 14 . 16 . 17 . 19 .'), mel('16 . . . 12 . . . 7 . . . . . . .')], leadWave: 'square', leadHarm: -12 },
+  // batalla: tenso y rápido, do menor
+  batalla: { tempo: 160, root: 65.41, prog: [[0, 3, 7], [0, 3, 7], [-4, 0, 3], [-2, 2, 5]], chorus: [[3, 7, 10], [-2, 2, 5], [-4, 0, 3], [-5, -1, 2]],
+    kick: 'x...x...x...x...', kick2: 'x.x.x...x.x.x..x', snare: '....x.......x...', hat: 'x.xxx.xxx.xxx.xx', bass: 'xx.xx.xx.xx.xx.x', bassWave: 'sawtooth', bassLen: 0.7, bassCut: 700,
+    stab: 'x.....x.....x...', stabWave: 'sawtooth',
+    lead: [mel('12 . 15 . 19 . 15 . 12 . 15 . 19 . 22 .'), mel('20 . 19 . 15 . . . 12 . . . . . . .'), mel('22 . 20 . 19 . 17 . 15 . 17 . 19 . . .'), mel('17 . . . 15 . . . 14 . . . . . . .')], leadWave: 'sawtooth' },
+};

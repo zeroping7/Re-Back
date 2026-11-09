@@ -12,4 +12,4 @@ Todo el sonido se **sintetiza por código** (Web Audio): no hay archivos de audi
 | AUD-06 | **Ambiente por circuito**: salón (tic-tac de reloj y rumor de casa), supermercado (zumbido de neveras y aviso por megafonía), jardín (viento y pájaros); baja en la pausa | ✅ |
 | AUD-07 | Música procedimental en menús y carrera, se puede apagar | ✅ |
 | AUD-08 | Sonido y música se pueden silenciar por separado (Opciones) | ✅ |
-| AUD-09 | **Música con más ritmo** y un tema propio por circuito (tempo, tonalidad, batería y estribillo distintos) | 🚧 |
+| AUD-09 | **Música con más ritmo** y un tema propio por circuito (tempo, tonalidad, batería y estribillo distintos) | ✅ |
