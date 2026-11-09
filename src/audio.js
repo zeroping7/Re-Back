@@ -1,9 +1,113 @@
-// Sonido sintetizado: zumbido del motor eléctrico RC, chirrido de derrape y golpes.
+// Sonido sintetizado: motores (eléctrico y nitro), derrapes, golpes, efectos, ambiente y música.
+
+// Ondas con armónicos a medida (se crean una vez por contexto)
+function makeWaves(ctx) {
+  const N = 32;
+  const wave = (fn) => {
+    const re = new Float32Array(N), im = new Float32Array(N);
+    for (let n = 1; n < N; n++) im[n] = fn(n);
+    return ctx.createPeriodicWave(re, im);
+  };
+  return {
+    // eléctrico: bobinado del motor, fundamental fuerte + 2.º y 3.º armónico, poco brillo
+    electric: wave((n) => (n === 1 ? 1 : n === 2 ? 0.55 : n === 3 ? 0.3 : n === 6 ? 0.12 : 0.6 / (n * n))),
+    // nitro: explosiones cortas → pulso estrecho (muchos armónicos casi iguales que caen despacio)
+    nitro: wave((n) => (Math.sin(n * Math.PI * 0.18) / (n * 0.18 * Math.PI)) * (n % 2 ? 1 : 0.8)),
+  };
+}
+
+// Una voz de motor: 2 osciladores + chillido de engranajes + ruido (escobillas / escape) + saturación
+class EngineVoice {
+  constructor(ctx, out, waves, noiseBuf, { pan = false } = {}) {
+    this.ctx = ctx; this.waves = waves;
+    const osc = (type) => { const o = ctx.createOscillator(); if (type) o.type = type; return o; };
+    const gain = (v) => { const g = ctx.createGain(); g.gain.value = v; return g; };
+    this.o1 = osc(); this.o2 = osc('sawtooth'); this.whine = osc('sine');
+    this.g1 = gain(1); this.g2 = gain(0.2); this.gw = gain(0);
+    this.noise = ctx.createBufferSource(); this.noise.buffer = noiseBuf; this.noise.loop = true;
+    this.nf = ctx.createBiquadFilter(); this.nf.type = 'bandpass'; this.nf.Q.value = 1.2;
+    this.ng = gain(0);
+    this.filter = ctx.createBiquadFilter(); this.filter.type = 'lowpass'; this.filter.Q.value = 2.5;
+    this.shaper = ctx.createWaveShaper();
+    this.am = gain(1);                    // pulsos de explosión (nitro) / rizado (eléctrico)
+    this.lfo = osc('sine'); this.lfoDepth = gain(0);
+    this.out = gain(0);
+    this.lfo.connect(this.lfoDepth).connect(this.am.gain);
+    this.o1.connect(this.g1).connect(this.filter);
+    this.o2.connect(this.g2).connect(this.filter);
+    this.noise.connect(this.nf).connect(this.ng).connect(this.filter);
+    this.filter.connect(this.shaper).connect(this.am).connect(this.out);
+    this.whine.connect(this.gw).connect(this.out);
+    this.pan = pan && ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    if (this.pan) this.out.connect(this.pan).connect(out); else this.out.connect(out);
+    for (const o of [this.o1, this.o2, this.whine, this.lfo]) o.start();
+    this.noise.start(0, Math.random());
+    this.setType('electric', 1);
+  }
+
+  setType(type, pitch = 1) {
+    if (this.type === type && this.pitch === pitch) return;
+    this.type = type; this.pitch = pitch;
+    const nitro = type === 'nitro';
+    this.o1.setPeriodicWave(this.waves[nitro ? 'nitro' : 'electric']);
+    this.o2.type = nitro ? 'sawtooth' : 'triangle';
+    this.nf.type = nitro ? 'bandpass' : 'highpass';
+    this.lfo.type = nitro ? 'square' : 'sine';
+    const n = 512, curve = new Float32Array(n), k = nitro ? 3.2 : 1.4;
+    for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * 2 - 1; curve[i] = Math.tanh(x * k) / Math.tanh(k); }
+    this.shaper.curve = curve;
+  }
+
+  // rpm: 0 (ralentí) … 1 (tope) · load: gas 0…1 · vol: volumen final · dop: multiplicador Doppler
+  set(rpm, load, vol, { dop = 1, tc = 0.04 } = {}) {
+    const t = this.ctx.currentTime, P = this.pitch * dop;
+    const st = (p, v, k = tc) => p.setTargetAtTime(v, t, k);
+    if (this.type === 'nitro') {
+      // monocilíndrico de 2 tiempos: frecuencia de explosiones de ~35 Hz (ralentí) a ~190 Hz
+      const f = (34 + rpm * 156) * P;
+      st(this.o1.frequency, f);
+      st(this.o2.frequency, f * 0.5);                  // medio orden: explosiones irregulares
+      st(this.g2.gain, 0.35 - rpm * 0.2);
+      st(this.lfo.frequency, f);
+      st(this.lfoDepth.gain, 0.55 - rpm * 0.35);      // a pocas vueltas se oye cada explosión
+      st(this.nf.frequency, f * 4.5); st(this.nf.Q, 1.4);
+      st(this.ng.gain, 0.25 + load * 0.45);            // escape rasposo
+      st(this.filter.frequency, 260 + rpm * 1700 + load * 1300);
+      st(this.whine.frequency, f * 7.3); st(this.gw.gain, 0.012 * rpm); // embrague / piñones
+    } else {
+      // eléctrico: zumbido que sube con las vueltas + chillido de piñones y siseo de escobillas
+      const f = (90 + rpm * 330) * P;
+      st(this.o1.frequency, f);
+      st(this.o2.frequency, f * 2.005);
+      st(this.g2.gain, 0.15 + load * 0.2);
+      st(this.lfo.frequency, 21 + rpm * 12);
+      st(this.lfoDepth.gain, 0.05 + load * 0.08);
+      st(this.nf.frequency, 2500 + rpm * 3500); st(this.nf.Q, 0.7);
+      st(this.ng.gain, 0.03 + load * 0.05 + rpm * 0.04);
+      st(this.filter.frequency, 450 + rpm * 2200 + load * 900);
+      st(this.whine.frequency, f * 3.62);
+      st(this.gw.gain, (0.04 + load * 0.08) * (0.3 + rpm));
+    }
+    st(this.out.gain, vol, tc * 1.5);
+  }
+
+  silence(k = 0.05) { this.out.gain.setTargetAtTime(0, this.ctx.currentTime, k); }
+}
+
+// Tono propio de cada coche: el nombre cambia un poco el timbre y el peso lo hace más grave
+function carPitch(def) {
+  if (!def) return 1;
+  let h = 0; for (const ch of def.id || '') h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return (0.9 + (h % 1000) / 1000 * 0.2) * Math.pow(8 / (def.mass || 8), 0.35);
+}
+
 export class Sfx {
   constructor() {
     this.ctx = null;
     this.muted = localStorage.getItem('reback.muted') === '1';
     this.musicOn = localStorage.getItem('reback.music') !== '0';
+    this.engineType = 'electric'; this.enginePitch = 1;
+    this.rpm = 0; this._lastThr = 0; this._popCool = 0;
   }
 
   start() {
@@ -15,41 +119,19 @@ export class Sfx {
     this.master.gain.value = this.muted ? 0 : 0.5;
     this.master.connect(ctx.destination);
 
-    // motor: dos osciladores + filtro + saturación + vibración (eléctrico o nitro)
-    this.engFilter = ctx.createBiquadFilter();
-    this.engFilter.type = 'lowpass'; this.engFilter.frequency.value = 900; this.engFilter.Q.value = 4;
-    this.engShaper = ctx.createWaveShaper();
-    this.engAM = ctx.createGain(); this.engAM.gain.value = 0.85;
-    this.engGain = ctx.createGain(); this.engGain.gain.value = 0;
-    this.osc1 = ctx.createOscillator(); this.osc1.type = 'sawtooth';
-    this.osc2 = ctx.createOscillator(); this.osc2.type = 'square';
-    this.osc2Gain = ctx.createGain(); this.osc2Gain.gain.value = 0.35;
-    this.lfo = ctx.createOscillator(); this.lfo.type = 'square'; this.lfo.frequency.value = 30;
-    this.lfoDepth = ctx.createGain(); this.lfoDepth.gain.value = 0.04;
-    this.lfo.connect(this.lfoDepth).connect(this.engAM.gain);
-    this.osc1.connect(this.engFilter); this.osc2.connect(this.osc2Gain).connect(this.engFilter);
-    this.engFilter.connect(this.engShaper).connect(this.engAM).connect(this.engGain).connect(this.master);
-    this.osc1.start(); this.osc2.start(); this.lfo.start();
-    this.setEngine(this.engineType || 'electric');
-
-    // dos voces para los motores de los rivales más cercanos
-    this.rivalVoices = [0, 1].map(() => {
-      const o = ctx.createOscillator(); o.type = 'sawtooth';
-      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 700; f.Q.value = 3;
-      const g = ctx.createGain(); g.gain.value = 0;
-      const pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-      o.connect(f).connect(g);
-      if (pan) g.connect(pan).connect(this.master); else g.connect(this.master);
-      o.start();
-      return { o, f, g, pan, car: null };
-    });
-
-    // ruido para derrapes y golpes
+    // ruido para motores, derrapes y golpes
     const len = ctx.sampleRate * 1.5;
     const buf = ctx.createBuffer(1, len, ctx.sampleRate);
     const d = buf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
     this.noiseBuf = buf;
+
+    const waves = makeWaves(ctx);
+    this.engine = new EngineVoice(ctx, this.master, waves, buf);
+    this.engine.setType(this.engineType, this.enginePitch);
+    // tres voces para los motores de los rivales más cercanos
+    this.rivalVoices = [0, 1, 2].map(() => new EngineVoice(ctx, this.master, waves, buf, { pan: true }));
+
     const n = ctx.createBufferSource(); n.buffer = buf; n.loop = true;
     this.skidFilter = ctx.createBiquadFilter(); this.skidFilter.type = 'bandpass'; this.skidFilter.frequency.value = 1800; this.skidFilter.Q.value = 3;
     this.skidGain = ctx.createGain(); this.skidGain.gain.value = 0;
@@ -63,38 +145,42 @@ export class Sfx {
     if (this.master) this.master.gain.value = m ? 0 : 0.5;
   }
 
-  // 'electric': zumbido limpio que sube con la velocidad · 'nitro': motor de explosión pequeño, grave y rasposo
-  setEngine(type) {
-    this.engineType = type;
-    if (!this.ctx) return;
-    const nitro = type === 'nitro';
-    this.osc1.type = nitro ? 'square' : 'sawtooth';
-    this.osc2.type = nitro ? 'sawtooth' : 'square';
-    this.osc2Gain.gain.value = nitro ? 0.6 : 0.35;
-    this.lfoDepth.gain.value = nitro ? 0.4 : 0.04;
-    const n = 256, curve = new Float32Array(n), k = nitro ? 6 : 0;
-    for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * 2 - 1; curve[i] = k ? Math.tanh(x * k) / Math.tanh(k) : x; }
-    this.engShaper.curve = curve;
+  // 'electric': zumbido de motor eléctrico RC · 'nitro': motor de explosión pequeño, rasposo y con petardeos
+  setEngine(type, def) {
+    this.engineType = type; this.enginePitch = carPitch(def); this.rpm = 0;
+    if (this.engine) this.engine.setType(type, this.enginePitch);
   }
 
-  update(speed, throttle, slip) {
+  // speed en m/s · throttle -1…1 · slip: deslizamiento · opts.max: velocidad punta · opts.air: en el aire
+  update(speed, throttle, slip, { max = 30, air = false } = {}) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
-    if (this.engineType === 'nitro') {
-      const f = 38 + speed * 5.2 + throttle * 22;
-      this.osc1.frequency.setTargetAtTime(f, t, 0.06);
-      this.osc2.frequency.setTargetAtTime(f * 2.01, t, 0.06);
-      this.lfo.frequency.setTargetAtTime(f * 0.5, t, 0.06);
-      this.engFilter.frequency.setTargetAtTime(380 + speed * 34 + throttle * 700, t, 0.05);
-      this.engGain.gain.setTargetAtTime(0.05 + throttle * 0.08 + Math.min(speed, 40) * 0.0018, t, 0.08);
-    } else {
-      const f = 70 + speed * 9 + throttle * 30;
-      this.osc1.frequency.setTargetAtTime(f, t, 0.05);
-      this.osc2.frequency.setTargetAtTime(f * 1.5, t, 0.05);
-      this.lfo.frequency.setTargetAtTime(17, t, 0.1);
-      this.engFilter.frequency.setTargetAtTime(500 + speed * 40 + throttle * 600, t, 0.05);
-      this.engGain.gain.setTargetAtTime(0.05 + throttle * 0.1 + Math.min(speed, 40) * 0.002, t, 0.08);
+    const dt = Math.min(0.1, Math.max(0.001, t - (this._t || t)));
+    this._t = t;
+    const nitro = this.engineType === 'nitro';
+    const thr = Math.min(1, Math.abs(throttle || 0));
+    const spd = Math.min(1.15, speed / Math.max(5, max));
+    // vueltas: siguen a la velocidad; con gas suben algo más; en el aire o patinando se disparan
+    let target = spd * 0.88 + thr * 0.14;
+    if ((air || slip > 6) && thr > 0.3) target = Math.max(target, 0.75 + thr * 0.3);
+    if (nitro) target = Math.max(target, 0.04 + Math.sin(t * 7.3) * 0.015 + Math.random() * 0.01);
+    const rate = target > this.rpm ? (nitro ? 5 : 8) : (nitro ? 2.6 : 4);
+    this.rpm += (target - this.rpm) * Math.min(1, rate * dt);
+    const rpm = Math.min(1.2, this.rpm);
+    const vol = nitro ? 0.06 + thr * 0.05 + rpm * 0.05 : (0.015 + thr * 0.06 + rpm * 0.07) * Math.min(1, rpm * 6 + thr);
+    this.engine.set(rpm, thr, vol);
+    // petardeo al soltar el gas con el nitro revolucionado
+    this._popCool -= dt;
+    if (nitro && this._lastThr > 0.6 && thr < 0.2 && rpm > 0.45 && this._popCool <= 0) {
+      this._popCool = 0.8;
+      const pops = 2 + Math.floor(Math.random() * 3);
+      for (let k = 0; k < pops; k++) {
+        const dl = 0.05 + k * (0.07 + Math.random() * 0.06);
+        this.noise(0.06, { vol: 0.35, freq: 700 + Math.random() * 500, type: 'lowpass', delay: dl });
+        this.tone(60 + Math.random() * 30, 0.07, { type: 'square', vol: 0.12, slide: 0.5, delay: dl });
+      }
     }
+    this._lastThr = thr;
     this.skidGain.gain.setTargetAtTime(Math.min(0.25, slip * 0.035), t, 0.05);
     this.skidFilter.frequency.setTargetAtTime(1400 + slip * 60, t, 0.1);
   }
@@ -174,37 +260,40 @@ export class Sfx {
   stopEngine() {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
-    this.engGain.gain.setTargetAtTime(0, t, 0.05);
+    this.engine.silence();
     this.skidGain.gain.setTargetAtTime(0, t, 0.05);
-    for (const v of this.rivalVoices) v.g.gain.setTargetAtTime(0, t, 0.05);
+    for (const v of this.rivalVoices) v.silence();
   }
 
-  // ---------- Motores de los 2 rivales más cercanos (volumen y panorama según la posición) ----------
+  // ---------- Motores de los 3 rivales más cercanos (volumen, panorama y efecto Doppler) ----------
   updateRivals(race) {
     if (!this.ctx || !this.rivalVoices) return;
     const t = this.ctx.currentTime, P = race.player, cam = race.camera;
-    if (race.paused || this.muted) { for (const v of this.rivalVoices) v.g.gain.setTargetAtTime(0, t, 0.05); return; }
-    if (!this._rivT || t - this._rivT > 0.1) {
-      this._rivT = t;
-      const near = race.cars.filter((c) => c !== P).map((c) => [c, c.currPos.distanceToSquared(P.currPos)]).sort((a, b) => a[1] - b[1]).slice(0, 2);
-      const e0 = cam.matrixWorld.elements, camRight = { x: e0[0], z: e0[2] }; // eje X de la cámara
-      this.rivalVoices.forEach((v, i) => {
-        const e = near[i];
-        if (!e) { v.g.gain.setTargetAtTime(0, t, 0.1); return; }
-        const [c, d2] = e, d = Math.sqrt(d2);
-        const nitro = c.def.motor === 'Nitro';
-        if (v.nitro !== nitro) { v.nitro = nitro; v.o.type = nitro ? 'square' : 'sawtooth'; }
-        const sp = c.speed || 0, f = (nitro ? 40 + sp * 5 : 75 + sp * 8.5) * (1 + i * 0.03);
-        v.o.frequency.setTargetAtTime(f, t, 0.08);
-        v.f.frequency.setTargetAtTime(350 + sp * 30, t, 0.08);
-        const vol = Math.pow(Math.max(0, 1 - d / 45), 2) * (0.035 + Math.min(sp, 35) * 0.0012);
-        v.g.gain.setTargetAtTime(vol, t, 0.1);
-        if (v.pan) {
-          const dx = c.currPos.x - cam.position.x, dz = c.currPos.z - cam.position.z, l = Math.hypot(dx, dz) || 1;
-          v.pan.pan.setTargetAtTime(Math.max(-0.8, Math.min(0.8, (dx * camRight.x + dz * camRight.z) / l)), t, 0.1);
-        }
-      });
-    }
+    if (race.paused || this.muted) { for (const v of this.rivalVoices) v.silence(); return; }
+    if (this._rivT && t - this._rivT < 0.05) return;
+    this._rivT = t;
+    const near = race.cars.filter((c) => c !== P).map((c) => [c, c.currPos.distanceToSquared(P.currPos)]).sort((a, b) => a[1] - b[1]).slice(0, 3);
+    const e0 = cam.matrixWorld.elements, camRight = { x: e0[0], z: e0[2] }; // eje X de la cámara
+    const lv = P.velocity || { x: 0, z: 0 };
+    this.rivalVoices.forEach((v, i) => {
+      const e = near[i];
+      if (!e) { v.silence(0.1); return; }
+      const [c, d2] = e, d = Math.sqrt(d2) || 1;
+      v.setType(c.def.motor === 'Nitro' ? 'nitro' : 'electric', carPitch(c.def) * (1 + i * 0.02));
+      const sp = c.speed || 0, max = (c.t && c.t.maxSpeed) || 30;
+      const rpm = Math.min(1.1, sp / max * 0.88 + Math.abs(c.throttle || 0) * 0.14);
+      // Doppler: velocidad relativa en la línea que une al jugador con el rival
+      const dx = c.currPos.x - P.currPos.x, dz = c.currPos.z - P.currPos.z;
+      const cv = c.velocity || { x: 0, z: 0 };
+      const vr = ((cv.x - lv.x) * dx + (cv.z - lv.z) * dz) / d; // >0 se aleja
+      const dop = Math.max(0.8, Math.min(1.25, 1 / (1 + vr / 160)));
+      const vol = Math.pow(Math.max(0, 1 - d / 50), 2) * (0.05 + rpm * 0.06) * (i === 0 ? 1 : 0.75);
+      v.set(rpm, Math.abs(c.throttle || 0), vol, { dop, tc: 0.08 });
+      if (v.pan) {
+        const cx = c.currPos.x - cam.position.x, cz = c.currPos.z - cam.position.z, l = Math.hypot(cx, cz) || 1;
+        v.pan.pan.setTargetAtTime(Math.max(-0.8, Math.min(0.8, (cx * camRight.x + cz * camRight.z) / l)), t, 0.1);
+      }
+    });
   }
 
   // ---------- Ambiente de cada circuito (sintetizado) ----------

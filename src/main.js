@@ -16,7 +16,7 @@ import { Controls } from './controls.js';
 import { PadInput } from './gamepad.js';
 import { Hud } from './hud.js';
 import { Sfx } from './audio.js';
-import { tuning, setupTuningPanel, onTuningChange } from './tuning.js';
+import { tuning } from './tuning.js';
 
 const params = new URLSearchParams(location.search);
 const $ = (id) => document.getElementById(id);
@@ -68,7 +68,6 @@ async function init() {
   const pad = new PadInput(controls);
   pad.onMove = () => sfx.play('click');
   const hud = new Hud();
-  setupTuningPanel();
 
   // Taller 3D detrás de los menús
   const room = new Showroom(envMap);
@@ -231,7 +230,6 @@ async function init() {
     seg('opt-quality', [['alta', 'Alta'], ['media', 'Media'], ['baja', 'Baja']], () => settings.quality, (v) => { settings.quality = v; saveSettings(); applyQuality(); });
   }
   buildSettings();
-  $('btn-tune2').addEventListener('click', () => $('tune-panel').classList.remove('hidden'));
 
   function setCam(v, announce) {
     settings.cam = v; saveSettings();
@@ -332,7 +330,6 @@ async function init() {
     const cfg = raceConfig(), def = cfg.battle ? ARENA : trackFromKey(cfg.track);
     showScreen(null);
     $('hud').classList.add('hidden');
-    $('tune-panel').classList.add('hidden');
     sfx.stopAmbient();
     showLoading(def, cfg);
     const t0 = performance.now();
@@ -388,7 +385,6 @@ async function init() {
     if (race) { race.dispose(); race = null; }
     if (mode === 'cup') { cup = null; mode = 'race'; }
     $('hud').classList.add('hidden');
-    $('tune-panel').classList.add('hidden');
     $('loading').classList.add('hidden');
     sfx.stopAmbient();
     sfx.startMusic('menu');
@@ -397,7 +393,6 @@ async function init() {
   $('btn-quit').addEventListener('click', () => { if (mode !== 'cup' || confirm('¿Abandonar la copa? Perderás los puntos.')) quit(); });
   $('btn-reset').addEventListener('click', () => race && race.respawn(race.player));
   controls.onReset = () => race && race.respawn(race.player);
-  onTuningChange(() => race && race.applyTuning(tuning));
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(true); });
 
   function showResults(res) {

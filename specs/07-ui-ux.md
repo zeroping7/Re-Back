@@ -30,7 +30,7 @@ Inicio (toca para empezar)
      ├─ Campeonato → copa (Bronce/Plata/Oro) → coche → 3 carreras con clasificación entre medias → Podio final (+🪙)
      ├─ Contrarreloj → circuito, coche → Carga → Vueltas libres con récord y estrella oculta
      ├─ Garaje → comprar/vender, usar, mejoras, ficha del coche (clase, motor, tracción, peso)
-     └─ Opciones → sonido, música, dirección (botones/inclinación), acelerar solo, cámara, calidad, ajustes ⚙
+     └─ Opciones → sonido, música, dirección (botones/inclinación), acelerar solo, cámara, calidad (sin ajustes de conducción: se quitaron para evitar trampas, UI-ANTITRAMPAS)
 ```
 
 | ID | Requisito | Estado |

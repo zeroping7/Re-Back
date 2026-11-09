@@ -23,6 +23,7 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 17 | La lista de rivales y tiempos de la batalla tapa el centro | UX-16 |
 | 18 | Quitar la plataforma de arriba de las rampas de la batalla; looping tipo pista de juguete y rampas para subir a mesa/silla bien comunicadas; no recolocar al chocar con esquinas; cohetes que explotan contra uno mismo | UX-17, UX-18, OBJ-20 |
 | 19 | Online fluido, gratis y para 8-10 jugadores | Servidor propio en Oracle Cloud Always Free (Madrid) con WebSocket + Caddy; NET-01..08 |
+| 20 | Mejorar el sonido de todos los motores y quitar los ajustes de conducción (velocidad, etc.) para evitar trampas | AUD-10, AUD-11; panel ⚙ eliminado (02-fisicas, 07-ui-ux) |
 
 ## Preferencias del usuario
 
@@ -30,3 +31,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 - Respuestas **breves y concisas**, en español.
 - Mantener `PROGRESO.md` y estas specs al día.
 - Objetivo principal: **parecerse lo máximo posible a Re-Volt**.
+

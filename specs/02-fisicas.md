@@ -24,7 +24,7 @@ de forma controlable y que se recoloca fácil. Motor: **Rapier** (`DynamicRayCas
 | FIS-17 | **Peso por coche** (masa 6,5–11): potencia, freno, inercia, fuerza máx. de suspensión y control en el aire se escalan con la masa para que todos aceleren parecido, pero los pesados empujan más y las explosiones los mueven menos | ✅ |
 | FIS-18 | **Tracción por coche**: reparto propio (`rearBias` del coche) relativo al ajuste base: `base + (coche − 90)` | ✅ |
 
-### Parámetros por defecto (panel ⚙, clave `reback.tuning.v4`)
+### Parámetros base fijos (`src/tuning.js`; el panel ⚙ se quitó el 2026-11-09 para evitar trampas)
 
 | Parámetro | Valor | Nota |
 |---|---|---|

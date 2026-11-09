@@ -90,7 +90,7 @@ export class Race {
       this.playerAI = new BattleDriver(this.player, this, { skill: 1, seed: 99 });
       setupBattle(this);
     }
-    this.sfx.setEngine?.(carDef.motor === 'Nitro' ? 'nitro' : 'electric');
+    this.sfx.setEngine?.(carDef.motor === 'Nitro' ? 'nitro' : 'electric', carDef);
 
     // ---------- Objetos ----------
     this.items = new Items(this);
@@ -569,7 +569,7 @@ export class Race {
       }
     }
     if (car.isPlayer) {
-      this.sfx.update(car.speed || 0, car.throttle, Math.max(0, maxSlip - 3) + (car.braking && car.speed > 8 ? 4 : 0));
+      this.sfx.update(car.speed || 0, car.throttle, Math.max(0, maxSlip - 3) + (car.braking && car.speed > 8 ? 4 : 0), { max: car.t.maxSpeed, air: car.contacts === 0 });
       if (car.fx.boost > 0) this.trauma = Math.max(this.trauma, 0.12);
     }
 
@@ -811,7 +811,7 @@ export class Race {
     this.flashLight.intensity = Math.max(0, this.flashLight.intensity - dt * 1500);
     const P = this.player;
     r.idx = this.circuit.nearestFrom(r.idx, P.model.position.x, P.model.position.z, 10, 30);
-    this.sfx.update(Math.min(P.speed, 40), 0.7, 0);
+    this.sfx.update(Math.min(P.speed, 40), 0.7, 0, { max: P.t.maxSpeed });
   }
 
   renderReplay(dt) {

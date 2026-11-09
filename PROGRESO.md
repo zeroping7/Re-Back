@@ -13,7 +13,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Coche con controlador de vehículo por rayos de Rapier: suspensión real, 4x4 con reparto trasero,
   freno, marcha atrás, derrape (freno + giro), control en el aire, antivuelco, carga aerodinámica.
 - Ajuste por defecto elegido por el usuario: tracción trasera 90 %, freno 10, giro máx. 0,3.
-- Panel ⚙ con sliders en vivo (se guardan en el móvil; "Copiar valores" para pegarlos en el chat).
+- Valores de conducción fijos (el panel ⚙ de ajustes se quitó para evitar trampas; los ajustes guardados se borran).
 
 ### Fase 2 — Rivales y vueltas ✅
 - `src/race.js`: cuenta atrás con cámara de presentación, vueltas, posiciones, mejor vuelta,
@@ -105,6 +105,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - **Menús en un taller 3D**: el coche gira en una peana sobre un banco de trabajo gigante con herramientas, lámpara y cartel;
   tipografía arcade (Russo One), botones con brillo y entrada animada.
 - **Pantalla de carga** con modo, circuito, descripción y consejo (y shaders compilados antes de empezar).
+- **Motores nuevos**: eléctrico con zumbido, piñones y escobillas; nitro con explosiones, escape rasposo y petardeos; rivales con efecto Doppler.
 - **Sonido**: ambiente por circuito (reloj en el salón, neveras y megafonía en el súper, viento y pájaros en el jardín)
   y motores de los 2 rivales más cercanos con panorama.
 - Marcador con tiempo de la **última vuelta**.
