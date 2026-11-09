@@ -22,8 +22,8 @@ Solo se toman **ideas de diseño**; todo el contenido es original (ver [00-visio
 | REF-15 | Sonido ambiente de cada escenario y zumbido de motores de los rivales | Ambiente sintetizado por circuito y motores cercanos | ✅ |
 | REF-16 | Decorado limpio: el escenario marca el circuito, sin exceso de objetos | Bordes bajos y sobrios, menos objetos sueltos | ✅ |
 | REF-17 | Contrarreloj contra tu mejor vuelta | Contrarreloj con récords | ✅ (fantasma 📝) |
-| REF-18 | Editor de circuitos | — | 📝 |
-| REF-19 | Multijugador | — | 📝 |
+| REF-18 | Editor de circuitos | Pendiente para más adelante: editor sencillo desde el móvil | 📝 |
+| REF-19 | Multijugador | Pendiente para más adelante: primero pantalla partida con dos mandos, luego online | 📝 |
 
 ## Checklist de "sensación Re-Volt" para revisar en cada cambio
 

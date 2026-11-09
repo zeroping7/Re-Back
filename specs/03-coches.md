@@ -22,6 +22,8 @@ ajuste base. Nombres y diseños originales.
 | COC-01 | 9 coches con multiplicadores de potencia, velocidad, agarre, giro y suspensión | ✅ |
 | COC-02 | Clase, motor (eléctrico/nitro), tracción y peso por coche, visibles en el garaje (peso en kg = masa × 0,2) | ✅ |
 | COC-03 | Motor nitro con sonido distinto (más grave y rasposo) | ✅ |
+| COC-04 | 3 coches nuevos: **Saeta** (turismo nitro Pro), **Morsa** (camión eléctrico pesado Avanzado), **Grillo** (buggy semi-pro de giro rápido) | 🚧 |
+| COC-05 | **Coche secreto «Cometa»** (estilo cohete): se regala al conseguir todas las estrellas ocultas | 🚧 |
 
 ## Modelos 3D (hechos por código)
 
