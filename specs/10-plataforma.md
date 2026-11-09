@@ -31,6 +31,7 @@
 | PLA-02 | Web en GitHub Pages (fuente "GitHub Actions"): https://zeroping7.github.io/Re-Back/ | ✅ |
 | PLA-03 | APK: https://zeroping7.github.io/Re-Back/re-back.apk y en Releases (`v1.0.N`) | ✅ |
 | PLA-04 | Firma fija para actualizar sin desinstalar | ✅ |
+| PLA-05 | **Icono** original: buggy Rayo rojo saltando sobre rayos naranjas con el título "RE-BACK" en amarillo; adaptativo (fondo y primer plano en `mipmap-*`, contenido dentro de la zona segura para máscaras redonda y cuadrada), `ic_launcher`, `ic_launcher_round` y `public/icon.png` (1024 px, favicon de la web) | ✅ |
 
 ## Rendimiento
 

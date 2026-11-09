@@ -40,7 +40,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Sonido y música sintetizados por código (`src/audio.js`).
 
 ### Fase 5 — APK final ✅
-- Icono propio (adaptativo), pantalla de carga, nombre "Re-Back", versión 1.0.N, horizontal, pantalla completa.
+- Icono propio (adaptativo; desde nov. 2026 el buggy rojo saltando sobre rayos naranjas, PLA-05), pantalla de carga, nombre "Re-Back", versión 1.0.N, horizontal, pantalla completa.
 - Firma fija (debug) para actualizar sin desinstalar. Cada push publica web + APK.
 
 ### Cambios tras probar en el móvil
