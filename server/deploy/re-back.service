@@ -1,0 +1,14 @@
+[Unit]
+Description=Re-Back servidor online
+After=network.target
+
+[Service]
+WorkingDirectory=/home/ubuntu/re-back-server
+ExecStart=/usr/bin/node index.js
+Environment=PORT=2567 NODE_ENV=production
+Restart=always
+RestartSec=2
+User=ubuntu
+
+[Install]
+WantedBy=multi-user.target

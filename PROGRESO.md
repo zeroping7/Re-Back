@@ -157,3 +157,12 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Arena de batalla: looping de juguete, subida suelo → silla → mesa → bajada, caja central sin plataformas sueltas.
 - Ya no se recoloca el coche al chocar con esquinas.
 - Cohetes: siempre a un rival de delante, explotan en paredes y no dañan a quien los lanza.
+
+### Online hasta 10 jugadores (en curso) 🚧
+- Servidor propio en Oracle Cloud Always Free (Madrid): `server/` (Node + `ws`) con salas por código de 4 letras,
+  máx. 10, anfitrión, salida sincronizada, eventos e instantáneas binarias a 20 Hz.
+- Cliente `src/net.js`: reloj sincronizado, envío de estado (52 B) e interpolación a 100 ms con extrapolación.
+- Prueba de carga `node server/test/load.mjs`: 10 jugadores, 19,8 instantáneas/s, 10,5 KB/s por jugador.
+- Despliegue automático (`.github/workflows/server.yml`) con Caddy y HTTPS (`wss://<ip>.sslip.io`).
+- Pendiente: crear la máquina en Oracle y los secrets `ORACLE_HOST` / `ORACLE_SSH_KEY`; menú Online (NET-07)
+  y carrera online (NET-08).

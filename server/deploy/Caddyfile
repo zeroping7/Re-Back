@@ -1,0 +1,4 @@
+# HTTPS automático (Let's Encrypt). wss://{DOMAIN} -> servidor Node local
+{DOMAIN} {
+	reverse_proxy 127.0.0.1:2567
+}

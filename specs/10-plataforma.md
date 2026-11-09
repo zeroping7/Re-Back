@@ -20,6 +20,8 @@
 | `src/hud.js`, `src/controls.js`, `src/audio.js`, `src/profile.js`, `src/tuning.js`, `src/textures.js` | Marcador, controles, sonido, partida, ajustes, texturas |
 | `specs/` | Especificaciones (fuente de verdad) |
 | `tests/` | Simulación sin gráficos y capturas en Chrome headless |
+| `server/` | Servidor online (Node + ws), despliegue en Oracle Cloud (`deploy/`) y prueba de carga (`test/load.mjs`) |
+| `src/net.js` | Cliente online: salas, envío de estado, reloj sincronizado e interpolación |
 
 ## Publicación
 
@@ -50,3 +52,21 @@
 - `tests/menu.mjs`, `tests/garage.mjs`, `tests/shop.mjs`, `tests/damage.mjs`: menús, garaje, compra, daños.
 - `node tests/layout.mjs '<puntos>' 7 <nombre> '[x,z]'`: radios y separación de un trazado.
 - Parámetros de depuración: `?test=1&track=…&car=…&rivals=…&laps=…&diff=…&auto=1&practice=1&cam=top|close&camMode=normal|far|bumper&cup=bronce&cupIdx=0&screen=m-cups`.
+
+## Multijugador online (hasta 10 jugadores)
+
+Decisión: servidor propio gratis en **Oracle Cloud Always Free** (región Madrid, Ampere A1 2 OCPU / 12 GB,
+10 TB/mes de salida). Node + `ws` (WebSocket) detrás de **Caddy** con HTTPS automático (`wss://<ip>.sslip.io`).
+Cada móvil simula su propio coche y envía su estado; el servidor reparte instantáneas y decide lo que
+afecta a varios (salida, objetos, meta). Los coches remotos se pintan **interpolados ~100 ms** por detrás.
+
+| ID | Requisito | Criterio de aceptación | Estado |
+|---|---|---|---|
+| NET-01 | Servidor `server/` con salas por código de 4 letras, máx. 10 jugadores, anfitrión = primero (pasa al siguiente si se va) | `node server/test/load.mjs` crea una sala de 10 | ✅ |
+| NET-02 | Estado del coche binario (≈50 B) a 20 Hz; el servidor envía instantáneas a 20 Hz con todos los coches | En la prueba de carga: ≥18 instantáneas/s por cliente y < 15 KB/s de bajada por jugador | ✅ |
+| NET-03 | Reloj sincronizado (ping/pong) y salida simultánea (`start` con hora del servidor + 3 s) | Desfase de reloj medido < 5 ms en local | ✅ |
+| NET-04 | Eventos (objetos, impactos, meta) reenviados al resto con autor | La prueba de carga recibe los eventos de otros | ✅ |
+| NET-05 | Cliente `src/net.js` (conexión, salas, envío de estado, búfer de interpolación) usable en navegador y Node | La prueba de carga usa `src/net.js` | ✅ |
+| NET-06 | Despliegue automático: push en `server/**` → GitHub Actions copia y reinicia el servidor por SSH (secrets `ORACLE_HOST`, `ORACLE_SSH_KEY`) | Workflow `server.yml` en verde | 🚧 |
+| NET-07 | Menú "Online": crear/unirse con código, lista de jugadores, el anfitrión elige circuito y vueltas | — | 📝 |
+| NET-08 | Carrera online: coches remotos interpolados, objetos y posiciones sincronizados | — | 📝 |

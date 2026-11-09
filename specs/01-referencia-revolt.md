@@ -23,7 +23,7 @@ Solo se toman **ideas de diseño**; todo el contenido es original (ver [00-visio
 | REF-16 | Decorado limpio: el escenario marca el circuito, sin exceso de objetos | Bordes bajos y sobrios, menos objetos sueltos | ✅ |
 | REF-17 | Contrarreloj contra tu mejor vuelta | Contrarreloj con récords | ✅ (fantasma 📝) |
 | REF-18 | Editor de circuitos | Pendiente para más adelante: editor sencillo desde el móvil | 📝 |
-| REF-19 | Multijugador | Pendiente para más adelante: primero pantalla partida con dos mandos, luego online | 📝 |
+| REF-19 | Multijugador | Online hasta 10 jugadores con servidor propio (ver NET-* en 10-plataforma.md); pantalla partida más adelante | 🚧 |
 
 ## Checklist de "sensación Re-Volt" para revisar en cada cambio
 

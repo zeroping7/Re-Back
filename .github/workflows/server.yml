@@ -1,0 +1,54 @@
+name: Servidor online
+
+on:
+  push:
+    branches: [main]
+    paths: ['server/**', 'src/net.js', '.github/workflows/server.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: server
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Prueba de carga (10 jugadores)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm install --prefix server
+      - run: node server/test/load.mjs
+
+  deploy:
+    name: Desplegar en Oracle Cloud
+    needs: test
+    runs-on: ubuntu-24.04
+    env:
+      HOST: ${{ secrets.ORACLE_HOST }}
+      KEY: ${{ secrets.ORACLE_SSH_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Comprobar secrets
+        id: chk
+        run: |
+          if [ -z "$HOST" ] || [ -z "$KEY" ]; then
+            echo "::warning::Faltan los secrets ORACLE_HOST / ORACLE_SSH_KEY: no se despliega"
+            echo "ok=0" >> "$GITHUB_OUTPUT"
+          else echo "ok=1" >> "$GITHUB_OUTPUT"; fi
+      - name: Copiar y reiniciar
+        if: steps.chk.outputs.ok == '1'
+        run: |
+          mkdir -p ~/.ssh && printf '%s\n' "$KEY" > ~/.ssh/id && chmod 600 ~/.ssh/id
+          SSH="ssh -i ~/.ssh/id -o StrictHostKeyChecking=accept-new ubuntu@$HOST"
+          DOMAIN="$(echo "$HOST" | tr . -).sslip.io"
+          tar czf /tmp/srv.tgz --exclude=node_modules -C server .
+          scp -i ~/.ssh/id -o StrictHostKeyChecking=accept-new /tmp/srv.tgz ubuntu@$HOST:/tmp/srv.tgz
+          $SSH "mkdir -p ~/re-back-server && tar xzf /tmp/srv.tgz -C ~/re-back-server \
+            && DOMAIN=$DOMAIN bash ~/re-back-server/deploy/setup.sh \
+            && cd ~/re-back-server && npm install --omit=dev --no-audit --no-fund \
+            && sudo systemctl restart re-back && sleep 2 && curl -fsS localhost:2567/health"
+          echo "Servidor: wss://$DOMAIN"
+          curl -fsS --retry 10 --retry-delay 6 --retry-all-errors "https://$DOMAIN/health"

@@ -1,0 +1,8 @@
+{
+  "name": "re-back-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node index.js", "test": "node test/load.mjs" },
+  "dependencies": { "ws": "^8.18.0" }
+}
