@@ -31,9 +31,9 @@
 
 | ID | Requisito | Estado |
 |---|---|---|
-| CIR-20 | **Museo de noche**: suelo de mármol pulido muy brillante, vitrinas, columnas, esqueleto de dinosaurio low-poly, luces de vitrina y foco de vigilante | 🚧 |
-| CIR-21 | **El muelle**: tablones de madera sobre el agua al atardecer, cajas, barcas, cuerdas, gaviotas y charcos | 🚧 |
-| CIR-22 | **Parque infantil**: arena (derrapa), suelo de caucho, tobogán-rampa, columpios, balancín y arenero | 🚧 |
+| CIR-20 | **Museo de noche**: suelo de mármol pulido muy brillante, vitrinas, columnas, esqueleto de dinosaurio low-poly, luces de vitrina y foco de vigilante | ✅ |
+| CIR-21 | **El muelle**: tablones de madera sobre el agua al atardecer, cajas, barcas, cuerdas, gaviotas y charcos | ✅ |
+| CIR-22 | **Parque infantil**: arena (derrapa), suelo de caucho, tobogán-rampa, columpios, balancín y arenero | ✅ |
 | CIR-23 | **Pistas al revés y en espejo**: se generan solas desde cada circuito (mismo decorado; rampas y cuestas giradas para el nuevo sentido; espejo invierte mundo y físicas) | ✅ |
 
 ## Ideas futuras

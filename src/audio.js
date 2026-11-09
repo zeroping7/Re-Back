@@ -261,6 +261,21 @@ export class Sfx {
       loopNoise('bandpass', 5200, 8, 0.006); // fluorescentes
       ev(() => [784, 659, 523].forEach((f, i) => blip(f, 0.7, { type: 'sine', vol: 0.05, delay: i * 0.35 })), 18, 34); // megafonía
       ev(() => { for (let k = 0; k < 3; k++) click(1800 + Math.random() * 600, 0.04); }, 6, 14); // carritos lejanos
+    } else if (kind === 'museo') {
+      loopNoise('lowpass', 160, 0.5, 0.04); // sala grande y vacía
+      hum(60, 0.012);
+      ev(() => { for (let k = 0; k < 2; k++) click(900 + Math.random() * 200, 0.08); }, 5, 11); // pasos del vigilante a lo lejos
+      ev(() => blip(196, 1.6, { type: 'triangle', vol: 0.02, slide: 0.98 }), 16, 30); // eco misterioso
+    } else if (kind === 'muelle') {
+      const w = loopNoise('lowpass', 420, 0.4, 0.07); // olas
+      this.ambTimers.push(setInterval(() => { const t = ctx.currentTime; w.g.gain.setTargetAtTime(0.03 + Math.random() * 0.07, t, 1.2); }, 2200));
+      ev(() => { const b = 1500 + Math.random() * 500; blip(b, 0.25, { type: 'sawtooth', vol: 0.02, slide: 0.7 }); blip(b * 0.9, 0.3, { type: 'sawtooth', vol: 0.018, slide: 0.65, delay: 0.3 }); }, 4, 10); // gaviotas
+      ev(() => { for (let k = 0; k < 3; k++) click(300 + Math.random() * 100, 0.05); }, 8, 16); // madera crujiendo
+    } else if (kind === 'parque') {
+      loopNoise('bandpass', 600, 0.6, 0.025); // brisa
+      ev(() => { const n = 2 + Math.floor(Math.random() * 3); for (let k = 0; k < n; k++) blip(700 + Math.random() * 500, 0.18, { type: 'triangle', vol: 0.012, slide: 1.2, delay: k * 0.2 }); }, 5, 12); // niños jugando a lo lejos
+      ev(() => { blip(420, 0.5, { type: 'sine', vol: 0.012, slide: 0.8 }); }, 7, 13); // columpio que chirría
+      ev(() => { const base = 2600 + Math.random() * 1800; for (let k = 0; k < 3; k++) blip(base, 0.08, { vol: 0.025, slide: 1.4, delay: k * 0.12 }); }, 3, 8); // pájaros
     } else {
       const w = loopNoise('bandpass', 500, 0.6, 0.05); // viento
       this.ambTimers.push(setInterval(() => {

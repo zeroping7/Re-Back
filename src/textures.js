@@ -281,6 +281,42 @@ export function groundTex(kind, repeat = [1, 1]) {
         h.fillStyle = gr; h.beginPath(); h.arc(x, y, rad, 0, 7); h.fill();
       }
     }, repeat, 3);
+    case 'marble': return pair(512, (g, h, S) => {
+      // losas de mármol pulido con vetas
+      const n = 2, s = S / n;
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+        const dark = (i + j) % 2;
+        g.fillStyle = dark ? '#cbc3b4' : '#ebe7df'; g.fillRect(i * s, j * s, s, s);
+        for (let k = 0; k < 14; k++) {
+          g.strokeStyle = dark ? `rgba(220,220,230,${0.08 + r() * 0.12})` : `rgba(90,90,100,${0.06 + r() * 0.12})`;
+          g.lineWidth = 0.6 + r() * 2.2;
+          g.beginPath(); let x = i * s + r() * s, y = j * s;
+          g.moveTo(x, y);
+          for (let q = 0; q < 6; q++) { x += (r() - 0.4) * 50; y += s / 6; g.lineTo(x, y); }
+          g.stroke();
+        }
+      }
+      g.fillStyle = '#9a8f78'; h.fillStyle = '#404040';
+      for (let i = 0; i <= n; i++) { g.fillRect(i * s - 1.5, 0, 3, S); g.fillRect(0, i * s - 1.5, S, 3); h.fillRect(i * s - 2, 0, 4, S); h.fillRect(0, i * s - 2, S, 4); }
+    }, repeat, 2);
+    case 'sand': return pair(512, (g, h, S) => {
+      g.fillStyle = '#e2c48c'; g.fillRect(0, 0, S, S);
+      for (let k = 0; k < 40; k++) { g.fillStyle = `hsla(${38 + r() * 8},${45 + r() * 20}%,${62 + r() * 16}%,0.35)`; g.beginPath(); g.ellipse(r() * S, r() * S, 30 + r() * 80, 20 + r() * 50, r() * 3, 0, 7); g.fill(); }
+      for (let k = 0; k < 14000; k++) { const l = 55 + r() * 35; g.fillStyle = `hsl(${35 + r() * 12}, 40%, ${l}%)`; g.fillRect(r() * S, r() * S, 1.2, 1.2); }
+      // ondas del viento y huellas
+      for (let k = 0; k < 22; k++) { const y = r() * S; h.strokeStyle = '#a0a0a0'; h.lineWidth = 6; h.beginPath(); h.moveTo(0, y); for (let x = 0; x <= S; x += 32) h.lineTo(x, y + Math.sin(x * 0.03 + k) * 8); h.stroke(); }
+    }, repeat, 2);
+    case 'rubber': return pair(256, (g, h, S) => {
+      // losetas de caucho de parque infantil
+      const cols = ['#d84343', '#3f7fd8', '#3fae5a', '#e6a52b'];
+      const n = 2, s = S / n;
+      for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
+        g.fillStyle = cols[(i * 2 + j + (i ^ j)) % 4]; g.fillRect(i * s, j * s, s, s);
+        for (let k = 0; k < 900; k++) { g.fillStyle = `rgba(0,0,0,${r() * 0.18})`; g.fillRect(i * s + r() * s, j * s + r() * s, 1.5, 1.5); h.fillStyle = r() > 0.5 ? '#909090' : '#707070'; h.fillRect(i * s + r() * s, j * s + r() * s, 2, 2); }
+      }
+      g.fillStyle = '#222'; h.fillStyle = '#404040';
+      for (let i = 0; i <= n; i++) { g.fillRect(i * s - 1, 0, 2, S); g.fillRect(0, i * s - 1, S, 2); h.fillRect(i * s - 2, 0, 4, S); h.fillRect(0, i * s - 2, S, 4); }
+    }, repeat, 2);
     case 'cardboard': return pair(256, (g, h, S) => {
       g.fillStyle = '#c69c62'; g.fillRect(0, 0, S, S);
       for (let i = 0; i < S; i += 8) { g.fillStyle = i % 16 ? '#bf9358' : '#cda46b'; g.fillRect(0, i, S, 4); h.fillStyle = i % 16 ? '#909090' : '#707070'; h.fillRect(0, i, S, 4); }
@@ -400,6 +436,17 @@ function buildSurface(kind) {
       const a = (0.26 + sw * 0.42 + (n1(u, v, 4, 3) - 0.5) * 0.25) * edge(u, n3(u * 0.3, v, 3, 5), 0.06);
       return [a * 255, a * 255, a * 255];
     });
+  } else if (kind === 'sand') {
+    // arenero: arena suelta con montoncitos y huellas
+    col = px(S, (u, v) => {
+      const a = n1(u, v, 4, 4), c = n3(u, v, 2, 26);
+      H[Math.floor(v * S) * S + Math.floor(u * S)] = 0.5 + (a - 0.5) * 0.8 + (c - 0.5) * 0.2;
+      const k = mixc([214, 182, 128], [236, 212, 160], a);
+      const j = (c - 0.5) * 30;
+      return [k[0] + j, k[1] + j, k[2] + j * 0.8];
+    });
+    rough = px(S, () => [0, 0.95 * 255, 0]);
+    alpha = px(S, (u, v) => { const e = edge(u, n2(u * 0.3, v, 3, 6), 0.08); return [e * 255, e * 255, e * 255]; });
   } else if (kind === 'water') {
     // agua: fondo oscuro con reflejos; el brillo lo pone el mapa de entorno
     col = px(S, (u, v) => { H[Math.floor(v * S) * S + Math.floor(u * S)] = n1(u, v, 4, 6) * 0.8 + n2(u, v, 3, 14) * 0.2; return mixc([28, 62, 82], [52, 98, 118], n2(u, v, 3, 3)); });
@@ -411,7 +458,7 @@ function buildSurface(kind) {
   const hg = hc.getContext('2d'), img = hg.createImageData(S, S);
   for (let i = 0; i < S * S; i++) { const v = clamp01(H[i]) * 255; img.data.set([v, v, v, 255], i * 4); }
   hg.putImageData(img, 0, 0);
-  const strength = { mud: 6, wet: 1.5, wax: 0.5, water: 4 }[kind];
+  const strength = { mud: 6, wet: 1.5, wax: 0.5, water: 4, sand: 5 }[kind];
   return {
     map: { canvas: col, srgb: true }, normalMap: { canvas: normalFromHeight(hc, strength) },
     roughnessMap: { canvas: rough }, alphaMap: { canvas: alpha },

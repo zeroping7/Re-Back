@@ -1,8 +1,11 @@
 import salon from './salon.js';
 import superm from './super.js';
 import jardin from './jardin.js';
+import museo from './museo.js';
+import muelle from './muelle.js';
+import parque from './parque.js';
 
-export const TRACKS = [salon, superm, jardin];
+export const TRACKS = [salon, superm, jardin, museo, muelle, parque];
 export const trackById = (id) => TRACKS.find((t) => t.id === id) || TRACKS[0];
 
 // Variantes (CIR-23 / UX-13): mismo circuito al revés o en espejo. Clave: 'salon', 'salon:rev', 'salon:mirror'

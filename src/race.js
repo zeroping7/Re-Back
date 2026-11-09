@@ -326,7 +326,7 @@ export class Race {
       E.ripples.emit(p.x, y, p.z, { r0: 0.6, r1: 5.5, life: 1.4, alpha: 0.6 });
       E.ripples.emit(p.x, y, p.z, { r0: 0.3, r1: 3.5, life: 1.1, alpha: 0.5 });
     }
-    if (surf === 'mud' && car.speed > 6) {
+    if ((surf === 'mud' || surf === 'sand') && car.speed > 6) {
       this.sound('splash', car.currPos);
       if (car.isPlayer) this.trauma = Math.min(1, this.trauma + 0.08);
     }
@@ -349,16 +349,17 @@ export class Race {
       const w = car.wheelState[i], rear = i >= 2, sgn = i % 2 ? -1 : 1;
       if (!w.contact) continue;
       const P = w.point;
-      if (s === 'mud') {
-        // grumos lanzados por las ruedas (más si patinan) y algo de vaho marrón
+      if (s === 'mud' || s === 'sand') {
+        // grumos lanzados por las ruedas (más si patinan) y algo de vaho marrón (o polvo de arena)
+        const COL = s === 'sand' ? SAND : MUD;
         const rate = (rear ? 0.55 : 0.2) * Math.min(1, sp / 14 + Math.max(0, w.slip - 2) / 6) * many;
         if (Math.random() < rate) {
           const k = Math.random();
           E.chunks.emit(P.x, P.y + 0.15, P.z, -f.x * sp * 0.35 + side.x * sgn * rnd(3) + rnd(1.5), 2.5 + Math.random() * 4.5, -f.z * sp * 0.35 + side.z * sgn * rnd(3) + rnd(1.5),
-            { life: 0.6 + Math.random() * 0.5, size: 0.12 + k * 0.2, size1: 0.1 + k * 0.15, alpha: 1, color: MUD[Math.floor(Math.random() * 3)], grav: 28, drag: 0.4 });
+            { life: 0.6 + Math.random() * 0.5, size: (0.12 + k * 0.2) * (s === 'sand' ? 0.6 : 1), size1: 0.1 + k * 0.15, alpha: 1, color: COL[Math.floor(Math.random() * 3)], grav: 28, drag: 0.4 });
         }
         if (rear && sp > 8 && Math.random() < 0.15 * many) {
-          E.smoke.emit(P.x, P.y + 0.2, P.z, -f.x * 2 + rnd(1), 0.6, -f.z * 2 + rnd(1), { life: 0.7, size: 0.5, size1: 1.8, alpha: 0.22, color: [0.38, 0.28, 0.18], drag: 2 });
+          E.smoke.emit(P.x, P.y + 0.2, P.z, -f.x * 2 + rnd(1), 0.6, -f.z * 2 + rnd(1), { life: 0.7, size: 0.5, size1: s === 'sand' ? 2.6 : 1.8, alpha: s === 'sand' ? 0.3 : 0.22, color: s === 'sand' ? [0.85, 0.75, 0.55] : [0.38, 0.28, 0.18], drag: 2 });
         }
       } else if (s === 'water') {
         // abanico de agua a los lados de cada rueda, gotas y ondas
@@ -834,10 +835,12 @@ const _Y = new THREE.Vector3(0, 1, 0);
 const WATER_DROP = [[0.78, 0.9, 1], [0.6, 0.8, 0.95], [0.9, 0.96, 1]];
 const MUD = [[0.22, 0.14, 0.08], [0.3, 0.2, 0.12], [0.17, 0.11, 0.06]];
 const WAX_MARK = [0.75, 0.72, 0.62];
+const SAND = [[0.86, 0.74, 0.52], [0.78, 0.66, 0.45], [0.92, 0.82, 0.62]];
 const TRAILS = {
   mud: { color: [0.2, 0.13, 0.07], a: 0.6, time: 2.6 },
   water: { color: [0.05, 0.07, 0.09], a: 0.34, time: 2.2 },
   wet: { color: [0.06, 0.08, 0.1], a: 0.22, time: 1.6 },
+  sand: { color: [0.72, 0.6, 0.4], a: 0.4, time: 1.4 },
 };
 
 export function fmtTime(t) {
