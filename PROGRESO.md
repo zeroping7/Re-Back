@@ -13,6 +13,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Coche con controlador de vehículo por rayos de Rapier: suspensión real, 4x4 con reparto trasero,
   freno, marcha atrás, derrape (freno + giro), control en el aire, antivuelco, carga aerodinámica.
 - Ajuste por defecto elegido por el usuario: tracción trasera 90 %, freno 10, giro máx. 0,3.
+- Dirección más progresiva (menos brusca) y giro extra a baja velocidad para maniobrar en parado (FIS-24, FIS-25).
 - Valores de conducción fijos (el panel ⚙ de ajustes se quitó para evitar trampas; los ajustes guardados se borran).
 
 ### Fase 2 — Rivales y vueltas ✅

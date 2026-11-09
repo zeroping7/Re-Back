@@ -25,6 +25,7 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 19 | Online fluido, gratis y para 8-10 jugadores | Servidor propio en Oracle Cloud Always Free (Madrid) con WebSocket + Caddy; NET-01..08 |
 | 20 | Mejorar el sonido de todos los motores y quitar los ajustes de conducción (velocidad, etc.) para evitar trampas | AUD-10, AUD-11; panel ⚙ eliminado (02-fisicas, 07-ui-ux) |
 | 21 | Icono nuevo de la app (propuesta A: buggy rojo saltando sobre rayos naranjas, título amarillo), original | PLA-05 |
+| 22 | Dirección demasiado sensible/brusca en todos los coches; que gire más porque en parado cuesta maniobrar | FIS-24 (giro ×1,6 en parado), FIS-25 (entrada de dirección más progresiva) |
 
 ## Preferencias del usuario
 

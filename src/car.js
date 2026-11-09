@@ -126,7 +126,9 @@ export class Car {
 
     // --- Dirección (más suave a alta velocidad) ---
     const pull = (1 - this.health / 100) * 0.12 * this.pullDir;
-    const target = THREE.MathUtils.clamp(input.steer + (Math.abs(fwd) > 3 ? pull : 0), -1, 1) * t.steerMax / (1 + Math.abs(fwd) * t.steerFalloff);
+    // FIS-24: giro extra a baja velocidad (maniobrar en parado), se desvanece a 6 u/s
+    const lowBoost = 1 + (t.steerLow || 0) * Math.max(0, 1 - Math.abs(fwd) / 6);
+    const target = THREE.MathUtils.clamp(input.steer + (Math.abs(fwd) > 3 ? pull : 0), -1, 1) * t.steerMax * lowBoost / (1 + Math.abs(fwd) * t.steerFalloff);
     const ds = t.steerSpeed * dt * (Math.sign(target - this.steer) !== Math.sign(this.steer) ? 1.6 : 1);
     this.steer += THREE.MathUtils.clamp(target - this.steer, -ds, ds);
     veh.setWheelSteering(0, this.steer);

@@ -49,6 +49,8 @@ Si cambian los valores por defecto se sube la clave de guardado para que se apli
 | FIS-21 | Zonas de derrape (encerado, fregado, barro, arena): agarre delantero ×0,88 y trasero ×0,74 y giro sobre sí mismo limitado (2 rad/s): resbala pero se controla | ✅ |
 | FIS-22 | Charco: frena con resistencia del agua (empuje contra la marcha), no con freno de ruedas (evita trompos) | ✅ |
 | FIS-23 | Parado, **freno + giro no arranca** el coche (solo frena); la marcha atrás se mete con el freno solo y, ya yendo hacia atrás, se puede girar. La IA puede salir de atascos igual que antes | ✅ |
+| FIS-24 | **Giro extra a baja velocidad**: en parado el ángulo de giro es ×1,6 y baja de forma lineal hasta ×1 a 6 u/s, para maniobrar mejor. Criterio: el radio de giro en parado es claramente menor y a velocidad de carrera no cambia | ✅ |
+| FIS-25 | **Dirección menos brusca** (todos los coches): los botones tardan ~0,24 s en llegar al giro completo (antes 0,14 s); inclinación con ±32º y curva suave en el centro; mando con curva más suave. Criterio: toques cortos corrigen poco, mantener pulsado sigue dando el giro completo | ✅ |
 | FIS-22 | Placas de turbo: empujón de 0,8 s | ✅ |
 | FIS-23 | Charco: frena (velocidad máx. ×0,7) y salpica | ✅ |
 

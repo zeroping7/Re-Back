@@ -57,7 +57,7 @@ export class PadInput {
     if (ctx.racing) {
       this.clearFocus();
       // volante: stick con curva suave, o cruceta
-      let steer = Math.abs(ax) < DEAD ? 0 : Math.sign(ax) * ((Math.abs(ax) - DEAD) / (1 - DEAD)) ** 1.4;
+      let steer = Math.abs(ax) < DEAD ? 0 : Math.sign(ax) * ((Math.abs(ax) - DEAD) / (1 - DEAD)) ** 1.7;
       if (now[B.LEFT]) steer = -1;
       if (now[B.RIGHT]) steer = 1;
       const gas = Math.max(val(B.RT), now[B.A] ? 1 : 0);

@@ -96,12 +96,14 @@ export class Controls {
 
     let steer;
     if (this.mode === 'tilt' && !left && !right) {
-      const v = -this.tilt / 28; // ±28º = giro completo
-      steer = Math.max(-1, Math.min(1, Math.abs(v) < 0.05 ? 0 : v));
+      const v = Math.max(-1, Math.min(1, -this.tilt / 32)); // ±32º = giro completo
+      // FIS-25: curva suave cerca del centro (menos brusco)
+      steer = Math.abs(v) < 0.05 ? 0 : Math.sign(v) * Math.abs(v) ** 1.35;
     } else {
       const target = (left ? 1 : 0) - (right ? 1 : 0);
       // los botones digitales entran rápido pero no de golpe
-      const rate = target === 0 ? 10 : 7;
+      // FIS-25: entrada más progresiva (antes 7): ~0,24 s hasta giro completo
+      const rate = target === 0 ? 9 : 4.2;
       this.steerSmooth += Math.max(-rate * dt, Math.min(rate * dt, target - this.steerSmooth));
       steer = this.steerSmooth;
     }
