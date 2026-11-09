@@ -6,7 +6,7 @@ import { Car } from './car.js';
 import { CARS, carTuning, rivalPool } from './cars.js';
 import { AIDriver } from './ai.js';
 import { Items, haloTexture } from './items.js';
-import { Particles, SkidMarks } from './effects.js';
+import { Particles, SkidMarks, Ripples } from './effects.js';
 
 export const FIXED = 1 / 60;
 const RIVAL_COLORS = ['#ff7a00', '#00b8a9', '#ff4f9a', '#7cb342', '#5c6bc0', '#fdd835', '#8d6e63'];
@@ -49,6 +49,8 @@ export class Race {
       sparks: new Particles(scene, 400, { additive: true, soft: 0.6 }),
       fire: new Particles(scene, 300, { additive: true, soft: 1 }),
       skids: new SkidMarks(scene, 2400),
+      chunks: new Particles(scene, 600, { soft: 0.12 }), // barro y gotas (bordes duros)
+      ripples: new Ripples(scene),
     };
     this.flashLight = new THREE.PointLight('#ffb050', 0, 30, 1.5);
     scene.add(this.flashLight);
@@ -151,7 +153,7 @@ export class Race {
     this.T.update?.(this.clock);
     this.items.update(dt);
     if (this.star) this.updateStar(dt);
-    this.effects.smoke.update(dt); this.effects.sparks.update(dt); this.effects.fire.update(dt);
+    this.effects.smoke.update(dt); this.effects.sparks.update(dt); this.effects.fire.update(dt); this.effects.chunks.update(dt); this.effects.ripples.update(dt);
     this.flashLight.intensity = Math.max(0, this.flashLight.intensity - dt * 1500);
   }
 
@@ -237,8 +239,9 @@ export class Race {
 
   zoneEffects(car) {
     const idx = this.state(car).idx, c = this.circuit;
+    let surf = null;
+    if (car.contacts === 0) return; // en el aire se conserva la superficie (no repite salpicaduras en baches)
     for (const z of this.T.zones || []) {
-      if (car.contacts === 0) continue;
       if (z.from !== undefined) {
         const inside = z.from <= z.to ? idx >= z.from && idx <= z.to : idx >= z.from || idx <= z.to;
         if (!inside) continue;
@@ -250,24 +253,100 @@ export class Race {
           car.fx.boost = Math.max(car.fx.boost, 0.8);
         } else if (z.effect === 'slide') {
           car.fx.slide = 0.2;
-          if (z.particles && car.speed > 6 && Math.random() < 0.5) {
-            const w = car.wheelState[2 + (Math.random() < 0.5 ? 0 : 1)];
-            this.effects.smoke.emit(w.point.x, w.point.y + 0.2, w.point.z, rnd(2), 1 + Math.random() * 3, rnd(2),
-              { life: 0.6, size: 0.4, size1: 1.2, alpha: 0.6, color: z.particles, grav: 12, drag: 1 });
-          }
+          if (z.surface) surf = z.surface;
         }
         continue;
       }
       if (Math.hypot(car.currPos.x - z.pos.x, car.currPos.z - z.pos.z) > z.r) continue;
       if (z.effect === 'wet') {
-        if (car.fx.wet < 0.2 && car.speed > 6) {
-          this.sound('splash', car.currPos);
-          for (let k = 0; k < 20; k++) {
-            this.effects.smoke.emit(car.currPos.x, 0.3, car.currPos.z, rnd(5), 3 + Math.random() * 6, rnd(5),
-              { life: 0.6, size: 0.3, size1: 0.7, alpha: 0.8, color: [0.45, 0.7, 0.95], grav: 25, drag: 0.5 });
+        surf = z.surface || 'water';
+        car.waterY = z.pos.y + 0.07 * this.S;
+        car.fx.wet = Math.max(car.fx.wet, 0.8);
+      }
+    }
+    if (surf !== car.surface) this.enterSurface(car, surf, car.surface);
+    car.surface = surf;
+  }
+
+  // ---------- Superficies: barro, agua, suelo mojado, cera ----------
+  enterSurface(car, surf, prev) {
+    if (surf === 'water' && car.speed > 4) {
+      // corona de salpicadura al entrar en el charco
+      const E = this.effects, p = car.currPos, y = car.waterY ?? p.y, sp = Math.min(1.6, car.speed / 14);
+      this.sound('splash', p);
+      if (car.isPlayer) this.trauma = Math.min(1, this.trauma + 0.18 * sp);
+      for (let k = 0; k < 46; k++) {
+        const a = Math.random() * 6.283, v = (3 + Math.random() * 5) * sp;
+        E.chunks.emit(p.x + Math.cos(a) * 0.6, y + 0.1, p.z + Math.sin(a) * 0.6, Math.cos(a) * v + car.velocity.x * 0.3, (5 + Math.random() * 7) * sp, Math.sin(a) * v + car.velocity.z * 0.3,
+          { life: 0.7 + Math.random() * 0.5, size: 0.1 + Math.random() * 0.14, size1: 0.06, alpha: 0.85, color: WATER_DROP[k % 3], grav: 26, drag: 0.6 });
+      }
+      for (let k = 0; k < 10; k++) {
+        E.smoke.emit(p.x + rnd(1), y + 0.3, p.z + rnd(1), rnd(3) * sp, 2 + Math.random() * 3, rnd(3) * sp,
+          { life: 0.8, size: 0.6, size1: 2.6, alpha: 0.32, color: [0.85, 0.93, 1], drag: 2.5, grav: 2 });
+      }
+      E.ripples.emit(p.x, y, p.z, { r0: 0.6, r1: 5.5, life: 1.4, alpha: 0.6 });
+      E.ripples.emit(p.x, y, p.z, { r0: 0.3, r1: 3.5, life: 1.1, alpha: 0.5 });
+    }
+    if (surf === 'mud' && car.speed > 6) {
+      this.sound('splash', car.currPos);
+      if (car.isPlayer) this.trauma = Math.min(1, this.trauma + 0.08);
+    }
+  }
+
+  surfaceEffects(car, near) {
+    const s = car.surface, E = this.effects, dt = FIXED;
+    // rastro de las ruedas al salir (barro o agua) — se usa en carEffects
+    const TR = TRAILS[s];
+    if (TR) car.trail = { ...TR, t: TR.time, max: TR.time };
+    else if (car.trail && (car.trail.t -= dt) <= 0) car.trail = null;
+    if (s === 'mud') car.dirt = Math.min(1, car.dirt + dt * (0.15 + car.speed / 60));
+    else if (s === 'water') car.dirt = Math.max(0, car.dirt - dt * 0.9);
+    else if (s === 'wet') car.dirt = Math.max(0, car.dirt - dt * 0.12);
+    else if (car.dirt > 0.25) car.dirt = Math.max(0.25, car.dirt - dt * 0.004); // el barro seco se queda un poco
+    if (!s || !near) return;
+    const many = car.isPlayer ? 1 : 0.45, v = car.velocity, f = car.forward, sp = car.speed;
+    const side = new THREE.Vector3(1, 0, 0).applyQuaternion(car.currQuat);
+    for (let i = 0; i < 4; i++) {
+      const w = car.wheelState[i], rear = i >= 2, sgn = i % 2 ? -1 : 1;
+      if (!w.contact) continue;
+      const P = w.point;
+      if (s === 'mud') {
+        // grumos lanzados por las ruedas (más si patinan) y algo de vaho marrón
+        const rate = (rear ? 0.55 : 0.2) * Math.min(1, sp / 14 + Math.max(0, w.slip - 2) / 6) * many;
+        if (Math.random() < rate) {
+          const k = Math.random();
+          E.chunks.emit(P.x, P.y + 0.15, P.z, -f.x * sp * 0.35 + side.x * sgn * rnd(3) + rnd(1.5), 2.5 + Math.random() * 4.5, -f.z * sp * 0.35 + side.z * sgn * rnd(3) + rnd(1.5),
+            { life: 0.6 + Math.random() * 0.5, size: 0.12 + k * 0.2, size1: 0.1 + k * 0.15, alpha: 1, color: MUD[Math.floor(Math.random() * 3)], grav: 28, drag: 0.4 });
+        }
+        if (rear && sp > 8 && Math.random() < 0.15 * many) {
+          E.smoke.emit(P.x, P.y + 0.2, P.z, -f.x * 2 + rnd(1), 0.6, -f.z * 2 + rnd(1), { life: 0.7, size: 0.5, size1: 1.8, alpha: 0.22, color: [0.38, 0.28, 0.18], drag: 2 });
+        }
+      } else if (s === 'water') {
+        // abanico de agua a los lados de cada rueda, gotas y ondas
+        const a = Math.min(1, sp / 12);
+        if (sp > 2 && Math.random() < 0.9 * a * many) {
+          for (let k = 0; k < 2; k++) {
+            E.chunks.emit(P.x, (car.waterY ?? P.y) + 0.05, P.z, side.x * sgn * (2 + Math.random() * 4) * a + v.x * 0.35 + rnd(1), (3 + Math.random() * 4) * a, side.z * sgn * (2 + Math.random() * 4) * a + v.z * 0.35 + rnd(1),
+              { life: 0.5 + Math.random() * 0.4, size: 0.07 + Math.random() * 0.1, size1: 0.04, alpha: 0.8, color: WATER_DROP[k], grav: 24, drag: 0.8 });
           }
         }
-        car.fx.wet = Math.max(car.fx.wet, 0.8);
+        if (rear && sp > 4 && Math.random() < 0.35 * many) {
+          E.smoke.emit(P.x, (car.waterY ?? P.y) + 0.2, P.z, -f.x * 2 + side.x * sgn * 2, 1.2, -f.z * 2 + side.z * sgn * 2, { life: 0.6, size: 0.4, size1: 1.8, alpha: 0.25, color: [0.85, 0.94, 1], drag: 2.5 });
+        }
+        if (Math.random() < (sp > 1 ? 0.12 : 0.02)) E.ripples.emit(P.x, car.waterY ?? P.y, P.z, { r0: 0.25, r1: 1.6 + sp * 0.08, life: 0.9, alpha: 0.45 });
+      } else if (s === 'wet') {
+        // estela de agua pulverizada detrás de las ruedas traseras
+        if (rear && sp > 6 && Math.random() < 0.6 * many) {
+          E.smoke.emit(P.x, P.y + 0.15, P.z, -f.x * sp * 0.15 + side.x * sgn * 0.8, 0.8 + Math.random(), -f.z * sp * 0.15 + side.z * sgn * 0.8,
+            { life: 0.55, size: 0.3, size1: 1.4 + sp * 0.03, alpha: 0.28, color: [0.82, 0.92, 1], drag: 3 });
+          if (Math.random() < 0.5) E.chunks.emit(P.x, P.y + 0.12, P.z, -f.x * sp * 0.25 + rnd(1.5), 1.5 + Math.random() * 2.5, -f.z * sp * 0.25 + rnd(1.5),
+            { life: 0.4, size: 0.06 + Math.random() * 0.06, size1: 0.03, alpha: 0.75, color: WATER_DROP[2], grav: 22, drag: 0.8 });
+        }
+      } else if (s === 'wax') {
+        // brillo del suelo encerado al patinar
+        if (Math.random() < Math.max(0, w.slip - 1.5) * 0.08 * many) {
+          E.sparks.emit(P.x + rnd(0.3), P.y + 0.12, P.z + rnd(0.3), rnd(1), 0.6 + Math.random(), rnd(1), { life: 0.35, size: 0.22, size1: 0.02, alpha: 0.7, color: [1, 0.97, 0.85], grav: 0 });
+        }
       }
     }
   }
@@ -381,7 +460,14 @@ export class Race {
       if (braking) mark = Math.max(mark, 0.35);
       if (launching) mark = Math.max(mark, 0.25);
       if (car.fx.oil > 0 && w.contact) mark = Math.max(mark, 0.4);
-      E.skids.add(car.index * 4 + i, w.point, side, near ? mark : 0);
+      const tr = car.trail;
+      let color, lift = car.surface && car.surface !== 'water' ? 0.11 : 0.01;
+      if (tr && w.contact) {
+        const k = tr.t / tr.max, m = tr.a * (0.25 + 0.75 * k) * (car.speed > 1.5 ? 1 : 0);
+        if (m > mark * 0.6) { mark = Math.max(mark, m); color = tr.color; }
+      }
+      if (car.surface === 'wax' && w.contact && w.slip > 2) { mark = Math.max(mark, 0.12); color = WAX_MARK; }
+      E.skids.add(car.index * 4 + i, w.point, side, near ? mark : 0, 0.28, color, lift);
       if (!near) continue;
       const amt = (w.contact ? Math.max(0, (w.slip - 4.5) / 8) : 0) + (launching ? 0.35 : 0) + (car.drifting && rear && w.contact ? 0.4 : 0);
       if (amt > 0 && Math.random() < amt * (car.isPlayer ? 1 : 0.5)) {
@@ -390,10 +476,12 @@ export class Race {
           life: 0.9 + Math.random() * 0.7, size: 0.7, size1: 3 + Math.random() * 1.5, alpha: 0.35, color: [0.9, 0.9, 0.92], drag: 2,
         });
       }
-      if (car.fx.wet > 0 && Math.random() < 0.3) {
-        E.smoke.emit(w.point.x, w.point.y + 0.2, w.point.z, rnd(1.5), 2 + Math.random() * 2, rnd(1.5), { life: 0.4, size: 0.25, size1: 0.4, alpha: 0.7, color: [0.5, 0.78, 1], grav: 20 });
+      // gotas que caen del coche después de mojarse
+      if (car.fx.wet > 0 && car.surface !== 'water' && Math.random() < 0.08) {
+        E.chunks.emit(w.point.x, w.point.y + 0.3, w.point.z, car.velocity.x * 0.6, 0, car.velocity.z * 0.6, { life: 0.4, size: 0.06, size1: 0.04, alpha: 0.7, color: WATER_DROP[1], grav: 20 });
       }
     }
+    this.surfaceEffects(car, near);
     // humo (y algo de fuego) si el coche está muy tocado
     if (near && car.health < 55 && Math.random() < (55 - car.health) / 80) {
       const top = car.currPos.clone().addScaledVector(car.forward, -0.3); top.y += 0.5;
@@ -504,6 +592,10 @@ export class Race {
       cam.position.set(0, Math.max(b.x, b.z) * 2.3, 0.01); cam.lookAt(0, 0, 0); cam.fov = 50; cam.updateProjectionMatrix();
       return;
     }
+    if (this.debugCam && typeof this.debugCam === 'object') { // cámara fija para pruebas
+      cam.position.set(...this.debugCam.pos); cam.lookAt(...this.debugCam.look); cam.fov = 55; cam.updateProjectionMatrix();
+      return;
+    }
     if (this.debugCam === 'preview') { // foto de la tarjeta del circuito (tests/previews.mjs)
       const b = this.bounds, m = Math.max(b.x, b.z), o = this.previewCam || {};
       cam.position.set(b.x * (o.x ?? 0.15), m * (o.y ?? 0.95), b.z * (o.z ?? 1.25));
@@ -584,7 +676,7 @@ export class Race {
 
   resize(w, h, pr) {
     this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
-    for (const k of ['smoke', 'sparks', 'fire']) this.effects[k].setViewport(h * pr);
+    for (const k of ['smoke', 'sparks', 'fire', 'chunks']) this.effects[k].setViewport(h * pr);
   }
 
   applyTuning(base) {
@@ -617,6 +709,15 @@ export class Race {
 function baseTuningDefaults(base) {
   return { ...base, camDist: base.camDist, camHeight: base.camHeight };
 }
+
+const WATER_DROP = [[0.78, 0.9, 1], [0.6, 0.8, 0.95], [0.9, 0.96, 1]];
+const MUD = [[0.22, 0.14, 0.08], [0.3, 0.2, 0.12], [0.17, 0.11, 0.06]];
+const WAX_MARK = [0.75, 0.72, 0.62];
+const TRAILS = {
+  mud: { color: [0.2, 0.13, 0.07], a: 0.6, time: 2.6 },
+  water: { color: [0.05, 0.07, 0.09], a: 0.34, time: 2.2 },
+  wet: { color: [0.06, 0.08, 0.1], a: 0.22, time: 1.6 },
+};
 
 export function fmtTime(t) {
   if (!t) return '--:--.--';

@@ -28,6 +28,7 @@ export class Car {
     this.R = def.wheelR;
     // efectos de objetos (segundos restantes)
     this.fx = { boost: 0, oil: 0, stun: 0, wet: 0, slide: 0, zap: 0 };
+    this.dirt = 0; this.surface = null; this.trail = null;
     this.item = null;
     this.health = 100;
     this.pullDir = Math.random() < 0.5 ? -1 : 1;
@@ -336,6 +337,11 @@ export class Car {
     }
     const u = this.model.userData;
     u.updateSuspension(this.hubY);
+    // barro en la carrocería (se seca y cae despacio; el agua lo lava)
+    if (u.paint) {
+      u.paint.userData.dirt.value = this.dirt;
+      if (this.dirt > 0) { this.model.updateMatrixWorld(); u.paint.userData.root.value.copy(this.model.matrixWorld).invert(); }
+    }
     u.antenna.rotation.set(u.antennaBase.x + this.antenna.pitch, 0, u.antennaBase.z + this.antenna.roll);
     const brakeGlow = this.braking || this.drifting ? 3.2 : this.reversing ? 1.5 : 0.6;
     u.tailMat.emissiveIntensity += (brakeGlow - u.tailMat.emissiveIntensity) * 0.3;

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { rugTexture, wallpaperTexture, bookCoverTexture, canTexture, groundTex } from '../textures.js';
+import { surfaceTex, rugTexture, wallpaperTexture, bookCoverTexture, canTexture, groundTex } from '../textures.js';
 import { buildCircuit, mat, BARRIER_GROUPS, trackPatch, autoBoosts } from './common.js';
 
 // Circuito 1: "El salón". Escala de juguete: 1 unidad ≈ 22 cm.
@@ -107,11 +107,11 @@ function build(B) {
   const onTrack = (x, z, along = 0, lat = 0) => { const s = circuit.sampleNear(x, z); return s.p.clone().addScaledVector(s.t, along).addScaledVector(s.n, lat * circuit.width / 2); };
   const zones = [];
   // suelo recién encerado (derrapa) y flechas de turbo
-  const wax = groundTex('wax', [1, 3]);
+  const wax = surfaceTex('wax', [1, 3]);
   const curvy = (f0, f1) => { let best = circuit.at(f0), br = Infinity; for (let f = f0; f < f1; f += 0.005) { const i = circuit.at(f); const r = circuit.minRadius(i, 3, 3); if (r < br) { br = r; best = i; } } return samples[best].p; };
   for (const [f0, f1] of [[0.6, 0.72], [0.9, 0.98]]) {
     const p = curvy(f0, f1);
-    zones.push(trackPatch(B, circuit, [p.x, p.z], 18, 'slide', { map: wax.map, color: '#fffaf0', opacity: 0.55 }));
+    zones.push(trackPatch(B, circuit, [p.x, p.z], 18, 'slide', { ...wax, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0.1, surface: 'wax' }));
   }
   zones.push(...autoBoosts(B, circuit, 2, zones.map((z) => [z.from, z.to])));
   // bolos para derribar

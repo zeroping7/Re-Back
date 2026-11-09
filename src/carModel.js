@@ -113,7 +113,43 @@ function mats(color, number, pattern) {
   const paint = new THREE.MeshPhysicalMaterial({
     map: bodyTexture(color, number, pattern), roughness: 0.28, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.08,
   });
+  addDirt(paint);
   return paint;
+}
+
+// Barro en la carrocería: manchas que crecen desde abajo según uDirt (0 limpio … 1 embarrado).
+// uRoot pasa los vértices a coordenadas del coche para que las manchas no "naden" al moverse.
+function addDirt(m) {
+  const dirt = { value: 0 }, root = { value: new THREE.Matrix4() };
+  m.userData.dirt = dirt; m.userData.root = root;
+  m.customProgramCacheKey = () => 'paint-dirt';
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uDirt = dirt; sh.uniforms.uRoot = root;
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nuniform mat4 uRoot; varying vec3 vDirtP;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvDirtP = (uRoot * modelMatrix * vec4(position, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader
+      .replace('#include <common>', `#include <common>
+uniform float uDirt; varying vec3 vDirtP;
+float dHash(vec3 p) { p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+float dNoise(vec3 x) {
+  vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(dHash(i), dHash(i + vec3(1, 0, 0)), f.x), mix(dHash(i + vec3(0, 1, 0)), dHash(i + vec3(1, 1, 0)), f.x), f.y),
+             mix(mix(dHash(i + vec3(0, 0, 1)), dHash(i + vec3(1, 0, 1)), f.x), mix(dHash(i + vec3(0, 1, 1)), dHash(i + vec3(1, 1, 1)), f.x), f.y), f.z);
+}`)
+      .replace('#include <map_fragment>', `#include <map_fragment>
+float dM = 0.0;
+if (uDirt > 0.002) {
+  float n = dNoise(vDirtP * 6.0) * 0.55 + dNoise(vDirtP * 17.0) * 0.3 + dNoise(vDirtP * 45.0) * 0.15;
+  float low = clamp(0.55 - vDirtP.y * 2.4, 0.0, 1.0);
+  float th = 1.0 - uDirt * (0.6 + low * 0.9);
+  dM = smoothstep(th, th + 0.06, n) * min(1.0, uDirt * 2.0);
+  vec3 mud = mix(vec3(0.13, 0.085, 0.05), vec3(0.24, 0.17, 0.1), dNoise(vDirtP * 60.0));
+  diffuseColor.rgb = mix(diffuseColor.rgb, mud, dM);
+}`)
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.8, dM);')
+      .replace('#include <lights_physical_fragment>', '#include <lights_physical_fragment>\nmaterial.clearcoat *= 1.0 - dM;');
+  };
 }
 
 export function buildCarModel(def, color, WHEELS, CONN_Y) {
@@ -337,7 +373,7 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
   const dmg = makeDamage(shell, paint);
   const detail = susp.flatMap((p) => [p.lower, p.upper, p.hub, p.shock, p.shaft]);
 
-  g.userData = { ...dmg, detail, wheels, antenna, antennaBase: new THREE.Vector3(-0.1, 0, 0), tailMat, revMat, updateSuspension };
+  g.userData = { ...dmg, detail, wheels, antenna, antennaBase: new THREE.Vector3(-0.1, 0, 0), tailMat, revMat, updateSuspension, paint };
   return g;
 }
 

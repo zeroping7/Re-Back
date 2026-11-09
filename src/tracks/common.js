@@ -494,31 +494,36 @@ export function scaleTrack(T, S) {
 }
 
 // Parche sobre la pista (zona de derrape, turbo…). Devuelve la zona para la carrera.
-export function trackPatch(B, circuit, at, len, effect, { color = '#ffffff', map = null, normalMap = null, opacity = 0.85, emissive = null, inset = 0.4, roughness } = {}) {
+export function trackPatch(B, circuit, at, len, effect, { color = '#ffffff', map = null, normalMap = null, roughnessMap = null, alphaMap = null, opacity = 0.85, emissive = null, inset = 0.4, roughness, metalness, normalScale = 1, surface = null } = {}) {
   const S = circuit.samples, N = S.length;
   const c = circuit.sampleNear(at[0], at[1]).i;
   const half = Math.max(1, Math.round(len / 2 / 1.6));
   const hw = circuit.width / 2 - inset;
-  const pos = [], uv = [], idx = [];
+  const pos = [], uv = [], idx = [], col = [];
   for (let k = -half, n = 0; k <= half; k++, n++) {
     const s = S[(c + k + N) % N];
     const l = s.p.clone().addScaledVector(s.n, hw), r = s.p.clone().addScaledVector(s.n, -hw);
     pos.push(l.x, s.h + 0.05, l.z, r.x, s.h + 0.05, r.z);
+    // con superficie realista, los extremos se difuminan
+    const fade = surface ? Math.min(1, (half - Math.abs(k)) / Math.max(1, half * 0.3)) : 1;
+    col.push(1, 1, 1, fade, 1, 1, 1, fade);
     uv.push(0, n / (half * 2) * len / (hw * 2), 1, n / (half * 2) * len / (hw * 2));
     if (k < half) { const a = n * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 4));
   g.setIndex(idx); g.computeVertexNormals();
   const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
-    color, map, normalMap, transparent: true, opacity, roughness: roughness ?? (effect === 'slide' ? 0.05 : 0.4), metalness: effect === 'slide' ? 0.3 : 0,
+    color, map, normalMap, roughnessMap, alphaMap, vertexColors: !!surface, normalScale: new THREE.Vector2(normalScale, normalScale),
+    transparent: true, opacity, roughness: roughness ?? (effect === 'slide' ? 0.05 : 0.4), metalness: metalness ?? (effect === 'slide' ? 0.3 : 0), depthWrite: !surface,
     emissive: emissive || '#000000', emissiveMap: emissive ? map : null, emissiveIntensity: emissive ? 0.9 : 0,
     polygonOffset: true, polygonOffsetFactor: -3,
   }));
   m.receiveShadow = true; m.userData.dynamic = true;
   B.scene.add(m);
-  return { from: (c - half + N) % N, to: (c + half) % N, effect, mesh: m };
+  return { from: (c - half + N) % N, to: (c + half) % N, effect, mesh: m, surface };
 }
 
 export function chevronTexture() {

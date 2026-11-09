@@ -129,3 +129,8 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - **Mando** Bluetooth/USB: stick/cruceta para girar, RT/A acelerar, LT/B frenar, X/RB disparar, Y cámara,
   Select recolocar, Start pausa. Menús con foco: cruceta, A elegir, B atrás, Start = ¡A correr!. Vibración del mando en golpes.
   Los botones táctiles se ocultan al usar el mando. Prueba: `node tests/gamepad.mjs`.
+
+### Superficies realistas (noviembre 2026)
+- Barro, suelo fregado, cera y agua con texturas nuevas (brillo, relieve, bordes irregulares) y orilla de barro en charco y estanque.
+- Efectos: grumos de barro, salpicaduras y ondas en el agua, estelas, huellas de barro/mojadas al salir;
+  el coche se ensucia con el barro y el agua lo lava. Capturas: `node tests/surfaces.mjs`.

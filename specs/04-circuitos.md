@@ -15,6 +15,8 @@
 | CIR-09 | Detalles animados de ambiente que no estorban (tren, gato, globos, mariposas…) | ✅ |
 | CIR-10 | Una **estrella oculta** por circuito para el modo Contrarreloj, en un sitio que requiera saltar o salirse de la trazada: flota en el vuelo del salto de la rampa (2 muestras tras la cima, 1,6 u por encima) y se coge pasando a menos de 2,4 u, así que hay que saltar a fondo y por el centro. Si ya es tuya se ve transparente | ✅ |
 | CIR-11 | Texturas con relieve (mapas de normales): parqué, baldosas, césped, tierra, barro, agua animada | ✅ |
+| CIR-12 | **Superficies realistas** (`surfaceTex`): barro con charcos brillantes, roderas y piedras; suelo fregado con película de agua, pasadas de fregona y espuma; cera con remolinos de abrillantadora; bordes irregulares y extremos difuminados; agua con doble capa de ondas y orilla de barro húmedo | ✅ |
+| CIR-13 | **Efectos al pisar superficies**: barro → grumos lanzados por las ruedas, vaho, huellas marrones al salir y la carrocería se mancha de barro (desde abajo); charco → corona de salpicadura al entrar, abanicos de agua por rueda, ondas en el agua, huellas mojadas y gotas al salir; el agua lava el barro; fregado → estela pulverizada y huellas húmedas; cera → destellos y marcas claras al patinar. Prueba: `node tests/surfaces.mjs` | ✅ |
 | CIR-12 | Los decorados se colocan solos fuera de la pista (`circuit.spot`) | ✅ |
 
 ## Circuitos

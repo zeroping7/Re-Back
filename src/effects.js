@@ -75,12 +75,15 @@ export class Particles {
   }
 }
 
+const TIRE = [0.06, 0.05, 0.05];
+
 // ---------- Marcas de derrape (cinta con búfer circular) ----------
 export class SkidMarks {
   constructor(scene, maxQuads = 1600) {
     this.max = maxQuads;
     this.pos = new Float32Array(maxQuads * 4 * 3);
     this.alpha = new Float32Array(maxQuads * 4);
+    this.col = new Float32Array(maxQuads * 4 * 3);
     const idx = new Uint32Array(maxQuads * 6);
     for (let i = 0; i < maxQuads; i++) {
       const v = i * 4;
@@ -89,12 +92,13 @@ export class SkidMarks {
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage));
     geo.setAttribute('aAlpha', new THREE.BufferAttribute(this.alpha, 1).setUsage(THREE.DynamicDrawUsage));
+    geo.setAttribute('aCol', new THREE.BufferAttribute(this.col, 3).setUsage(THREE.DynamicDrawUsage));
     geo.setIndex(new THREE.BufferAttribute(idx, 1));
     geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e4);
     const mat = new THREE.ShaderMaterial({
       transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4,
-      vertexShader: `attribute float aAlpha; varying float vA; void main(){ vA=aAlpha; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);} `,
-      fragmentShader: `varying float vA; void main(){ gl_FragColor=vec4(0.06,0.05,0.05,vA); }`,
+      vertexShader: `attribute float aAlpha; attribute vec3 aCol; varying float vA; varying vec3 vC; void main(){ vA=aAlpha; vC=aCol; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);} `,
+      fragmentShader: `varying float vA; varying vec3 vC; void main(){ gl_FragColor=vec4(vC,vA); }`,
     });
     this.mesh = new THREE.Mesh(geo, mat);
     this.mesh.frustumCulled = false;
@@ -104,12 +108,13 @@ export class SkidMarks {
   }
 
   // Llamar cada paso por rueda: punto de contacto, dirección lateral, intensidad (0 = sin marca)
-  add(wheel, point, side, strength, width = 0.28) {
+  // color: [r,g,b] (por defecto goma), lift: altura extra (para pintar encima de parches)
+  add(wheel, point, side, strength, width = 0.28, color = TIRE, lift = 0) {
     const last = this.last[wheel];
     if (strength <= 0) { this.last[wheel] = null; return; }
     const lx = point.x + side.x * width / 2, lz = point.z + side.z * width / 2;
     const rx = point.x - side.x * width / 2, rz = point.z - side.z * width / 2;
-    const y = point.y + 0.025;
+    const y = point.y + 0.025 + lift;
     if (last) {
       const dx = point.x - last.x, dz = point.z - last.z;
       if (dx * dx + dz * dz < 0.09) return; // espera a moverse
@@ -118,11 +123,41 @@ export class SkidMarks {
       this.pos.set([last.lx, last.y, last.lz, last.rx, last.y, last.rz, lx, y, lz, rx, y, rz], o);
       const a = Math.min(0.55, strength);
       this.alpha.set([last.a, last.a, a, a], i * 4);
+      for (let v = 0; v < 4; v++) this.col.set(color, (i * 4 + v) * 3);
       const g = this.mesh.geometry.attributes;
-      g.position.needsUpdate = true; g.aAlpha.needsUpdate = true;
+      g.position.needsUpdate = true; g.aAlpha.needsUpdate = true; g.aCol.needsUpdate = true;
       this.last[wheel] = { x: point.x, z: point.z, y, lx, lz, rx, rz, a };
     } else {
       this.last[wheel] = { x: point.x, z: point.z, y, lx, lz, rx, rz, a: Math.min(0.55, strength) };
+    }
+  }
+}
+
+// ---------- Ondas en el agua (anillos que se abren y se desvanecen) ----------
+export class Ripples {
+  constructor(scene, max = 48) {
+    const geo = new THREE.RingGeometry(0.82, 1, 40).rotateX(-Math.PI / 2);
+    this.items = Array.from({ length: max }, () => {
+      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: '#e8f6ff', transparent: true, opacity: 0, depthWrite: false }));
+      m.visible = false; m.renderOrder = 2; scene.add(m);
+      return { m, t: 0, life: 1, r0: 0.3, r1: 2 };
+    });
+    this.next = 0;
+  }
+  emit(x, y, z, { r0 = 0.3, r1 = 2.5, life = 0.9, alpha = 0.55 } = {}) {
+    const it = this.items[this.next]; this.next = (this.next + 1) % this.items.length;
+    Object.assign(it, { t: 0, life, r0, r1, a: alpha });
+    it.m.position.set(x, y, z); it.m.visible = true;
+  }
+  update(dt) {
+    for (const it of this.items) {
+      if (!it.m.visible) continue;
+      it.t += dt;
+      const k = it.t / it.life;
+      if (k >= 1) { it.m.visible = false; continue; }
+      const e = 1 - (1 - k) * (1 - k);
+      it.m.scale.setScalar(it.r0 + (it.r1 - it.r0) * e);
+      it.m.material.opacity = it.a * (1 - k);
     }
   }
 }

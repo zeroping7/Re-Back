@@ -298,3 +298,122 @@ export function groundTex(kind, repeat = [1, 1]) {
   }
   return null;
 }
+
+// ---------- Superficies especiales (barro, suelo mojado, cera, agua) ----------
+// Devuelve { map, normalMap, roughnessMap, alphaMap }. Las texturas se repiten a lo largo (v) del parche;
+// los bordes laterales (u≈0 y u≈1) son irregulares en el alphaMap para que no parezca un rectángulo pegado.
+function noise2(seed) {
+  // ruido de valor 2D repetible (periodo 1) con octavas
+  const r = rnd(seed), G = 128, grid = Array.from({ length: G * G }, () => r());
+  const v = (x, y) => grid[(((y % G) + G) % G) * G + (((x % G) + G) % G)];
+  const sm = (t) => t * t * (3 - 2 * t);
+  const one = (x, y, f) => {
+    const X = x * f, Y = y * f, xi = Math.floor(X), yi = Math.floor(Y), tx = sm(X - xi), ty = sm(Y - yi);
+    const m = f; // periodo
+    const g = (a, b) => v(((a % m) + m) % m + 0, ((b % m) + m) % m + 0);
+    return (g(xi, yi) * (1 - tx) + g(xi + 1, yi) * tx) * (1 - ty) + (g(xi, yi + 1) * (1 - tx) + g(xi + 1, yi + 1) * tx) * ty;
+  };
+  return (x, y, oct = 4, f0 = 4) => { let s = 0, a = 0.5, n = 0; for (let o = 0; o < oct; o++) { s += one(x, y, f0 << o) * a; n += a; a *= 0.5; } return s / n; };
+}
+function px(size, fn) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d'), img = g.createImageData(size, size), d = img.data;
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const v = fn(x / size, y / size), i = (y * size + x) * 4;
+    d[i] = v[0]; d[i + 1] = v[1]; d[i + 2] = v[2]; d[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+}
+const edge = (u, n, w = 0.1) => { // 0 fuera, 1 dentro, con borde ondulado
+  const d = Math.min(u, 1 - u);
+  return Math.max(0, Math.min(1, (d - w * (0.35 + n * 0.9)) / 0.03));
+};
+const mixc = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+const clamp01 = (t) => Math.max(0, Math.min(1, t));
+
+const surfCache = new Map();
+export function surfaceTex(kind, repeat = [1, 3]) {
+  if (!surfCache.has(kind)) surfCache.set(kind, buildSurface(kind));
+  const s = surfCache.get(kind), out = {};
+  for (const k in s) {
+    const t = new THREE.CanvasTexture(s[k].canvas);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat[0], repeat[1]); t.anisotropy = 8;
+    if (s[k].srgb) t.colorSpace = THREE.SRGBColorSpace;
+    out[k] = t;
+  }
+  return out;
+}
+
+function buildSurface(kind) {
+  const S = 256;
+  const n1 = noise2(kind.length * 31 + 1), n2 = noise2(kind.length * 17 + 5), n3 = noise2(kind.length * 7 + 9);
+  const H = new Float32Array(S * S);
+  let col, rough, alpha;
+  if (kind === 'mud') {
+    // barro húmedo: charcos brillantes, grumos, roderas con dibujo de neumático
+    const ruts = [0.3, 0.7];
+    col = px(S, (u, v) => {
+      const a = n1(u, v, 5, 3), b = n2(u, v, 3, 8), c = n3(u, v, 2, 24);
+      let rut = 0;
+      for (const r of ruts) { const d = Math.abs(u - r - (n2(0.5, v, 2, 2) - 0.5) * 0.06); rut = Math.max(rut, clamp01(1 - d / 0.06)); }
+      const tread = rut * (Math.sin(v * 160 + (u > 0.5 ? 1 : 0)) > 0.2 ? 1 : 0.55);
+      const pool = clamp01((a - 0.58) / 0.06);
+      const dry = clamp01((b - 0.62) / 0.1) * (1 - pool);
+      let k = mixc([88, 60, 38], [58, 38, 22], clamp01(a * 1.4 - 0.2));
+      k = mixc(k, [128, 98, 70], dry * 0.8);
+      k = mixc(k, [44, 30, 18], tread * 0.7);
+      k = mixc(k, [36, 26, 18], pool * 0.85);
+      const pebble = c > 0.78 ? (c - 0.78) * 4 : 0;
+      k = mixc(k, [120, 110, 98], clamp01(pebble) * (1 - pool));
+      const j = (b - 0.5) * 18;
+      H[Math.floor(v * S) * S + Math.floor(u * S)] = 0.5 + (c - 0.5) * 0.5 - rut * 0.35 - pool * 0.3 + pebble * 0.6 + (Math.sin(v * 160) > 0.2 ? rut * 0.12 : 0);
+      return [k[0] + j, k[1] + j * 0.8, k[2] + j * 0.6];
+    });
+    rough = px(S, (u, v) => { const pool = clamp01((n1(u, v, 5, 3) - 0.58) / 0.06), dry = clamp01((n2(u, v, 3, 8) - 0.62) / 0.1); const r = 0.42 - pool * 0.36 + dry * 0.45; return [0, r * 255, 0]; });
+    alpha = px(S, (u, v) => { const e = edge(u, n3(u * 0.3, v, 3, 6), 0.09); const bite = clamp01((n2(u, v * 0.5, 2, 3) - 0.18) / 0.05); const a = e * (0.55 + 0.45 * bite); return [a * 255, a * 255, a * 255]; });
+  } else if (kind === 'wet') {
+    // suelo recién fregado: película de agua con charcos, pasadas de fregona y espuma
+    col = px(S, (u, v) => {
+      const foam = n3(u, v, 2, 28) > 0.82 ? 1 : 0;
+      H[Math.floor(v * S) * S + Math.floor(u * S)] = 0.5 + (n2(u, v, 4, 10) - 0.5) * 0.4 + foam * 0.3;
+      return foam ? [235, 245, 250] : mixc([92, 118, 138], [128, 156, 176], n2(u, v, 3, 4));
+    });
+    rough = px(S, (u, v) => [0, (0.03 + n3(u, v, 2, 28) * 0.05) * 255, 0]);
+    alpha = px(S, (u, v) => {
+      const film = clamp01((n1(u, v, 5, 3) - 0.36) / 0.08);
+      const mop = 0.5 + 0.5 * Math.sin((u * 9 + Math.sin(v * 12.566) * 1.2) * 6.283);
+      const foam = n3(u, v, 2, 28) > 0.82 ? 0.9 : 0;
+      const a = Math.max(foam, film * (0.5 + mop * 0.25)) * edge(u, n2(u * 0.3, v, 3, 5), 0.07);
+      return [a * 255, a * 255, a * 255];
+    });
+  } else if (kind === 'wax') {
+    // cera recién dada: brillo con remolinos de abrillantadora
+    col = px(S, (u, v) => { H[Math.floor(v * S) * S + Math.floor(u * S)] = 0.5; return mixc([255, 236, 190], [255, 250, 232], n2(u, v, 2, 6)); });
+    rough = px(S, (u, v) => [0, (0.02 + n2(u, v, 3, 6) * 0.08) * 255, 0]);
+    alpha = px(S, (u, v) => {
+      let sw = 0;
+      for (const [cx, cy, rr] of [[0.3, 0.25, 0.2], [0.7, 0.55, 0.24], [0.35, 0.82, 0.18], [0.75, 0.05, 0.15]]) {
+        const d = Math.hypot(u - cx, (((v - cy + 1.5) % 1) - 0.5)) / rr;
+        if (d < 1.4) sw = Math.max(sw, (0.5 + 0.5 * Math.sin(d * 40 + n1(u, v, 2, 4) * 6)) * clamp01(1.4 - d));
+      }
+      const a = (0.26 + sw * 0.42 + (n1(u, v, 4, 3) - 0.5) * 0.25) * edge(u, n3(u * 0.3, v, 3, 5), 0.06);
+      return [a * 255, a * 255, a * 255];
+    });
+  } else if (kind === 'water') {
+    // agua: fondo oscuro con reflejos; el brillo lo pone el mapa de entorno
+    col = px(S, (u, v) => { H[Math.floor(v * S) * S + Math.floor(u * S)] = n1(u, v, 4, 6) * 0.8 + n2(u, v, 3, 14) * 0.2; return mixc([28, 62, 82], [52, 98, 118], n2(u, v, 3, 3)); });
+    rough = px(S, () => [0, 0.03 * 255, 0]);
+    alpha = px(S, () => [255, 255, 255]);
+  }
+  // normales desde la altura
+  const hc = document.createElement('canvas'); hc.width = hc.height = S;
+  const hg = hc.getContext('2d'), img = hg.createImageData(S, S);
+  for (let i = 0; i < S * S; i++) { const v = clamp01(H[i]) * 255; img.data.set([v, v, v, 255], i * 4); }
+  hg.putImageData(img, 0, 0);
+  const strength = { mud: 6, wet: 1.5, wax: 0.5, water: 4 }[kind];
+  return {
+    map: { canvas: col, srgb: true }, normalMap: { canvas: normalFromHeight(hc, strength) },
+    roughnessMap: { canvas: rough }, alphaMap: { canvas: alpha },
+  };
+}

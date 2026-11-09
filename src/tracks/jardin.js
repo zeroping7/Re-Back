@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { groundTex } from '../textures.js';
+import { groundTex, surfaceTex } from '../textures.js';
 import { buildCircuit, startArch, trackRibbon, mat, BARRIER_GROUPS, trackPatch, autoBoosts } from './common.js';
 
 // Circuito 3: "El jardín". Al aire libre: camino de tierra, charco, rampa-tabla y árboles.
@@ -89,11 +89,11 @@ function build(B) {
   const onTrack = (x, z, along = 0, lat = 0) => { const s = circuit.sampleNear(x, z); return s.p.clone().addScaledVector(s.t, along).addScaledVector(s.n, lat * circuit.width / 2); };
   const extraZones = [];
   // barro (derrapa) y turbos
-  const mud = groundTex('mud', [1, 3]);
+  const mud = surfaceTex('mud', [1, 2.2]);
   const curvy = (f0, f1) => { let best = circuit.at(f0), br = Infinity; for (let f = f0; f < f1; f += 0.005) { const i = circuit.at(f); const r = circuit.minRadius(i, 3, 3); if (r < br) { br = r; best = i; } } return circuit.samples[best].p; };
   for (const [f0, f1] of [[0.68, 0.76], [0.46, 0.53], [0.9, 0.97]]) {
     const p = curvy(f0, f1);
-    extraZones.push(Object.assign(trackPatch(B, circuit, [p.x, p.z], 20, 'slide', { map: mud.map, normalMap: mud.normalMap, color: '#ffffff', opacity: 0.97, roughness: 0.3 }), { particles: [0.3, 0.2, 0.1] }));
+    extraZones.push(trackPatch(B, circuit, [p.x, p.z], 20, 'slide', { ...mud, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0, normalScale: 1.2, inset: 0.1, surface: 'mud' }));
   }
   // balón de playa, macetas y cajas de madera
   { const sb = circuit.samples[circuit.at(0.12)]; const p = sb.p.clone().addScaledVector(sb.n, 0.3 * W / 2); B.dynBall(1.6, p.x, p.y + 1.7, p.z, '#ff5252', { density: 0.02 }); }
@@ -102,9 +102,24 @@ function build(B) {
   startArch(B, circuit, { color: '#43a047', text: 'GRAN PREMIO JARDÍN' });
 
   // agua con ondas animadas (charco y estanque)
-  const wt = groundTex('water', [2, 2]);
-  const waterMat = new THREE.MeshStandardMaterial({ color: '#7fb5d9', map: wt.map, normalMap: wt.normalMap, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 0.04, metalness: 0.35, transparent: true, opacity: 0.88 });
-  anim.push((t) => { wt.normalMap.offset.set(t * 0.03, t * 0.02); wt.map.offset.set(-t * 0.01, 0); });
+  const wt = surfaceTex('water', [2, 2]), wt2 = surfaceTex('water', [3.1, 3.1]);
+  const waterMat = new THREE.MeshPhysicalMaterial({
+    color: '#ffffff', map: wt.map, normalMap: wt.normalMap, normalScale: new THREE.Vector2(0.35, 0.35), roughness: 0.03, metalness: 0,
+    clearcoat: 1, clearcoatRoughness: 0.02, clearcoatNormalMap: wt2.normalMap, clearcoatNormalScale: new THREE.Vector2(0.5, 0.5),
+    envMapIntensity: 1.6, transparent: true, opacity: 0.9,
+  });
+  anim.push((t) => { wt.normalMap.offset.set(t * 0.03, t * 0.02); wt2.normalMap.offset.set(-t * 0.025, t * 0.035); wt.map.offset.set(-t * 0.01, 0); });
+  // orilla de barro húmedo alrededor del agua (degradado irregular)
+  const rimTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const g = c.getContext('2d');
+    const gr = g.createRadialGradient(128, 128, 60, 128, 128, 128);
+    gr.addColorStop(0, '#3a2a1cff'); gr.addColorStop(0.55, '#4a3624d0'); gr.addColorStop(1, '#5a432c00');
+    g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+    for (let k = 0; k < 220; k++) { const a = Math.random() * 6.28, r = 70 + Math.random() * 55; g.fillStyle = `rgba(${40 + Math.random() * 30},${28 + Math.random() * 20},${16 + Math.random() * 12},${0.15 + Math.random() * 0.3})`; g.beginPath(); g.ellipse(128 + Math.cos(a) * r, 128 + Math.sin(a) * r, 3 + Math.random() * 9, 2 + Math.random() * 5, a, 0, 7); g.fill(); }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  })();
+  const rimMat = new THREE.MeshStandardMaterial({ map: rimTex, transparent: true, roughness: 0.35, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
   // ---------- Charco (frena y salpica) ----------
   const zones = extraZones;
   {
@@ -116,7 +131,11 @@ function build(B) {
     puddle.position.set(p.x, s.p.y + 0.06, p.z);
     puddle.userData.dynamic = true;
     scene.add(puddle);
-    zones.push({ pos: p, r: 4.2, effect: 'wet' });
+    const rim = new THREE.Mesh(new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2), rimMat);
+    rim.scale.set(6.4, 1, 4.9); rim.rotation.y = puddle.rotation.y;
+    rim.position.set(p.x, s.p.y + 0.04, p.z); rim.userData.dynamic = true; rim.receiveShadow = true;
+    scene.add(rim);
+    zones.push({ pos: p, r: 4.2, effect: 'wet', surface: 'water' });
   }
 
   // ---------- Árboles, rocas, flores ----------
@@ -183,6 +202,8 @@ function build(B) {
   {
     const pond = new THREE.Mesh(new THREE.CircleGeometry(9, 32).rotateX(-Math.PI / 2), waterMat);
     pond.position.set(px, 0.05, pz); pond.userData.dynamic = true; scene.add(pond);
+    const prim = new THREE.Mesh(new THREE.CircleGeometry(12, 40).rotateX(-Math.PI / 2), rimMat);
+    prim.position.set(px, 0.035, pz); prim.userData.dynamic = true; scene.add(prim);
     for (let k = 0; k < 14; k++) {
       const a = (k / 14) * Math.PI * 2;
       ball(1.2, px + Math.cos(a) * 9.5, 0.3, pz + Math.sin(a) * 9.5, rockM, { detail: 0 });
