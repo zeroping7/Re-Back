@@ -20,6 +20,7 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 14 | Mejorar efectos al pasar por agua, barro, etc. y texturas más realistas | CIR-12, CIR-13 |
 | 15 | Aplicar las mejoras propuestas: fantasma, repetición, música por circuito, 3 circuitos, coches nuevos y secreto, Batalla de la Estrella, pistas al revés/espejo, Copa Platino; mirar atrás y cámara con stick. Editor y multijugador, para más adelante | UX-11..14, CTL-06/07, COC-04/05, CIR-20..23, AUD-09, ECO-09; REF-18/19 📝 |
 | 16 | Barro/agua demasiado incontrolables al girar; rehacer la arena de batalla (rampas tapadas); rampas de salto con aterrizaje (al revés se bloqueaba); freno + giro parado hacía andar el coche | FIS-21..23, CIR-24, UX-15 |
+| 17 | La lista de rivales y tiempos de la batalla tapa el centro | UX-16 |
 
 ## Preferencias del usuario
 

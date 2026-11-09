@@ -377,3 +377,9 @@ body.pad-mode #btn-look { display: none; }
 #m-setup:not(.battle) .battle-only { display: none; }
 .battle-info { background: #ffb3002e; border: 1px solid #ffb30088; border-radius: 12px; padding: 8px 12px; font-size: 13px; margin: 4px 0 8px; max-width: 520px; }
 #m-main .row2 .big-btn { font-size: 17px; white-space: nowrap; padding-left: 14px; padding-right: 10px; }
+/* UX-16: lista de la batalla arriba a la derecha, bajo los botones, compacta y semitransparente */
+#h-battle { top: calc(62px + env(safe-area-inset-top)); left: auto; right: calc(14px + env(safe-area-inset-right)); transform: none; width: 178px; gap: 2px; opacity: .92; }
+#h-battle .br { padding: 1px 6px; font-size: 11px; gap: 5px; background: #0006; }
+#h-battle .nm { width: 58px; }
+#h-battle i { height: 5px; }
+#h-battle .tm { width: 30px; }

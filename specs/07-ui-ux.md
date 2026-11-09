@@ -50,6 +50,7 @@ Inicio (toca para empezar)
 | UX-13 | **Variantes de circuito**: Normal, Al revés (se abre con la Copa Plata) y Espejo (con la Copa Oro); récords y fantasmas por variante | ✅ |
 | UX-14 | **Batalla de la Estrella**: arena cerrada; la estrella aparece en el centro, quien la lleva gasta su reloj (60 s); se roba tocando al que la lleva; gana quien vacía su reloj; rivales con IA de persecución/huida | ✅ |
 | UX-15 | **Arena de batalla rehecha**: rampas de mesa (subida, plataforma, bajada) con pasillo libre delante y detrás; bloques solo en las islas entre pasillos | ✅ |
+| UX-16 | Lista de relojes de la batalla arriba a la derecha, bajo los botones, compacta: no tapa el centro de la pantalla | ✅ |
 
 ## Marcador en carrera
 
