@@ -18,7 +18,7 @@ const MASS = 8; // masa de referencia: la potencia y el freno se escalan con la 
 const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q = new THREE.Quaternion(), _qi = new THREE.Quaternion();
 const UP = new THREE.Vector3(0, 1, 0);
 // DRI-04: ayudas del derrape (tope de giro, anti-trompo, empuje del gas y mando del volante)
-const DRIFT = { wMax: 1.16, yawGain: 6, align: 2.6, spin: 0.95, spinK: 6, latGrip: 0.15, thrust: 36, vmax: 0.85 };
+const DRIFT = { launch: 15, fishtail: 6, wobHz: 9, launchV: 18, wMax: 1.16, yawGain: 6, align: 2.6, spin: 0.95, spinK: 6, latGrip: 0.15, thrust: 36, vmax: 0.85 };
 
 export class Car {
   constructor(scene, world, RAPIER, def, tuning, { color = def.color, index = 0, name = def.name } = {}) {
@@ -221,6 +221,7 @@ export class Car {
       // giro visual de la rueda (con patinazo al arrancar)
       let w = fwd / this.R;
       if (thr > 0 && !this.W[i].front && fwd < 6) w += 25 * thr;
+      if (this.launch > 0 && !this.W[i].front) w = Math.max(w, fwd / this.R + 60 * this.launch); // ruedas patinando
       if (!ws.contact) w = this.lastW[i] * 0.99 + (thr > 0 && !this.W[i].front ? 0.5 : 0);
       this.lastW[i] = w;
       this.spin[i] += w * dt;
@@ -237,14 +238,27 @@ export class Car {
         b.applyTorqueImpulse({ x: 0, y: -k, z: 0 }, true);
       }
     }
+    // Salida de RC de drift: mucho par, las ruedas traseras patinan y la cola baila hasta coger velocidad
+    this.launch = 0;
+    if (this.driftMode && contacts > 1 && thr > 0 && fwd > -1 && !input.hold) {
+      const D = globalThis.__DP || DRIFT;
+      const k = Math.max(0, 1 - speed / (maxSpeed * 0.85));
+      const push = thr * D.launch * (t.engine / 145) * k * m * dt;
+      b.applyImpulse({ x: this.forward.x * push, y: 0, z: this.forward.z * push }, true);
+      this.launch = THREE.MathUtils.clamp(1 - fwd / (D.launchV ?? 13), 0, 1) * thr;
+      // la cola baila a un lado y a otro mientras las ruedas patinan
+      if (fwd < 1 && !(this.wob > 0)) this.wob = Math.random() < 0.5 ? 0.01 : Math.PI; // a qué lado sale la cola
+      this.wob = (this.wob || 0) + dt * (D.wobHz ?? 13);
+      this.tailWave = (Math.sin(this.wob) * 0.7 + Math.sin(this.wob * 2.3 + 1) * 0.3) * D.fishtail * this.launch;
+    } else { this.tailWave = 0; if (speed < 1) this.wob = 0; }
     if (this.driftMode && contacts > 1 && fwd > 0) {
       // DRI-04: derrape arcade. El volante manda sobre el giro del coche, las ruedas agarran poco de lado
       // (el coche se cruza) y el gas mantiene la velocidad; al soltar el volante se endereza solo.
       const D = globalThis.__DP || DRIFT;
-      const k = THREE.MathUtils.clamp((speed - 3) / 4, 0, 1);
+      const k = Math.max(THREE.MathUtils.clamp((speed - 3) / 4, 0, 1), this.launch > 0 && fwd > 0.8 ? 0.6 : 0);
       if (k > 0) {
         const beta = Math.atan2(this.localVel.x, Math.max(1, fwd)), ab = Math.abs(beta), st = input.steer;
-        let want = st * D.wMax * (t.steerMax / 0.345) + beta * D.align * (1 - 0.75 * Math.abs(st));
+        let want = st * D.wMax * (t.steerMax / 0.345) + beta * D.align * (1 - 0.75 * Math.abs(st)) * (1 - 0.7 * this.launch) + this.tailWave;
         if (ab > D.spin) want += Math.sign(beta) * (ab - D.spin) * D.spinK; // anti-trompo
         const dw = (want - b.angvel().y) * Math.min(1, D.yawGain * dt) * k;
         b.applyTorqueImpulse({ x: 0, y: dw * 5.0 * this.massK, z: 0 }, true);

@@ -14,7 +14,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
   Drift se abre con la Copa Bronce y Obstáculos con la Plata (entre los 3 primeros); al abrirse regalan su coche básico.
 - **Drift** (por puntos): conducción arcade propia (el volante cruza el coche y el gas lo sostiene), combo con multiplicador ×1-×5
   que se pierde al tocar un muro o hacer un trompo. Modos Puntuación (solo, medallas), Duelo y Copa Derrape.
-  Circuitos: La cocina encerada y El garaje. Coches: Patín, Humo, Trompo, Katana (+ Bólido, Flecha y Saeta).
+  Circuitos (pistas de drift RC reales, compactas y estrechas, con zonas de clip, conos, tarima de pilotos y boxes):
+  El club de drift y El garaje nocturno. Coches (turismos de drift rebajados, salida patinando): Patín, Humo, Trompo,
+  Bisonte y Katana (+ Bólido, Flecha y Saeta).
 - **Obstáculos**: rampas-libro, puentes sin bordes, eslalon, barreras que van y vienen, barras giratorias, ventilador, cascadas,
   badenes y jabón. Modos Contrarreloj (solo, medallas y fantasma), Carrera y Copa Obstáculos.
   Circuitos: El escritorio y El fregadero. Coches: Cabra, Oruga, Yeti (+ Tanque, Morsa y Rally).

@@ -199,7 +199,7 @@ export class Race {
     if (steps === 5) this.acc = 0;
     if (this.started) this.time += dt;
 
-    this.T.update?.(this.clock);
+    this.T.update?.(this.clock, this);
     this.items.update(dt);
     if (this.star) this.updateStar(dt);
     this.effects.smoke.update(dt); this.effects.sparks.update(dt); this.effects.fire.update(dt); this.effects.chunks.update(dt); this.effects.ripples.update(dt);
@@ -435,6 +435,19 @@ export class Race {
       st.driftT += dt; st.grace = 1;
       st.mult = Math.min(5, 1 + Math.floor(st.driftT / 1.6));
       st.combo += car.speed * Math.min(beta, 1.1) * 6 * dt;
+      // DRI-09: zona de clip: derrapar pegado al exterior de la curva da un bonus (una vez por paso)
+      for (const cl of this.T.clips || []) {
+        const inside = cl.from <= cl.to ? st.idx >= cl.from && st.idx <= cl.to : st.idx >= cl.from || st.idx <= cl.to;
+        if (!inside || st.lastClip === cl) continue;
+        const s = this.circuit.samples[st.idx];
+        const lat = ((car.currPos.x - s.p.x) * s.n.x + (car.currPos.z - s.p.z) * s.n.z) * cl.side;
+        if (lat < this.circuit.width * 0.18) continue;
+        st.lastClip = cl;
+        const bonus = 150 + 50 * st.mult;
+        st.combo += bonus / st.mult;
+        st.clips = (st.clips || 0) + 1;
+        if (car.isPlayer) { st.flash = { t: this.clock, text: `¡CLIP ${cl.n}! +${bonus}`, ok: true }; this.sfx.play('pickup'); }
+      }
     } else if (st.combo > 0 && (st.grace -= dt) <= 0) {
       const got = st.combo * st.mult;
       st.score += got; st.combo = 0; st.driftT = 0; st.mult = 1;
@@ -573,13 +586,13 @@ export class Race {
     for (let i = 0; i < 4; i++) {
       const w = car.wheelState[i];
       const rear = i >= 2;
-      const launching = rear && car.throttle > 0 && car.fwdSpeed < 6 && car.fwdSpeed > -1 && w.contact;
+      const launching = rear && car.throttle > 0 && car.fwdSpeed < (car.driftMode ? 13 : 6) && car.fwdSpeed > -1 && w.contact;
       const braking = car.braking && car.speed > 10 && w.contact;
       if (w.contact) maxSlip = Math.max(maxSlip, w.slip);
       let mark = 0;
       if (w.contact && w.slip > 3.5) mark = (w.slip - 3) / 6;
       if (braking) mark = Math.max(mark, 0.35);
-      if (launching) mark = Math.max(mark, 0.25);
+      if (launching) mark = Math.max(mark, car.driftMode ? 0.5 * car.launch + 0.15 : 0.25);
       if (car.fx.oil > 0 && w.contact) mark = Math.max(mark, 0.4);
       const tr = car.trail;
       let color, lift = car.surface && car.surface !== 'water' ? 0.11 : 0.01;
@@ -590,7 +603,7 @@ export class Race {
       if (car.surface === 'wax' && w.contact && w.slip > 2) { mark = Math.max(mark, 0.12); color = WAX_MARK; }
       E.skids.add(car.index * 4 + i, w.point, side, near ? mark : 0, 0.28, color, lift);
       if (!near) continue;
-      const amt = (w.contact ? Math.max(0, (w.slip - 4.5) / 8) : 0) + (launching ? 0.35 : 0) + (car.drifting && rear && w.contact ? 0.4 : 0);
+      const amt = (w.contact ? Math.max(0, (w.slip - 4.5) / 8) : 0) + (launching ? (car.driftMode ? 0.9 * car.launch + 0.3 : 0.35) : 0) + (car.drifting && rear && w.contact ? 0.4 : 0);
       if (amt > 0 && Math.random() < amt * (car.isPlayer ? 1 : 0.5)) {
         const v = car.velocity;
         E.smoke.emit(w.point.x, w.point.y + 0.25, w.point.z, v.x * 0.15 + rnd(1), 0.8 + Math.random() * 0.8, v.z * 0.15 + rnd(1), {
@@ -625,7 +638,7 @@ export class Race {
       }
     }
     if (car.isPlayer) {
-      this.sfx.update(car.speed || 0, car.throttle, Math.max(0, maxSlip - 3) + (car.braking && car.speed > 8 ? 4 : 0), { max: car.t.maxSpeed, air: car.contacts === 0 });
+      this.sfx.update(car.speed || 0, car.throttle, Math.max(0, maxSlip - 3) + (car.braking && car.speed > 8 ? 4 : 0) + (car.launch || 0) * 5, { max: car.t.maxSpeed, air: car.contacts === 0 });
       if (car.fx.boost > 0) this.trauma = Math.max(this.trauma, 0.12);
     }
 
@@ -863,7 +876,7 @@ export class Race {
     }
     const ev = this.replayRec.events;
     while (r.ev < ev.length && ev[r.ev].t <= r.t) { this.items.explosionFx(ev[r.ev].pos); r.ev++; }
-    this.T.update?.(this.clock);
+    this.T.update?.(this.clock, this);
     for (const k2 of ['smoke', 'sparks', 'fire', 'chunks', 'ripples']) this.effects[k2].update(dt);
     this.flashLight.intensity = Math.max(0, this.flashLight.intensity - dt * 1500);
     const P = this.player;

@@ -41,8 +41,8 @@ async function run(name, q, secs, shots) {
   }
   console.log(name, await page.evaluate(() => { const r = window.__game.race, st = r.state(r.player); return `t=${r.time.toFixed(1)} fase=${r.phase} vueltas=${st.laps} pts=${Math.round(st.score)} fps=${document.getElementById('fps').textContent} titulo="${document.getElementById('res-title').textContent}" premio="${document.getElementById('res-reward').textContent}"`; }));
 }
-if (want('drift')) await run('drift', 'track=cocina&solo', 46, [22, 30, 38, 45]);
-if (want('garaje')) await run('garaje', 'track=garaje&rivals=3', 30, [14, 29]);
+if (want('drift')) await run('drift', 'track=cocina&solo&car=katana', 30, [5, 12, 20, 29]);
+if (want('garaje')) await run('garaje', 'track=garaje&rivals=3&car=bisonte', 30, [5, 14, 22, 29]);
 if (want('obst')) await run('obst', 'track=escritorio&rivals=3&laps=1', 60, [20, 28, 36, 44, 52, 59]);
 if (want('fin')) { // resultados: modos en solitario y duelo, acelerado
   await run('fin-drift-solo', 'track=cocina&solo&fast=6', 80, []);

@@ -125,7 +125,7 @@ export function createBuilder(scene, world, RAPIER, S = 1, { mirror = false, rev
     };
   }
 
-  return { scene, world, RAPIER, fixed, collider, box, cyl, ball, wall, mat, S, MX, dynamics, dynBox, dynCyl, dynBall, kin, mirror, reverse };
+  return { scene, world, RAPIER, fixed, collider, box, cyl, ball, wall, mat, S, MX, dynamics, dynBox, dynCyl, dynBall, dyn, kin, mirror, reverse };
 }
 
 // Construye el trazado: muestras, bordes, línea de salida, parrilla y utilidades

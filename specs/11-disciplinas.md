@@ -31,6 +31,8 @@ Las monedas y el garaje son comunes. Código: `src/disciplines.js`.
 | DRI-06 | Marcador: puntos totales, combo en curso con su multiplicador (parpadea al cobrarse o perderse) y, en Duelo, puesto por puntos | ✅ |
 | DRI-07 | La IA derrapa: no levanta el gas en las curvas (el gas sostiene el derrape) y entra más rápido; no usa objetos. En simulación hace 2.400–8.700 puntos en 2 vueltas según el coche | ✅ |
 | DRI-08 | Circuitos de drift **compactos y estrechos** (ancho 5,5 u, la mitad que antes; trazado encogido ×0,7 para que las curvas vayan seguidas), sin rampas, armas ni turbos: **La cocina encerada** y **El garaje** | ✅ |
+| DRI-09 | **Pista de drift RC real**: suelo de losetas de plástico, pista pintada con líneas blancas y goma, bordes bajos blancos, **zonas de clip** numeradas en el exterior de las curvas (derrapar pegado al exterior da +150 + 50×multiplicador, una vez por paso), conos que se pueden tirar en el vértice, pilas de neumáticos, **tarima con pilotos gigantes** que siguen tu coche con la mirada, boxes con coches y cargadores, calle en miniatura (farolas, tiendas, máquinas) y pancartas/LED. Circuitos: **El club de drift** (de día) y **El garaje nocturno** (neones) | ✅ |
+| DRI-10 | **Salida de RC de drift**: mucho par (0→20 u/s en 0,7-1,0 s, antes 1,5-1,7 s), las ruedas traseras patinan con humo y marcas, y la cola baila a un lado al azar (~12º) hasta coger velocidad. Medido con `tests/driftprobe.mjs <circuito> <coche> launch` | ✅ |
 
 ## Obstáculos
 
@@ -51,7 +53,7 @@ para reutilizar vueltas, minimapa, IA, recolocación y variantes al revés/espej
 | ID | Requisito | Estado |
 |---|---|---|
 | DCO-01 | Cada coche indica en qué disciplinas corre (`disc`). Los de siempre son de Carrera | ✅ |
-| DCO-02 | Coches de **Drift**: Patín (gratis al abrir), Humo, Trompo, Katana. Turismos de tracción trasera con mucho giro | ✅ |
+| DCO-02 | Coches de **Drift** con aspecto de turismo RC de drift real (carrocerías bajas, kit ancho, caída negativa, llantas de radios, sin antena, sin marcas reales): **Patín** (descapotable, gratis al abrir), **Humo** (berlina cuadrada de los 80 con aletas anchas), **Trompo** (compacto bicolor de portón), **Bisonte** (deportivo americano con compresor) y **Katana** (cupé de los 90 con alerón) | ✅ |
 | DCO-03 | Coches de **Obstáculos**: Cabra (gratis al abrir), Oruga, Yeti. Camiones lentos con ruedas grandes, suspensión larga y mucho agarre | ✅ |
 | DCO-04 | Coches de Carrera que también valen: **Bólido, Flecha y Saeta** en Drift; **Tanque, Morsa y Rally** en Obstáculos | ✅ |
 | DCO-05 | Los rivales de Drift y Obstáculos salen de los coches de esa disciplina | ✅ |
@@ -68,8 +70,8 @@ para reutilizar vueltas, minimapa, IA, recolocación y variantes al revés/espej
 
 | Circuito | 🥉 | 🥈 | 🥇 | Referencia (IA con el coche básico, en solitario) |
 |---|---|---|---|---|
-| La cocina encerada | 1.200 pts | 3.000 | 5.500 | ~1.700 pts |
-| El garaje | 1.200 pts | 3.000 | 5.500 | ~1.550 pts |
+| El club de drift | 2.000 pts | 4.500 | 8.000 | ~3.000 pts |
+| El garaje nocturno | 2.000 pts | 4.500 | 8.000 | ~3.600 pts |
 | El escritorio | 1:22 | 1:10 | 1:01 | 1:00 |
 | El fregadero | 1:22 | 1:10 | 1:01 | 1:00 |
 

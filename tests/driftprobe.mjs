@@ -9,7 +9,7 @@ const { trackFromKey } = await import('../src/tracks/index.js');
 const { carById } = await import('../src/cars.js');
 const { tuning } = await import('../src/tuning.js');
 const [trackId = 'cocina', carId = 'patin', script = 'gas'] = process.argv.slice(2);
-if (process.env.DP) globalThis.__DP = { wMax: 1.3, yawGain: 6, align: 2.6, spin: 0.95, spinK: 6, latGrip: 0.15, thrust: 36, vmax: 0.85, ...JSON.parse(process.env.DP) };
+if (process.env.DP) globalThis.__DP = { launch: 15, fishtail: 6, wobHz: 9, launchV: 18, wMax: 1.16, yawGain: 6, align: 2.6, spin: 0.95, spinK: 6, latGrip: 0.15, thrust: 36, vmax: 0.85, ...JSON.parse(process.env.DP) };
 const sfx = { play() {}, update() {}, hit() {}, stopEngine() {} };
 const hud = { message() {}, setupMinimap() {}, update() {} };
 let input = { steer: 0, throttle: 0, brake: 0, human: true };
@@ -23,8 +23,10 @@ while (t < 16) {
   race.update(FIXED); t += FIXED;
   if (!race.started) continue;
   T0 ??= t; const u = t - T0;
-  if (u < 2.2) input = { steer: 0, throttle: 1, brake: 0, human: true };
+  if (script === 'launch') {}
+  else if (u < 2.2) input = { steer: 0, throttle: 1, brake: 0, human: true };
   else if (script === 'gas') input = { steer: 1, throttle: 1, brake: 0, human: true };
+  if (script === 'launch') { input = { steer: 0, throttle: 1, brake: 0, human: true }; globalThis.h0 ??= Math.atan2(car.forward.x, car.forward.z); { const d = (Math.atan2(car.forward.x, car.forward.z) - globalThis.h0) * 57.3; globalThis.hmin = Math.min(globalThis.hmin ?? 0, d); globalThis.hmax = Math.max(globalThis.hmax ?? 0, d); globalThis.bmax = Math.max(globalThis.bmax ?? 0, Math.abs(Math.atan2(car.localVel.x, Math.max(1, car.fwdSpeed)) * 57.3)); } for (const v of [10, 15, 20]) if (car.fwdSpeed >= v && !(globalThis['t' + v])) globalThis['t' + v] = u; if (u > 3) { console.log(`${carId} 0→10: ${globalThis.t10?.toFixed(2)} s · 0→15: ${globalThis.t15?.toFixed(2)} s · 0→20: ${globalThis.t20?.toFixed(2)} s · cola ${globalThis.hmin.toFixed(0)}º/${globalThis.hmax.toFixed(0)}º deriva máx ${globalThis.bmax.toFixed(0)}º`); process.exit(0); } }
   else if (script === 'half') input = { steer: u < 2.8 ? 1 : 0.4, throttle: 1, brake: 0, human: true };
   else if (script === 'straight') input = { steer: u < 3.0 ? 1 : 0, throttle: 1, brake: 0, human: true };
   else if (script === 'flick') input = { steer: 1, throttle: 1, brake: u < 2.7 ? 1 : 0, human: true };

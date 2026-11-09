@@ -52,6 +52,57 @@ const STYLES = {
     decal: { x: 0.625, y: 0.5, z: 0.25, size: 0.3 }, slick: true,
     arches: true, archX: 0.01, plate: { y: 0.22, zf: 1.12, zr: -1.08 }, mirrors: { x: 0.64, y: 0.62, z: 0.6 }, doors: { z: [0.55, -0.05], y: 0.4, h: 0.55 },
   },
+  // DCO-02: carrocerías de drift (turismos RC 1:10 con kit ancho, sin marcas reales)
+  coupe: { // cupé japonés de los 90 con alerón grande
+    profile: [[-1.0, -0.12], [-1.02, 0.12], [-0.92, 0.17], [-0.55, 0.18], [0.45, 0.18], [0.8, 0.12], [1.04, 0.04], [1.05, -0.08], [0.98, -0.13]],
+    width: 1.3, y: 0.22, noseStart: 0.6, noseTaper: 0.12, topStart: 0.1,
+    cab: [[-0.62, 0.0], [-0.4, 0.2], [0.1, 0.22], [0.45, 0.0]], cabWidth: 0.95, cabY: 0.41, cabZ: -0.08,
+    tailX: 0.42, tailY: 0.32, tailZ: -1.06, headX: 0.44, headY: 0.27, headZ: 1.06,
+    wing: { y: 0.74, z: -0.86, w: 1.32, strut: 0.26, d: 0.3, tilt: 0.1 },
+    decal: { x: 0.71, y: 0.25, z: 0.05, size: 0.28 }, slick: true,
+    arches: true, archX: -0.02, plate: { y: 0.15, zf: 1.09, zr: -1.08 }, mirrors: { x: 0.66, y: 0.48, z: 0.32 }, doors: { z: [0.33, -0.3], y: 0.16, h: 0.2 },
+    roundTail: true, drift: true, drop: 0.2,
+  },
+  roadster: { // descapotable pequeño con techo duro
+    profile: [[-0.9, -0.12], [-0.93, 0.1], [-0.8, 0.16], [-0.3, 0.17], [0.4, 0.16], [0.85, 0.08], [0.98, 0.0], [0.96, -0.1], [0.88, -0.13]],
+    width: 1.22, y: 0.22, noseStart: 0.55, noseTaper: 0.16, topStart: 0.08, topTaper: 0.14,
+    cab: [[-0.44, 0.0], [-0.3, 0.17], [0.0, 0.18], [0.24, 0.0]], cabWidth: 0.86, cabY: 0.39, cabZ: -0.16,
+    tailX: 0.4, tailY: 0.3, tailZ: -0.96, headX: 0.36, headY: 0.25, headZ: 0.97,
+    wing: { y: 0.46, z: -0.86, w: 1.0, strut: 0.04, d: 0.16, tilt: 0.22 },
+    decal: { x: 0.67, y: 0.24, z: 0.1, size: 0.26 }, slick: true,
+    arches: true, archX: -0.02, plate: { y: 0.14, zf: 0.99, zr: -0.98 }, mirrors: { x: 0.6, y: 0.44, z: 0.15 }, doors: { z: [0.2], y: 0.16, h: 0.18 },
+    drift: true, drop: 0.2,
+  },
+  sedan: { // berlina cuadrada de los 80 con aletas anchas
+    profile: [[-1.0, -0.12], [-1.01, 0.16], [-0.95, 0.19], [0.6, 0.19], [0.98, 0.16], [1.03, -0.1], [0.96, -0.13]],
+    width: 1.18, y: 0.22, noseStart: 0.8, noseTaper: 0.04, topStart: 0.12, topTaper: 0.05,
+    cab: [[-0.62, 0.0], [-0.52, 0.25], [0.24, 0.26], [0.46, 0.0]], cabWidth: 1.0, cabY: 0.43, cabZ: -0.05, cabTaper: 0.93,
+    tailX: 0.4, tailY: 0.3, tailZ: -1.05, headX: 0.38, headY: 0.26, headZ: 1.05,
+    wing: { y: 0.49, z: -0.95, w: 1.05, strut: 0.04, d: 0.18, tilt: 0.25 },
+    decal: { x: 0.65, y: 0.25, z: 0.05, size: 0.28 }, slick: true,
+    arches: false, plate: { y: 0.14, zf: 1.08, zr: -1.07 }, mirrors: { x: 0.62, y: 0.52, z: 0.32 }, doors: { z: [0.3, -0.26], y: 0.17, h: 0.22 },
+    flares: true, quadHead: true, drift: true, drop: 0.2,
+  },
+  hatch: { // compacto de los 80 con portón inclinado
+    profile: [[-0.94, -0.12], [-0.97, 0.12], [-0.9, 0.17], [0.4, 0.18], [0.72, 0.13], [1.0, 0.05], [1.02, -0.08], [0.96, -0.13]],
+    width: 1.18, y: 0.22, noseStart: 0.6, noseTaper: 0.1, topStart: 0.1, topTaper: 0.06,
+    cab: [[-0.9, 0.0], [-0.74, 0.25], [0.0, 0.27], [0.38, 0.0]], cabWidth: 0.96, cabY: 0.41, cabZ: 0.0, cabTaper: 0.9,
+    tailX: 0.42, tailY: 0.3, tailZ: -1.0, headX: 0.38, headY: 0.26, headZ: 1.03,
+    wing: { y: 0.71, z: -0.82, w: 0.95, strut: 0.03, d: 0.16, tilt: 0.12 },
+    decal: { x: 0.65, y: 0.25, z: 0.12, size: 0.28 }, slick: true,
+    arches: true, archX: -0.01, plate: { y: 0.14, zf: 1.07, zr: -1.0 }, mirrors: { x: 0.62, y: 0.5, z: 0.32 }, doors: { z: [0.34, -0.24], y: 0.17, h: 0.22 },
+    drift: true, drop: 0.2,
+  },
+  muscle: { // deportivo americano con compresor sobre el capó
+    profile: [[-1.0, -0.1], [-1.02, 0.15], [-0.86, 0.2], [-0.3, 0.2], [0.2, 0.2], [0.94, 0.17], [1.06, 0.06], [1.05, -0.1], [0.98, -0.13]],
+    width: 1.3, y: 0.22, noseStart: 0.8, noseTaper: 0.05, topStart: 0.12, topTaper: 0.06,
+    cab: [[-0.56, 0.0], [-0.4, 0.2], [-0.06, 0.21], [0.26, 0.0]], cabWidth: 0.96, cabY: 0.44, cabZ: -0.26,
+    tailX: 0.45, tailY: 0.33, tailZ: -1.06, headX: 0.46, headY: 0.29, headZ: 1.07,
+    wing: { y: 0.5, z: -0.97, w: 1.25, strut: 0.04, d: 0.16, tilt: 0.25 },
+    decal: { x: 0.71, y: 0.27, z: -0.1, size: 0.28 }, slick: true,
+    arches: true, archX: -0.02, plate: { y: 0.16, zf: 1.09, zr: -1.08 }, mirrors: { x: 0.66, y: 0.52, z: 0.08 }, doors: { z: [0.12, -0.45], y: 0.18, h: 0.22 },
+    drift: true, drop: 0.2,
+  },
   f1: {
     profile: null, cab: null,
     tailX: 0.06, tailY: 0.3, tailZ: -0.98,
@@ -171,33 +222,39 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
 
   const PLATE_Y = -0.2;
 
+  const style = def.style || 'buggy';
+  const S = STYLES[style];
   // ---------- Chasis ----------
   add(new THREE.BoxGeometry(0.46, 0.035, 1.62), M.alu, 0, PLATE_Y, -0.05);
-  const kick = add(new THREE.BoxGeometry(0.36, 0.035, 0.4), M.alu, 0, PLATE_Y + 0.07, 0.9);
-  kick.rotation.x = -0.4;
+  if (!S.drift) {
+    const kick = add(new THREE.BoxGeometry(0.36, 0.035, 0.4), M.alu, 0, PLATE_Y + 0.07, 0.9);
+    kick.rotation.x = -0.4;
+  }
   // cajas de diferencial
-  add(new THREE.BoxGeometry(0.3, 0.18, 0.2), M.plastic, 0, PLATE_Y + 0.1, 0.74, g, false);
-  add(new THREE.BoxGeometry(0.32, 0.2, 0.24), M.plastic, 0, PLATE_Y + 0.11, -0.72, g, false);
+  if (!S.drift) {
+    add(new THREE.BoxGeometry(0.3, 0.18, 0.2), M.plastic, 0, PLATE_Y + 0.1, 0.74, g, false);
+    add(new THREE.BoxGeometry(0.32, 0.2, 0.24), M.plastic, 0, PLATE_Y + 0.11, -0.72, g, false);
+  }
   // motor y batería (se intuyen bajo la carrocería)
   const motor = add(new THREE.CylinderGeometry(0.09, 0.09, 0.22, 12), M.chrome, -0.14, PLATE_Y + 0.11, -0.45, g, false);
   motor.rotation.z = Math.PI / 2;
   add(new THREE.BoxGeometry(0.2, 0.1, 0.62), new THREE.MeshStandardMaterial({ color: '#1a3d8f', roughness: 0.5 }), 0.1, PLATE_Y + 0.07, 0.05, g, false);
-  // torretas de amortiguadores (carbono)
-  for (const z of [0.69, -0.67]) {
-    const tw = add(new THREE.BoxGeometry(0.82, 0.3, 0.03), M.carbon, 0, 0.0, z, g, false);
-    tw.rotation.x = z > 0 ? -0.15 : 0.15;
+  if (!S.drift) {
+    // torretas de amortiguadores (carbono)
+    for (const z of [0.69, -0.67]) {
+      const tw = add(new THREE.BoxGeometry(0.82, 0.3, 0.03), M.carbon, 0, 0.0, z, g, false);
+      tw.rotation.x = z > 0 ? -0.15 : 0.15;
+    }
+    // parachoques delantero
+    const bump = add(new THREE.BoxGeometry(0.62, 0.07, 0.12), M.plastic, 0, PLATE_Y + 0.12, 1.1);
+    bump.rotation.x = -0.3;
+    for (const s of [1, -1]) {
+      const b2 = add(new THREE.BoxGeometry(0.2, 0.07, 0.1), M.plastic, s * 0.36, PLATE_Y + 0.12, 1.05);
+      b2.rotation.set(-0.3, s * 0.5, 0);
+    }
   }
-  // parachoques delantero
-  const bump = add(new THREE.BoxGeometry(0.62, 0.07, 0.12), M.plastic, 0, PLATE_Y + 0.12, 1.1);
-  bump.rotation.x = -0.3;
-  for (const s of [1, -1]) {
-    const b2 = add(new THREE.BoxGeometry(0.2, 0.07, 0.1), M.plastic, s * 0.36, PLATE_Y + 0.12, 1.05);
-    b2.rotation.set(-0.3, s * 0.5, 0);
-  }
-
   // ---------- Carrocería (policarbonato pintado) por estilo ----------
-  const style = def.style || 'buggy';
-  const S = STYLES[style];
+  const PB = PLATE_Y - (S.drop || 0); // carrocerías bajas (drift): las ruedas quedan dentro de los pasos
   if (S.profile) {
     const body = extrudeProfile(S.profile, S.width, 0.07, 0.05);
     shape(body, (v) => {
@@ -207,20 +264,26 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
     });
     const sb = smooth(body);
     planarUV(sb, 1.05, S.width / 2 + 0.1);
-    add(sb, paint, 0, PLATE_Y + S.y, 0);
+    add(sb, paint, 0, PB + S.y, 0);
   }
   if (S.cab) {
     const cabGeo = extrudeProfile(S.cab, S.cabWidth, 0.06, 0.04);
     shape(cabGeo, (v) => { if (v.y > S.cab[1][1] * 0.5) v.x *= S.cabTaper ?? 0.84; });
-    add(smooth(cabGeo), M.glass, 0, PLATE_Y + S.cabY, S.cabZ);
+    add(smooth(cabGeo), M.glass, 0, PB + S.cabY, S.cabZ);
   }
-  EXTRAS[style]?.({ add, paint, P: PLATE_Y, S, g, def, color, W: WHEELS, R: WHEEL_R });
+  EXTRAS[style]?.({ add, paint, P: PB, S, g, def, color, W: WHEELS, R: WHEEL_R });
+  // techo pintado sobre el cristal (drift)
+  if (S.drift && S.cab) {
+    const c0 = S.cab[1], c1 = S.cab[2], tw = S.cabWidth * (S.cabTaper ?? 0.84);
+    const roof = add(new THREE.BoxGeometry(tw + 0.05, 0.035, c1[0] - c0[0] + 0.02), paint, 0, PB + S.cabY + Math.min(c0[1], c1[1]) + 0.045, S.cabZ + (c0[0] + c1[0]) / 2);
+    roof.castShadow = true;
+  }
   // pasos de rueda (aletas) en carrocerías cerradas
   if (S.arches) {
     const hubY = CONN_Y - 0.26;
     for (const w of WHEELS) {
       const sx = Math.sign(w.x);
-      const a = add(new THREE.TorusGeometry(WHEEL_R + 0.07, 0.05, 6, 18, Math.PI), M.arch, sx * (S.width / 2 + S.archX), hubY, w.z, g, false);
+      const a = add(new THREE.TorusGeometry(WHEEL_R + 0.07, S.drift ? 0.07 : 0.05, 6, 18, Math.PI), S.drift ? paint : M.arch, sx * (S.width / 2 + S.archX), hubY, w.z, g, false);
       a.rotation.y = Math.PI / 2;
     }
   }
@@ -228,22 +291,22 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
   if (S.plate) {
     for (const z of [S.plate.zf, S.plate.zr]) {
       if (z === undefined) continue;
-      const pl = add(new THREE.PlaneGeometry(0.34, 0.1), plateMat(def.number || '7'), 0, PLATE_Y + S.plate.y, z, g, false);
+      const pl = add(new THREE.PlaneGeometry(0.34, 0.1), plateMat(def.number || '7'), 0, PB + S.plate.y, z, g, false);
       if (z < 0) pl.rotation.y = Math.PI;
     }
   }
   // retrovisores
   if (S.mirrors) {
     for (const sx of [1, -1]) {
-      const m = add(new THREE.BoxGeometry(0.1, 0.07, 0.05), paint, sx * S.mirrors.x, PLATE_Y + S.mirrors.y, S.mirrors.z, g, false);
-      add(new THREE.PlaneGeometry(0.08, 0.05), M.chrome, sx * S.mirrors.x, PLATE_Y + S.mirrors.y, S.mirrors.z - 0.026, g, false).rotation.y = Math.PI;
+      const m = add(new THREE.BoxGeometry(0.1, 0.07, 0.05), paint, sx * S.mirrors.x, PB + S.mirrors.y, S.mirrors.z, g, false);
+      add(new THREE.PlaneGeometry(0.08, 0.05), M.chrome, sx * S.mirrors.x, PB + S.mirrors.y, S.mirrors.z - 0.026, g, false).rotation.y = Math.PI;
       m.castShadow = true;
     }
   }
   // líneas de puertas
   if (S.doors) {
     for (const sx of [1, -1]) for (const z of S.doors.z) {
-      add(new THREE.BoxGeometry(0.005, S.doors.h, 0.012), M.carbon, sx * (S.width / 2 + 0.052), PLATE_Y + S.doors.y, z, g, false);
+      add(new THREE.BoxGeometry(0.005, S.doors.h, 0.012), M.carbon, sx * (S.width / 2 + 0.052), PB + S.doors.y, z, g, false);
     }
   }
 
@@ -251,7 +314,7 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
   if (S.decal) {
     const dm = decalMat(def.number || '7');
     for (const sd of [1, -1]) {
-      const d = add(new THREE.PlaneGeometry(S.decal.size, S.decal.size), dm, sd * S.decal.x, PLATE_Y + S.decal.y, S.decal.z, g, false);
+      const d = add(new THREE.PlaneGeometry(S.decal.size, S.decal.size), dm, sd * S.decal.x, PB + S.decal.y, S.decal.z, g, false);
       d.rotation.y = sd * Math.PI / 2;
     }
   }
@@ -260,21 +323,21 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
   const tailMat = new THREE.MeshStandardMaterial({ color: '#550000', emissive: '#ff1a1a', emissiveIntensity: 0.6 });
   const revMat = new THREE.MeshStandardMaterial({ color: '#777', emissive: '#ffffff', emissiveIntensity: 0 });
   for (const s2 of [1, -1]) {
-    add(new THREE.BoxGeometry(0.14, 0.06, 0.03), tailMat, s2 * S.tailX, PLATE_Y + S.tailY, S.tailZ, g, false);
-    add(new THREE.BoxGeometry(0.16, 0.08, 0.02), M.lens, s2 * S.tailX, PLATE_Y + S.tailY, S.tailZ - 0.02, g, false);
+    add(new THREE.BoxGeometry(0.14, 0.06, 0.03), tailMat, s2 * S.tailX, PB + S.tailY, S.tailZ, g, false);
+    add(new THREE.BoxGeometry(0.16, 0.08, 0.02), M.lens, s2 * S.tailX, PB + S.tailY, S.tailZ - 0.02, g, false);
   }
-  add(new THREE.BoxGeometry(0.08, 0.04, 0.03), revMat, 0, PLATE_Y + S.tailY, S.tailZ, g, false);
+  add(new THREE.BoxGeometry(0.08, 0.04, 0.03), revMat, 0, PB + S.tailY, S.tailZ, g, false);
   if (S.headY !== undefined) {
     for (const s2 of [1, -1]) {
-      add(new THREE.BoxGeometry(0.17, 0.08, 0.03), M.head, s2 * S.headX, PLATE_Y + S.headY, S.headZ, g, false);
-      add(new THREE.BoxGeometry(0.19, 0.1, 0.02), M.lens, s2 * S.headX, PLATE_Y + S.headY, S.headZ + 0.02, g, false);
+      add(new THREE.BoxGeometry(0.17, 0.08, 0.03), M.head, s2 * S.headX, PB + S.headY, S.headZ, g, false);
+      add(new THREE.BoxGeometry(0.19, 0.1, 0.02), M.lens, s2 * S.headX, PB + S.headY, S.headZ + 0.02, g, false);
     }
   }
 
   // ---------- Alerón ----------
   if (S.wing) {
     const wing = new THREE.Group();
-    wing.position.set(0, PLATE_Y + S.wing.y, S.wing.z);
+    wing.position.set(0, PB + S.wing.y, S.wing.z);
     wing.rotation.x = S.wing.tilt ?? 0.12;
     g.add(wing);
     const ww = S.wing.w;
@@ -297,13 +360,14 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
   tip.position.y = 1.16;
   antenna.add(rod, tip);
   g.add(antenna);
+  if (S.drift) antenna.scale.setScalar(0.001); // los de drift no llevan antena
 
   // ---------- Ruedas (una sola malla por rueda con colores por vértice) ----------
   const wheels = [];
   for (const w of WHEELS) {
     const pivot = new THREE.Group();
     const spin = new THREE.Group();
-    const wheel = new THREE.Mesh(wheelGeometry(WHEEL_R, w.x > 0 ? 1 : -1, !!S.slick, def.rimColor), M.wheel);
+    const wheel = new THREE.Mesh(wheelGeometry(WHEEL_R, w.x > 0 ? 1 : -1, !!S.slick, def.rimColor, def.spokes), M.wheel);
     wheel.castShadow = true; wheel.receiveShadow = true;
     spin.add(wheel);
     pivot.add(spin);
@@ -314,6 +378,7 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
     const cal = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.1 * k, 0.12 * k), M.caliper);
     cal.position.set(sx * 0.0, 0.1 * k, -0.06 * k); pivot.add(cal);
     pivot.position.set(w.x, CONN_Y - 0.3, w.z);
+    if (def.camber) pivot.rotation.z = sx * def.camber; // caída negativa de los coches de drift
     g.add(pivot);
     wheels.push(pivot);
   }
@@ -376,15 +441,18 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
   for (const p of susp) { dynamic.add(p.lower); dynamic.add(p.upper); dynamic.add(p.hub); dynamic.add(p.shock); dynamic.add(p.shaft); }
   const shell = mergeStatic(g, dynamic);
   const dmg = makeDamage(shell, paint);
-  const detail = susp.flatMap((p) => [p.lower, p.upper, p.hub, p.shock, p.shaft]);
+  // carrocería cerrada y baja (drift): los amortiguadores no se ven y asomarían por el capó
+  if (S.drift) for (const p of susp) for (const m of [p.upper, p.shock, p.shaft]) m.scale.set(0, 0, 0), (m.userData.hide = true);
+  const detail = susp.flatMap((p) => [p.lower, p.upper, p.hub, p.shock, p.shaft]).filter((m) => !m.userData.hide);
+  if (S.drift) for (const p of susp) { p.upper.visible = p.shock.visible = p.shaft.visible = false; }
 
   g.userData = { ...dmg, detail, wheels, antenna, antennaBase: new THREE.Vector3(-0.1, 0, 0), tailMat, revMat, updateSuspension, paint };
   return g;
 }
 
 const wheelCache = new Map();
-function wheelGeometry(R, side, slick = false, rimColor = '#eeeeee') {
-  const k = R + ':' + side + ':' + slick + ':' + rimColor;
+function wheelGeometry(R, side, slick = false, rimColor = '#eeeeee', spokes) {
+  const k = R + ':' + side + ':' + slick + ':' + rimColor + ':' + spokes;
   if (wheelCache.has(k)) return wheelCache.get(k);
   const paint = (geo, hex) => {
     const c = new THREE.Color(hex), n = geo.attributes.position.count, a = new Float32Array(n * 3);
@@ -393,7 +461,7 @@ function wheelGeometry(R, side, slick = false, rimColor = '#eeeeee') {
     return geo;
   };
   const tire = paint(makeTire(R, slick), '#161616');
-  const rimG = makeRim(R, slick ? 10 : 6);
+  const rimG = makeRim(R, spokes || (slick ? 10 : 6));
   if (side < 0) { rimG.scale(-1, 1, 1); flipWinding(rimG); }
   const rim = paint(rimG, rimColor);
   const nut = new THREE.CylinderGeometry(0.04, 0.04, 0.05, 6).rotateZ(Math.PI / 2).translate(side * 0.14, 0, 0).toNonIndexed();
@@ -497,6 +565,23 @@ function bodyTexture(color, number, pattern = 'stripes') {
   } else if (pattern === 'dots') {
     x.fillStyle = '#ffffff';
     for (let i = 0; i < 9; i++) for (let j = 0; j < 5; j++) { x.beginPath(); x.arc(30 + i * 56 + (j % 2) * 28, 26 + j * 52, 13, 0, Math.PI * 2); x.fill(); }
+  } else if (pattern === 'carbon') { // capó de carbono y franja lateral
+    x.fillStyle = '#16181b'; x.fillRect(330, 0, 182, 256);
+    x.fillStyle = '#2a2d31';
+    for (let i = 330; i < 512; i += 8) for (let j = 0; j < 256; j += 8) if (((i + j) / 8) % 2 < 1) x.fillRect(i, j, 4, 4);
+    x.fillStyle = '#ffffffcc'; x.fillRect(0, 10, 330, 6); x.fillRect(0, 240, 330, 6);
+  } else if (pattern === 'livery') { // decoración de patrocinadores inventados
+    const cols = ['#ffffff', '#111111', '#ff3d00'];
+    x.fillStyle = cols[0]; x.beginPath(); x.moveTo(0, 0); x.lineTo(180, 0); x.lineTo(80, 256); x.lineTo(0, 256); x.fill();
+    x.fillStyle = cols[2]; x.beginPath(); x.moveTo(180, 0); x.lineTo(215, 0); x.lineTo(115, 256); x.lineTo(80, 256); x.fill();
+    x.save(); x.translate(250, 128); x.rotate(-Math.PI / 2);
+    x.fillStyle = '#111'; x.font = 'bold italic 34px sans-serif'; x.textAlign = 'center'; x.fillText('SLIDE·K', 0, -40);
+    x.fillStyle = '#fff'; x.font = 'bold 22px sans-serif'; x.fillText('RB DRIFT', 0, 40); x.restore();
+  } else if (pattern === 'yellow') { // dos franjas amarillas de punta a punta
+    x.fillStyle = '#ffd400'; x.fillRect(0, 92, 512, 26); x.fillRect(0, 138, 512, 26);
+  } else if (pattern === 'twotone') { // dos tonos: techo claro y capó oscuro
+    x.fillStyle = '#f5f5f5'; x.fillRect(120, 30, 230, 196);
+    x.fillStyle = '#111111'; x.fillRect(360, 0, 152, 256);
   } else if (pattern === 'pizza') {
     x.fillStyle = '#ffffff'; x.fillRect(0, 20, 512, 26); x.fillRect(0, 210, 512, 26);
     x.fillStyle = '#2e7d32'; x.fillRect(0, 46, 512, 10); x.fillRect(0, 200, 512, 10);
@@ -662,8 +747,66 @@ function decalMat(number) {
   return m;
 }
 
+// Kit de drift común: faldón delantero, taloneras, gancho de remolque y escape grande
+function driftKit({ add, paint, P, S }, { lipZ = 1.04, skirt = 0.9, exhaust = -1.04 } = {}) {
+  const lip = add(new THREE.BoxGeometry(S.width + 0.06, 0.035, 0.22), M.carbon, 0, P + 0.03, lipZ, undefined, false);
+  lip.castShadow = true;
+  for (const sx of [1, -1]) add(new THREE.BoxGeometry(0.06, 0.06, skirt * 2 - 0.5), M.carbon, sx * (S.width / 2 + 0.05), P + 0.05, -0.02, undefined, false);
+  add(new THREE.BoxGeometry(0.06, 0.06, 0.1), M.caliper, -0.32, P + 0.08, lipZ + 0.08, undefined, false); // gancho
+  add(new THREE.CylinderGeometry(0.06, 0.06, 0.16, 10).rotateX(Math.PI / 2), M.chrome, -0.36, P + 0.06, exhaust, undefined, false);
+  add(new THREE.CylinderGeometry(0.042, 0.042, 0.02, 10).rotateX(Math.PI / 2), M.carbon, -0.36, P + 0.06, exhaust - 0.08, undefined, false);
+}
+function roundLights({ add, P, S }, n = 2, r = 0.075) {
+  const red = new THREE.MeshStandardMaterial({ color: '#7a0000', emissive: '#ff2020', emissiveIntensity: 0.9 });
+  for (const sx of [1, -1]) for (let i = 0; i < n; i++) {
+    add(new THREE.CylinderGeometry(r, r, 0.03, 14).rotateX(Math.PI / 2), red, sx * (S.tailX - 0.06 + i * 0.17), P + S.tailY, S.tailZ - 0.01, undefined, false);
+  }
+}
+
 // Piezas propias de cada tipo de coche
 const EXTRAS = {
+  coupe(c) {
+    driftKit(c);
+    roundLights(c, 2);
+    // capó con tomas de aire
+    for (const sx of [1, -1]) c.add(new THREE.BoxGeometry(0.16, 0.025, 0.2), M.carbon, sx * 0.2, c.P + c.S.y + 0.2, 0.72, undefined, false);
+  },
+  roadster(c) {
+    driftKit(c, { lipZ: 0.95, skirt: 0.8, exhaust: -0.95 });
+    // arco de seguridad y faros escamoteables (cerrados)
+    for (const sx of [1, -1]) c.add(new THREE.BoxGeometry(0.2, 0.03, 0.14), c.paint, sx * 0.36, c.P + c.S.y + 0.18, 0.78, undefined, false);
+  },
+  sedan(c) {
+    driftKit(c);
+    const { add, paint, P, S, W, R } = c;
+    // aletas anchas atornilladas (kit ancho)
+    for (const w of W) {
+      const sx = Math.sign(w.x);
+      const fl = add(new THREE.BoxGeometry(0.16, 0.2, R * 2 + 0.24), paint, sx * (S.width / 2 + 0.07), P + S.y + 0.02, w.z);
+      fl.castShadow = true;
+      for (const dz of [-1, 0, 1]) add(new THREE.SphereGeometry(0.018, 6, 4), M.chrome, sx * (S.width / 2 + 0.15), P + S.y + 0.09, w.z + dz * (R + 0.08), undefined, false);
+    }
+    // cuatro faros redondos y rejilla
+    for (const sx of [1, -1]) for (const dx of [0, 0.17]) add(new THREE.CylinderGeometry(0.065, 0.065, 0.03, 12).rotateX(Math.PI / 2), M.head, sx * (0.22 + dx), P + S.headY, S.headZ + 0.02, undefined, false);
+    add(new THREE.BoxGeometry(0.22, 0.1, 0.03), M.carbon, 0, P + S.headY, S.headZ + 0.01, undefined, false);
+  },
+  hatch(c) {
+    driftKit(c, { lipZ: 1.03, exhaust: -1.0 });
+    // franja inferior oscura (bicolor) y faros escamoteables
+    for (const sx of [1, -1]) c.add(new THREE.BoxGeometry(0.02, 0.12, 1.7), M.carbon, sx * (c.S.width / 2 + 0.052), c.P + c.S.y - 0.02, 0.02, undefined, false);
+    for (const sx of [1, -1]) c.add(new THREE.BoxGeometry(0.2, 0.03, 0.15), M.carbon, sx * 0.36, c.P + c.S.y + 0.15, 0.85, undefined, false);
+  },
+  muscle(c) {
+    driftKit(c, { lipZ: 1.06 });
+    const { add, P, S } = c;
+    // compresor que asoma del capó
+    const base = add(new THREE.BoxGeometry(0.34, 0.12, 0.42), M.chrome, 0, P + S.y + 0.26, 0.45);
+    base.castShadow = true;
+    add(new THREE.BoxGeometry(0.3, 0.1, 0.34), M.carbon, 0, P + S.y + 0.36, 0.45, undefined, false);
+    for (const dz of [-0.09, 0.09]) add(new THREE.CylinderGeometry(0.07, 0.07, 0.1, 12), M.chrome, 0, P + S.y + 0.46, 0.45 + dz, undefined, false);
+    // franjas de capó
+    for (const sx of [1, -1]) add(new THREE.BoxGeometry(0.1, 0.012, 0.5), M.carbon, sx * 0.3, P + S.y + 0.205, 0.75, undefined, false);
+  },
   buggy({ add, paint, P }) {
     add(new THREE.BoxGeometry(0.22, 0.08, 0.3), paint, 0, P + 0.46, -0.5);
     add(new THREE.BoxGeometry(0.18, 0.06, 0.02), M.carbon, 0, P + 0.46, -0.35, undefined, false);
