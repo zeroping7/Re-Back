@@ -341,3 +341,11 @@ body.pad-mode #btn-go::after, body.pad-mode #btn-cup-go::after { content: 'START
 #btn-look { position: absolute; left: calc(18px + env(safe-area-inset-left)); bottom: 128px; width: 58px; height: 58px; font-size: 24px; border-radius: 50%; }
 body.pad-mode #btn-look { display: none; }
 #h-lookback { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-weight: 900; letter-spacing: 2px; color: #fff; background: #0008; padding: 4px 14px; border-radius: 10px; }
+
+/* ===== Variantes de circuito (UX-13) ===== */
+.variant-opt { justify-content: flex-start; margin: 2px 0 6px; }
+.seg button.locked { opacity: .55; }
+.card.v-mirror .sw.pv.track { transform: scaleX(-1); }
+.card.v-mirror .sw.pv.track .star, .card.v-mirror .sw.pv.track .ghost-ic { transform: scaleX(-1); }
+.card.v-rev .sw.pv.track { filter: hue-rotate(-20deg) saturate(1.2); }
+.card .ghost-ic { position: absolute; left: 6px; top: 2px; font-size: 18px; z-index: 1; filter: drop-shadow(0 0 4px #9ef); }

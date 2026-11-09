@@ -4,7 +4,7 @@ globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext:
 globalThis.localStorage = { getItem: () => null, setItem() {} };
 const RAPIER = (await import('@dimforge/rapier3d-compat')).default; await RAPIER.init();
 const { Race, FIXED } = await import('../src/race.js');
-const { trackById } = await import('../src/tracks/index.js');
+const { trackFromKey: trackById } = await import('../src/tracks/index.js');
 const { carById } = await import('../src/cars.js');
 const { tuning } = await import('../src/tuning.js');
 const trackId = process.argv[2] || 'salon', rivals = +(process.argv[3] || 3), laps = +(process.argv[4] || 3);

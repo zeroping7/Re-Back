@@ -3,7 +3,7 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import '@fontsource/russo-one/latin-400.css';
 import { Race, FIXED, fmtTime, getBest } from './race.js';
-import { TRACKS, trackById } from './tracks/index.js';
+import { TRACKS, trackById, trackFromKey, VARIANTS, variantUnlocked } from './tracks/index.js';
 import { CARS, carById, UPGRADES, MAX_LEVEL, carTuning, tractionName } from './cars.js';
 import {
   profile, isOwned, upgradesOf, upgradeCost, sellValue, buyCar, sellCar, buyUpgrade, selectCar, raceReward, addMoney,
@@ -22,7 +22,7 @@ const $ = (id) => document.getElementById(id);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const SKEY = 'reback.settings.v1';
-const settings = { track: 'salon', car: 'rayo', laps: 3, rivals: 3, diff: 0.94, quality: 'alta', cam: 'normal', autoGas: false, cup: 'bronce', ...load(SKEY) };
+const settings = { track: 'salon', variant: 'normal', car: 'rayo', laps: 3, rivals: 3, diff: 0.94, quality: 'alta', cam: 'normal', autoGas: false, cup: 'bronce', ...load(SKEY) };
 function saveSettings() { try { localStorage.setItem(SKEY, JSON.stringify(settings)); } catch { /* nada */ } }
 function load(k) { try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch { return {}; } }
 
@@ -116,6 +116,8 @@ async function init() {
     }
   }
   const coins = (n) => n.toLocaleString('es-ES');
+  function toast(text) { const el = $('pad-toast'); el.textContent = text; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); }
+  const hasGhost = (key) => { try { return !!localStorage.getItem('reback.ghost.' + key); } catch { return false; } };
   // Foto de la tarjeta (UX-10); si no carga, se ve el color de siempre
   const PV = import.meta.env.BASE_URL + 'previews/';
   const carPv = (d) => `<div class="sw pv car" style="--c:${d.color};background-image:url(${PV}car-${d.id}.webp),radial-gradient(ellipse at 50% 75%,${d.color}88,#0000 70%),linear-gradient(135deg,#ffffff1a,#0003)"></div>`;
@@ -142,17 +144,36 @@ async function init() {
     }
   }
 
+  const trackKey = () => settings.track + (settings.variant && settings.variant !== 'normal' ? ':' + settings.variant : '');
   function buildSetup() {
+    if (!variantUnlocked(settings.variant, profile.cups)) settings.variant = 'normal';
     const tracks = $('tracks'); tracks.innerHTML = '';
+    const vr = settings.variant || 'normal';
     for (const t of TRACKS) {
-      const best = getBest(t.id);
+      const key = t.id + (vr !== 'normal' ? ':' + vr : '');
+      const best = getBest(key);
       const c = document.createElement('button');
-      c.className = 'card' + (settings.track === t.id ? ' sel' : '');
-      const star = mode === 'practice' ? `<span class="star ${profile.stars[t.id] ? 'got' : ''}">${profile.stars[t.id] ? '⭐' : '☆'}</span>` : '';
-      c.innerHTML = `${trackPv(t, star)}<b>${t.name}</b><small>${t.desc}</small>` +
+      c.className = 'card' + (settings.track === t.id ? ' sel' : '') + (vr !== 'normal' ? ' v-' + vr : '');
+      const star = mode === 'practice' && vr === 'normal' ? `<span class="star ${profile.stars[t.id] ? 'got' : ''}">${profile.stars[t.id] ? '⭐' : '☆'}</span>` : '';
+      const ghost = mode === 'practice' && hasGhost(key) ? '<span class="ghost-ic">👻</span>' : '';
+      c.innerHTML = `${trackPv(t, star + ghost)}<b>${trackFromKey(key).name}</b><small>${t.desc}</small>` +
         `<div class="rec">⏱ ${fmtTime(best.lap)}${best.wins ? ' · 🏆' + best.wins : ''}</div>`;
       c.addEventListener('click', () => { settings.track = t.id; saveSettings(); sfx.play('click'); buildSetup(); });
       tracks.append(c);
+    }
+    // sentido: normal, al revés, espejo (UX-13)
+    const vEl = $('opt-variant'); vEl.innerHTML = '';
+    for (const V of VARIANTS) {
+      const open = variantUnlocked(V.id, profile.cups);
+      const b = document.createElement('button');
+      b.textContent = (open ? '' : '🔒 ') + V.name + (V.icon ? ' ' + V.icon : '');
+      b.classList.toggle('sel', vr === V.id); b.classList.toggle('locked', !open);
+      b.addEventListener('click', () => {
+        sfx.play('click');
+        if (!open) { toast(`🔒 Queda entre los 3 primeros de la Copa ${V.needs === 'plata' ? 'Plata' : 'Oro'}`); return; }
+        settings.variant = V.id; saveSettings(); buildSetup();
+      });
+      vEl.append(b);
     }
     carCards($('cars'), buildSetup);
     seg('opt-laps', [[2, '2'], [3, '3'], [5, '5']], () => settings.laps, (v) => { settings.laps = v; saveSettings(); });
@@ -168,7 +189,7 @@ async function init() {
       const open = cupUnlocked(c, profile.cups), best = profile.cups[c.id];
       const b = document.createElement('button');
       b.className = 'card cup' + (settings.cup === c.id ? ' sel' : '') + (open ? '' : ' locked');
-      const route = c.tracks.map((id) => trackById(id).short).join(' → ');
+      const route = c.tracks.map((id) => trackFromKey(id).short).join(' → ');
       b.innerHTML = `<div class="cup-ic" style="--c:${c.color}">${open ? c.icon : '🔒'}</div><b>${c.name}</b>` +
         `<small>${c.diffName} · ${c.laps} vueltas · ${c.rivals + 1} coches<br>${route}</small>` +
         `<div class="price">Premio 🪙 ${coins(c.prize)}</div>` +
@@ -278,14 +299,14 @@ async function init() {
       const c = cupById(cup.id);
       return { track: c.tracks[cup.idx], laps: c.laps, rivals: c.rivals, diff: c.diff, practice: false, kind: `${c.icon} ${c.name} · Carrera ${cup.idx + 1} de ${c.tracks.length}` };
     }
-    if (mode === 'practice') return { track: settings.track, laps: 3, rivals: 0, diff: 1, practice: true, kind: '⏱ Contrarreloj' };
-    return { track: settings.track, laps: settings.laps, rivals: settings.rivals, diff: settings.diff, practice: false, kind: '🏁 Carrera rápida' };
+    if (mode === 'practice') return { track: trackKey(), laps: 3, rivals: 0, diff: 1, practice: true, kind: '⏱ Contrarreloj' };
+    return { track: trackKey(), laps: settings.laps, rivals: settings.rivals, diff: settings.diff, practice: false, kind: '🏁 Carrera rápida' };
   }
 
   function showLoading(def, cfg) {
     $('ld-kind').textContent = cfg.kind;
     $('ld-name').textContent = def.name;
-    $('ld-desc').textContent = def.desc + (cfg.practice ? (profile.stars[def.id] ? ' · ⭐ estrella conseguida' : ' · ☆ busca la estrella') : ` · ${cfg.laps} vueltas · ${cfg.rivals + 1} coches`);
+    $('ld-desc').textContent = def.desc + (cfg.practice && def.variant ? '' : cfg.practice ? (profile.stars[def.id] ? ' · ⭐ estrella conseguida' : ' · ☆ busca la estrella') : ` · ${cfg.laps} vueltas · ${cfg.rivals + 1} coches`);
     $('ld-tip').textContent = '💡 ' + TIPS[Math.floor(Math.random() * TIPS.length)];
     $('loading').style.setProperty('--tc', def.color);
     $('loading').classList.remove('hidden', 'go');
@@ -296,7 +317,7 @@ async function init() {
   function startRace() {
     const token = ++loadToken;
     if (race) { race.dispose(); race = null; }
-    const cfg = raceConfig(), def = trackById(cfg.track);
+    const cfg = raceConfig(), def = trackFromKey(cfg.track);
     showScreen(null);
     $('hud').classList.add('hidden');
     $('tune-panel').classList.add('hidden');
@@ -313,7 +334,7 @@ async function init() {
         trackDef: def, carDef: carById(profile.selected), carUpgrades: { ...upgradesOf(profile.selected) },
         laps: cfg.laps, rivals: cfg.rivals, difficulty: cfg.diff, practice: cfg.practice,
         baseTuning: tuning, onFinish: showResults, camMode: settings.cam,
-        star: cfg.practice ? { taken: !!profile.stars[def.id] } : null,
+        star: cfg.practice && !def.variant ? { taken: !!profile.stars[def.id] } : null,
         onStar: () => (takeStar(def.id) ? STAR_PRIZE : 0),
       });
       r.sun.castShadow = q.shadow;
@@ -367,7 +388,7 @@ async function init() {
     const cfg = raceConfig(), inCup = mode === 'cup';
     const me = res.find((r) => r.player);
     if (inCup) addPoints(cup, res);
-    $('res-kind').textContent = `${cfg.kind} · ${trackById(cfg.track).name}`;
+    $('res-kind').textContent = `${cfg.kind} · ${trackFromKey(cfg.track).name}`;
     $('res-title').textContent = me.place === 1 ? '🏆 ¡Has ganado!' : `Has quedado ${me.place}º`;
     $('res-table').innerHTML = res.map((r) => `<tr class="${r.player ? 'me' : ''}"><td>${r.place}º</td><td><span class="dot" style="background:${r.color}"></span>${r.name}</td>` +
       `<td>${r.finished ? fmtTime(r.time) : '—'}</td><td>⏱ ${fmtTime(r.best)}</td>${inCup ? `<td class="pts">+${POINTS[r.place - 1] || 0}</td>` : ''}</tr>`).join('');

@@ -21,9 +21,12 @@ export function clearMatCache() { matCache.clear(); }
 
 // Ayudante para crear mallas estáticas con colisión
 // S = escala del mundo: los circuitos se diseñan en unidades "pequeñas" y se amplían
-export function createBuilder(scene, world, RAPIER, S = 1) {
+// opts.mirror: circuito en espejo (CIR-23). El dibujo se refleja con escala X negativa en la escena;
+// aquí se reflejan las físicas: x → -x y rotaciones (x, -y, -z, w).
+export function createBuilder(scene, world, RAPIER, S = 1, { mirror = false, reverse = false } = {}) {
   const fixed = world.createRigidBody(RAPIER.RigidBodyDesc.fixed());
   const tmpE = new THREE.Euler();
+  const MX = mirror ? -1 : 1;
 
   function collider(desc, pos, quat, { friction = 0.6, restitution = 0.1, groups } = {}) {
     const sh = desc.shape;
@@ -31,8 +34,8 @@ export function createBuilder(scene, world, RAPIER, S = 1) {
     if (sh.halfHeight !== undefined) sh.halfHeight *= S;
     if (sh.radius !== undefined) sh.radius *= S;
     if (sh.borderRadius !== undefined) sh.borderRadius *= S;
-    desc.setTranslation(pos.x * S, pos.y * S, pos.z * S);
-    if (quat) desc.setRotation({ x: quat.x, y: quat.y, z: quat.z, w: quat.w });
+    desc.setTranslation(pos.x * S * MX, pos.y * S, pos.z * S);
+    if (quat) desc.setRotation(mirror ? { x: quat.x, y: -quat.y, z: -quat.z, w: quat.w } : { x: quat.x, y: quat.y, z: quat.z, w: quat.w });
     desc.setFriction(friction).setRestitution(restitution);
     if (groups !== undefined) desc.setCollisionGroups(groups);
     return world.createCollider(desc, fixed);
@@ -90,8 +93,8 @@ export function createBuilder(scene, world, RAPIER, S = 1) {
     scene.add(m);
     tmpE.set(rot[0], rot[1], rot[2], 'YXZ');
     const q = new THREE.Quaternion().setFromEuler(tmpE);
-    const body = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(x * S, y * S, z * S)
-      .setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }).setLinearDamping(0.3).setAngularDamping(0.4));
+    const body = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(x * S * MX, y * S, z * S)
+      .setRotation(mirror ? { x: q.x, y: -q.y, z: -q.z, w: q.w } : { x: q.x, y: q.y, z: q.z, w: q.w }).setLinearDamping(0.3).setAngularDamping(0.4));
     desc.setDensity(density).setFriction(0.5).setRestitution(0.3).setCollisionGroups(PROP_GROUPS);
     world.createCollider(desc, body);
     dynamics.push({ body, mesh: m });
@@ -101,7 +104,7 @@ export function createBuilder(scene, world, RAPIER, S = 1) {
   const dynCyl = (r, h, x, y, z, material, o) => dyn(new THREE.CylinderGeometry(r, r, h, 12), material, RAPIER.ColliderDesc.cylinder(h / 2 * S, r * S), x, y, z, o);
   const dynBall = (r, x, y, z, material, o) => dyn(new THREE.IcosahedronGeometry(r, 1), material, RAPIER.ColliderDesc.ball(r * S), x, y, z, o);
 
-  return { scene, world, RAPIER, fixed, collider, box, cyl, ball, wall, mat, S, dynamics, dynBox, dynCyl, dynBall };
+  return { scene, world, RAPIER, fixed, collider, box, cyl, ball, wall, mat, S, dynamics, dynBox, dynCyl, dynBall, mirror, reverse };
 }
 
 // Construye el trazado: muestras, bordes, línea de salida, parrilla y utilidades
@@ -126,6 +129,11 @@ export function buildCircuit(B, def) {
     samples.forEach((s, i) => { const d = (s.p.x - sx) ** 2 + (s.p.z - sz) ** 2; if (d < bd) { bd = d; k = i; } });
     samples.push(...samples.splice(0, k));
   }
+  // al revés (CIR-23): mismo trazado recorrido en sentido contrario, misma línea de salida
+  if (B.reverse) {
+    samples = [samples[0], ...samples.slice(1).reverse()];
+    for (const s of samples) { s.t.negate(); s.n.negate(); }
+  }
   samples.forEach((s, i) => { s.i = i; s.h = 0; });
 
   // curvatura (radio) y velocidad recomendada para la IA
@@ -136,15 +144,18 @@ export function buildCircuit(B, def) {
     samples[i].radius = (1.6 * 4) / Math.max(ang, 1e-4);
     samples[i].turn = Math.sign(cross);
   }
-  const at = (f) => Math.round(f * N) % N;
+  // fracción de vuelta → índice. Al revés, la misma fracción cae en el mismo sitio físico que en el original,
+  // así los decorados colocados con at() no se mueven.
+  const at = (f) => { const i = ((Math.round(f * N) % N) + N) % N; return B.reverse ? (N - i) % N : i; };
   // radio mínimo alrededor de un índice
   const minRadius = (i, back, fwd) => { let r = Infinity; for (let k = -back; k <= fwd; k++) r = Math.min(r, samples[(i + k + N) % N].radius); return r; };
   // índice del tramo más recto entre dos fracciones de la vuelta
   function straightest(f0, f1, back = 4, fwd = 10, avoid = []) {
-    let best = at(f0), br = -1;
+    const i0 = B.reverse ? at(f1) : at(f0);
+    let best = i0, br = -1;
     const n = Math.round(((f1 - f0 + 1) % 1 || 1) * N);
     for (let k = 0; k < n; k++) {
-      const i = (at(f0) + k) % N;
+      const i = (i0 + k) % N;
       if (avoid.some(([a, b]) => cyclicIn(i, a - 6, b + 6, N))) continue;
       const r = minRadius(i, back, fwd);
       if (r > br) { br = r; best = i; }
@@ -177,13 +188,14 @@ export function buildCircuit(B, def) {
 
   // ---------- Bordes ----------
   const st = def.barrier;
+  const gaps = def.gaps && (B.reverse ? def.gaps.map(([a, b, sd]) => [(N - b) % N, (N - a) % N, sd === undefined ? sd : -sd]) : def.gaps);
   // bordes visibles bajos y sobrios; la colisión es un muro invisible más alto
   const blockH = st.height ?? 0.6, blockT = st.thick ?? 0.6;
   const segs = [];
   for (const side of [1, -1]) {
     for (let i = 0; i < N; i++) {
       const a = samples[i], b = samples[(i + 1) % N];
-      if (def.gaps && def.gaps.some(([from, to, sd]) => (sd === undefined || sd === side) && inRange(i, from, to, N))) continue;
+      if (gaps && gaps.some(([from, to, sd]) => (sd === undefined || sd === side) && inRange(i, from, to, N))) continue;
       const pa = a.p.clone().addScaledVector(a.n, side * (width / 2 + blockT / 2));
       const pb = b.p.clone().addScaledVector(b.n, side * (width / 2 + blockT / 2));
       const mid = pa.clone().add(pb).multiplyScalar(0.5);
@@ -266,6 +278,10 @@ export function buildCircuit(B, def) {
     const mesh = new THREE.Mesh(g, material);
     mesh.receiveShadow = true; mesh.castShadow = true;
     scene.add(mesh);
+    if (B.mirror) { // espejo: x negada y triángulos al revés
+      for (let k = 0; k < phys.length; k += 3) phys[k] = -phys[k];
+      for (let k = 0; k < tri.length; k += 3) { const t = tri[k + 1]; tri[k + 1] = tri[k + 2]; tri[k + 2] = t; }
+    }
     const desc = RAPIER.ColliderDesc.trimesh(new Float32Array(phys), new Uint32Array(tri), RAPIER.TriMeshFlags.FIX_INTERNAL_EDGES).setFriction(0.9);
     B.world.createCollider(desc, B.fixed);
   }
@@ -482,13 +498,17 @@ export function mergeStatic(scene) {
 }
 
 // Pasa el circuito (diseñado en unidades pequeñas) a coordenadas del mundo
-export function scaleTrack(T, S) {
+export function scaleTrack(T, S, mirror = false) {
   const c = T.circuit;
-  for (const s of c.samples) { s.p.multiplyScalar(S); s.radius *= S; }
+  for (const s of c.samples) {
+    s.p.multiplyScalar(S); s.radius *= S;
+    if (mirror) { s.p.x = -s.p.x; s.t.x = -s.t.x; s.n.x = -s.n.x; s.turn = -s.turn; }
+  }
   c.width *= S; c.spacing *= S; c.length *= S;
   T.bounds = { x: T.bounds.x * S, z: T.bounds.z * S, h: T.bounds.h * S };
-  for (const z of T.zones || []) if (z.pos) { z.pos = z.pos.clone().multiplyScalar(S); z.r *= S; }
+  for (const z of T.zones || []) if (z.pos) { z.pos = z.pos.clone().multiplyScalar(S); z.r *= S; if (mirror) z.pos.x = -z.pos.x; }
   const L = T.lights;
+  if (mirror) { L.sun = { ...L.sun, offset: [-L.sun.offset[0], L.sun.offset[1], L.sun.offset[2]] }; for (const p of L.points || []) p.pos = [-p.pos[0], p.pos[1], p.pos[2]]; }
   if (L.fog) L.fog = [L.fog[0], L.fog[1] * S, L.fog[2] * S];
   for (const p of L.points || []) { p.pos = p.pos.map((v) => v * S); p.distance *= S; p.intensity *= Math.pow(S, p.decay ?? 2); }
 }

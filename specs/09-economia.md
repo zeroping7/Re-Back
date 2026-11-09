@@ -13,7 +13,7 @@ coche en uso, copas y estrellas.
 | ECO-06 | **Copas**: premio final al 1º 100 %, 2º 50 %, 3º 25 % (Bronce 1.500, Plata 3.000, Oro 6.000) además del premio de cada carrera | ✅ |
 | ECO-07 | Copas encadenadas: Plata se abre quedando entre los 3 primeros en Bronce; Oro, en Plata | ✅ |
 | ECO-08 | **Estrella oculta**: 500 🪙 la primera vez que se coge en cada circuito | ✅ |
-| ECO-09 | **Copa Platino** (se abre con Oro): circuitos al revés y en espejo, difícil, 6 coches, premio 10.000 | 🚧 |
+| ECO-09 | **Copa Platino** (se abre con Oro): circuitos al revés y en espejo, difícil, 6 coches, premio 10.000 | ✅ |
 
 ## Copas
 

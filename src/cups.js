@@ -3,6 +3,8 @@ export const CUPS = [
   { id: 'bronce', name: 'Copa Bronce', icon: '🥉', color: '#cd7f32', diff: 0.86, diffName: 'Fácil', laps: 2, rivals: 3, tracks: ['salon', 'super', 'jardin'], prize: 1500, needs: null },
   { id: 'plata', name: 'Copa Plata', icon: '🥈', color: '#c0c7d0', diff: 0.94, diffName: 'Normal', laps: 3, rivals: 3, tracks: ['super', 'jardin', 'salon'], prize: 3000, needs: 'bronce' },
   { id: 'oro', name: 'Copa Oro', icon: '🥇', color: '#ffd23f', diff: 1.02, diffName: 'Difícil', laps: 3, rivals: 5, tracks: ['jardin', 'salon', 'super'], prize: 6000, needs: 'plata' },
+  // ECO-09: circuitos al revés y en espejo
+  { id: 'platino', name: 'Copa Platino', icon: '💎', color: '#9fe7ff', diff: 1.06, diffName: 'Experto', laps: 3, rivals: 5, tracks: ['salon:rev', 'jardin:mirror', 'super:rev'], prize: 10000, needs: 'oro' },
 ];
 export const POINTS = [10, 6, 4, 3, 2, 1];
 export const cupById = (id) => CUPS.find((c) => c.id === id) || CUPS[0];

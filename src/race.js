@@ -30,12 +30,14 @@ export class Race {
     this.world.timestep = FIXED;
     const S = (this.S = trackDef.scale ?? 2);
     const root = new THREE.Group();
-    root.scale.setScalar(S);
+    const mirror = (this.mirror = !!trackDef.mirror);
+    root.scale.set(mirror ? -S : S, S, S);
     scene.add(root);
-    const B = createBuilder(root, this.world, RAPIER, S);
+    const B = createBuilder(root, this.world, RAPIER, S, { mirror, reverse: !!trackDef.reverse });
     const T = (this.T = trackDef.build(B));
     this.dynamics = B.dynamics;
-    scaleTrack(T, S);
+    scaleTrack(T, S, mirror);
+    this.trackKey = trackDef.key || trackDef.id;
     this.circuit = T.circuit;
     this.bounds = T.bounds;
     this.setupLights(T.lights);
@@ -94,7 +96,7 @@ export class Race {
     this.camY = this.player.currPos.y + 7;
     this.camDist = 16;
     this.camRay = new RAPIER.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 1 });
-    this.best = loadBest(trackDef.id);
+    this.best = loadBest(this.trackKey);
     this.updatePlaces();
     this.hud.setupMinimap(this.circuit);
   }
@@ -200,7 +202,7 @@ export class Race {
         st.lastLap = lapTime; st.lapStart = this.time;
         if (!st.bestLap || lapTime < st.bestLap) st.bestLap = lapTime;
         if (car.isPlayer) {
-          if (!this.best.lap || lapTime < this.best.lap) { this.best.lap = lapTime; saveBest(this.trackDef.id, this.best); this.hud.message(`¡Récord de vuelta! ${fmtTime(lapTime)}`, 2); }
+          if (!this.best.lap || lapTime < this.best.lap) { this.best.lap = lapTime; saveBest(this.trackKey, this.best); this.hud.message(`¡Récord de vuelta! ${fmtTime(lapTime)}`, 2); }
         }
         if (!this.practice && st.laps >= this.laps) {
           st.finished = true; st.finishTime = this.time;
@@ -432,7 +434,7 @@ export class Race {
     this.hud.message(`¡META! ${st.place}º`, 3, 'big go');
     if (!this.best.race || st.finishTime < this.best.race) { this.best.race = st.finishTime; }
     this.best.wins = (this.best.wins || 0) + (st.place === 1 ? 1 : 0);
-    saveBest(this.trackDef.id, this.best);
+    saveBest(this.trackKey, this.best);
     setTimeout(() => this.onFinish?.(this.results()), 2500);
   }
 
@@ -550,10 +552,11 @@ export class Race {
   // ---------- Render ----------
   render(alpha, dt) {
     const S = this.S;
+    const mx = this.mirror ? -1 : 1;
     for (const d of this.dynamics) {
       const p = d.body.translation(), r = d.body.rotation();
-      d.mesh.position.set(p.x / S, p.y / S, p.z / S);
-      d.mesh.quaternion.set(r.x, r.y, r.z, r.w);
+      d.mesh.position.set(mx * p.x / S, p.y / S, p.z / S);
+      d.mesh.quaternion.set(r.x, mx * r.y, mx * r.z, r.w);
     }
     for (const car of this.cars) {
       car.render(this.paused ? 1 : alpha);
