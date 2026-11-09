@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { grassTexture, dirtTexture } from '../textures.js';
-import { buildCircuit, startArch, trackRibbon, mat, BARRIER_GROUPS } from './common.js';
+import { buildCircuit, startArch, trackRibbon, mat, BARRIER_GROUPS, trackPatch, chevronTexture } from './common.js';
 
 // Circuito 3: "El jardín". Al aire libre: camino de tierra, charco, rampa-tabla y árboles.
 const AREA = { x: 72, z: 52 };
@@ -67,10 +67,31 @@ function build(B) {
     start: [-34, 39],
     width: 7,
     limits: [AREA.x - 2, AREA.z - 2],
+    hills: [{ at: [40, -6], len: 32, h: 2.2, double: true }, { at: [16, -25], len: 22, h: 1.8 }, { at: [0, 34], len: 22, h: 1.3 }],
+    hillColor: '#7a5a3a',
     barrier: { colors: ['#8d6e63', '#795548', '#a1887f', '#6d4c41'], thick: 0.8, round: true, roughness: 0.9 },
   });
   const { sampleNear, yawOf, spot } = circuit;
   const anim = [];
+
+  // punto relativo a la pista: avance y desplazamiento lateral (fracción del ancho)
+  const onTrack = (x, z, along = 0, lat = 0) => { const s = circuit.sampleNear(x, z); return s.p.clone().addScaledVector(s.t, along).addScaledVector(s.n, lat * circuit.width / 2); };
+  const extraZones = [];
+  // barro (derrapa) y turbos
+  extraZones.push(Object.assign(trackPatch(B, circuit, [-58, -8], 20, 'slide', { color: '#4e3420', opacity: 0.92 }), { particles: [0.35, 0.24, 0.12] }));
+  extraZones.push(Object.assign(trackPatch(B, circuit, [54, -32], 16, 'slide', { color: '#4e3420', opacity: 0.92 }), { particles: [0.35, 0.24, 0.12] }));
+  extraZones.push(trackPatch(B, circuit, [-48, 19], 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
+  extraZones.push(trackPatch(B, circuit, [30, 36], 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
+  // balón de playa, macetas y cajas de madera
+  { const p = onTrack(14, 40, 0, 0.3); B.dynBall(1.6, p.x, p.y + 1.7, p.z, '#ff5252', { density: 0.02 }); }
+  for (let k = 0; k < 5; k++) {
+    const p = onTrack(58, 24, k * 1.2, -0.5 + k * 0.25);
+    B.dynCyl(0.8, 1.5, p.x, p.y + 0.8, p.z, '#c0643b', { density: 0.08 });
+  }
+  for (const [i, l, y] of [[0, -0.3, 1], [0, 0.25, 1], [0.3, 0, 3]]) {
+    const p = onTrack(-47, 0, i, l);
+    B.dynBox(2, 2, 2, p.x, y, p.z, '#a1887f', { rot: [0, i, 0], density: 0.06 });
+  }
   const W = circuit.width;
   trackRibbon(B, circuit, new THREE.MeshStandardMaterial({ map: dirtTexture([1, 1]), roughness: 1 }), 0.8);
   startArch(B, circuit, { color: '#43a047', text: 'GRAN PREMIO JARDÍN' });
@@ -86,7 +107,7 @@ function build(B) {
   }
 
   // ---------- Charco (frena y salpica) ----------
-  const zones = [];
+  const zones = extraZones;
   {
     const s = sampleNear(-20, -36);
     const p = s.p.clone().addScaledVector(s.n, 1);

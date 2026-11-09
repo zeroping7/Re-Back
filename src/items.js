@@ -46,7 +46,7 @@ export class Items {
         const ring = new THREE.Mesh(this.ringGeo, this.ringMat);
         g.add(m, ring);
         g.position.copy(s.p).addScaledVector(s.n, lane * c.width / 2);
-        g.position.y = 1.0;
+        g.position.y = s.p.y + 1.0;
         this.scene.add(g);
         this.pickups.push({ g, m, ring, base: g.position.clone(), respawn: 0 });
       }

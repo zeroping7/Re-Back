@@ -192,3 +192,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .up-row button { padding: 7px 10px; border-radius: 10px; font-weight: 800; font-size: 13px; background: #ffb34755; min-width: 84px; }
 .up-row button:disabled { opacity: .4; }
 #res-reward { font-size: 20px; font-weight: 900; color: #ffd166; margin: 6px 0 0; }
+/* deslizar las listas de tarjetas con el dedo */
+.menu button { touch-action: manipulation; }
+.cards { touch-action: pan-x pan-y; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+.cards .card { touch-action: pan-x pan-y; scroll-snap-align: start; }

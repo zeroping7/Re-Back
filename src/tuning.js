@@ -1,16 +1,16 @@
 // Parámetros de conducción ajustables en vivo (se guardan en localStorage).
-const KEY = 'reback.tuning.v2';
+const KEY = 'reback.tuning.v3';
 
 export const TUNING_DEFS = [
-  { key: 'engine',      label: 'Potencia',              min: 40,  max: 400, step: 5,    def: 130 },
-  { key: 'maxSpeed',    label: 'Velocidad máx.',        min: 10,  max: 70,  step: 1,    def: 25 },
+  { key: 'engine',      label: 'Potencia',              min: 40,  max: 400, step: 5,    def: 145 },
+  { key: 'maxSpeed',    label: 'Velocidad máx.',        min: 10,  max: 70,  step: 1,    def: 29 },
   { key: 'rearBias',    label: 'Tracción trasera (%)',  min: 0,   max: 100, step: 5,    def: 90 },
   { key: 'brake',       label: 'Freno',                 min: 0.5, max: 12,  step: 0.5,  def: 10 },
   { key: 'steerMax',    label: 'Giro máx. (rad)',       min: 0.2, max: 0.9, step: 0.01, def: 0.3 },
   { key: 'steerSpeed',  label: 'Rapidez de giro',       min: 1,   max: 15,  step: 0.5,  def: 6 },
   { key: 'steerFalloff',label: 'Menos giro a alta vel.',min: 0,   max: 0.1, step: 0.005,def: 0.03 },
-  { key: 'gripFront',   label: 'Agarre delantero',      min: 0.5, max: 8,   step: 0.1,  def: 3.4 },
-  { key: 'gripRear',    label: 'Agarre trasero',        min: 0.5, max: 8,   step: 0.1,  def: 3.0 },
+  { key: 'gripFront',   label: 'Agarre delantero',      min: 0.5, max: 8,   step: 0.1,  def: 3.0 },
+  { key: 'gripRear',    label: 'Agarre trasero',        min: 0.5, max: 8,   step: 0.1,  def: 2.6 },
   { key: 'sideFront',   label: 'Rigidez lateral del.',  min: 0.2, max: 2,   step: 0.05, def: 1.0 },
   { key: 'sideRear',    label: 'Rigidez lateral tras.', min: 0.2, max: 2,   step: 0.05, def: 0.9 },
   { key: 'driftRear',   label: 'Agarre trasero al derrapar', min: 0.05,max: 1, step: 0.05, def: 0.45 },

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { parquetTexture, rugTexture, wallpaperTexture, bookCoverTexture, canTexture } from '../textures.js';
-import { buildCircuit, mat, BARRIER_GROUPS } from './common.js';
+import { buildCircuit, mat, BARRIER_GROUPS, trackPatch, chevronTexture } from './common.js';
 
 // Circuito 1: "El salón". Escala de juguete: 1 unidad ≈ 22 cm.
 const ROOM = { x: 48, z: 34, h: 30 };
@@ -81,12 +81,39 @@ function build(B) {
     start: [-16, 27.2],
     width: 7,
     limits: [ROOM.x - 1, ROOM.z - 1],
+    hills: [{ at: [-41, -4], len: 30, h: 1.6 }, { at: [27, 0], len: 20, h: 1.1 }],
+    hillColor: '#b07a4a',
     barrier: { colors: ['#e63946', '#f1c40f', '#2a9df4', '#2ecc71', '#ff8c1a', '#9b59b6'] },
   });
   const W = circuit.width;
   const { samples, sampleNear, yawOf, spot } = circuit;
   const s0 = samples[0];
   const anim = [];
+
+  // punto relativo a la pista: avance y desplazamiento lateral (fracción del ancho)
+  const onTrack = (x, z, along = 0, lat = 0) => { const s = circuit.sampleNear(x, z); return s.p.clone().addScaledVector(s.t, along).addScaledVector(s.n, lat * circuit.width / 2); };
+  const zones = [];
+  // suelo recién encerado (derrapa) y flechas de turbo
+  zones.push(trackPatch(B, circuit, [-17, -4], 16, 'slide', { color: '#fff4cc', opacity: 0.45 }));
+  zones.push(trackPatch(B, circuit, [-9, 27.4], 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
+  zones.push(trackPatch(B, circuit, [27, -26.5], 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
+  // bolos para derribar
+  {
+    const c = onTrack(41, -14);
+    const s = circuit.sampleNear(41, -14);
+    const pinM = mat('#fafafa', { flatShading: false, roughness: 0.3 });
+    let k = 0;
+    for (let row = 0; row < 3; row++) for (let j = 0; j <= row; j++) {
+      const p = c.clone().addScaledVector(s.t, row * 1.3).addScaledVector(s.n, (j - row / 2) * 1.3);
+      B.dynCyl(0.4, 2.2, p.x, s.p.y + 1.1, p.z, k++ % 2 ? pinM : mat('#e53935'), { density: 0.08 });
+    }
+  }
+  // bloques de juguete sueltos y un balón
+  for (const [i, l] of [[0, -0.5], [1.5, 0.1], [3, 0.55], [4.5, -0.2]]) {
+    const p = onTrack(-37, 9, i, l);
+    B.dynBox(1.4, 1.4, 1.4, p.x, p.y + 0.8, p.z, ['#e63946', '#2a9df4', '#f1c40f', '#2ecc71'][Math.round(i / 1.5)], { rot: [0, i, 0], density: 0.1 });
+  }
+  { const p = onTrack(-6, -13, 0, 0.3); B.dynBall(1.3, p.x, p.y + 1.4, p.z, '#ff7043', { density: 0.03 }); }
 
   // Alfombra (visual)
   const rug = new THREE.Mesh(new THREE.PlaneGeometry(30, 22), new THREE.MeshStandardMaterial({ map: rugTexture(), roughness: 1 }));
@@ -336,6 +363,7 @@ function build(B) {
     circuit,
     bounds: { x: ROOM.x - 1.5, z: ROOM.z - 1.5, h: ROOM.h - 1 },
     itemSpots: [0.3, 0.7],
+    zones,
     update: (t) => { for (const f of anim) f(t); },
     lights: {
       background: '#1b1d2a',

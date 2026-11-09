@@ -6,6 +6,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 export const BARRIER_GROUPS = (0x0002 << 16) | 0xffff;  // bordes y paredes
 export const CAR_GROUPS = (0x0004 << 16) | 0xffff;      // chasis de coches
 export const WHEEL_RAY_GROUPS = (0x0001 << 16) | 0x0001; // rayos de ruedas: solo suelo/objetos
+export const PROP_GROUPS = (0x0010 << 16) | 0xffff;     // objetos sueltos empujables
 export const CAMERA_RAY_GROUPS = (0x0008 << 16) | 0x0003; // cámara: ignora coches
 
 const matCache = new Map();
@@ -81,7 +82,26 @@ export function createBuilder(scene, world, RAPIER, S = 1) {
     }
   }
 
-  return { scene, world, RAPIER, fixed, collider, box, cyl, ball, wall, mat };
+  // Objetos sueltos que los coches pueden empujar y tirar
+  const dynamics = [];
+  function dyn(geo, material, desc, x, y, z, { rot = [0, 0, 0], density = 0.15 } = {}) {
+    const m = new THREE.Mesh(geo, typeof material === 'string' ? mat(material) : material);
+    m.castShadow = true; m.receiveShadow = true; m.userData.dynamic = true;
+    scene.add(m);
+    tmpE.set(rot[0], rot[1], rot[2], 'YXZ');
+    const q = new THREE.Quaternion().setFromEuler(tmpE);
+    const body = world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(x * S, y * S, z * S)
+      .setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }).setLinearDamping(0.3).setAngularDamping(0.4));
+    desc.setDensity(density).setFriction(0.5).setRestitution(0.3).setCollisionGroups(PROP_GROUPS);
+    world.createCollider(desc, body);
+    dynamics.push({ body, mesh: m });
+    return m;
+  }
+  const dynBox = (w, h, d, x, y, z, material, o) => dyn(new THREE.BoxGeometry(w, h, d), material, RAPIER.ColliderDesc.cuboid(w / 2 * S, h / 2 * S, d / 2 * S), x, y, z, o);
+  const dynCyl = (r, h, x, y, z, material, o) => dyn(new THREE.CylinderGeometry(r, r, h, 12), material, RAPIER.ColliderDesc.cylinder(h / 2 * S, r * S), x, y, z, o);
+  const dynBall = (r, x, y, z, material, o) => dyn(new THREE.IcosahedronGeometry(r, 1), material, RAPIER.ColliderDesc.ball(r * S), x, y, z, o);
+
+  return { scene, world, RAPIER, fixed, collider, box, cyl, ball, wall, mat, S, dynamics, dynBox, dynCyl, dynBall };
 }
 
 // Construye el trazado: muestras, bordes, línea de salida, parrilla y utilidades
@@ -106,7 +126,23 @@ export function buildCircuit(B, def) {
     samples.forEach((s, i) => { const d = (s.p.x - sx) ** 2 + (s.p.z - sz) ** 2; if (d < bd) { bd = d; k = i; } });
     samples.push(...samples.splice(0, k));
   }
-  samples.forEach((s, i) => { s.i = i; });
+  samples.forEach((s, i) => { s.i = i; s.h = 0; });
+
+  // Cuestas: elevación suave (coseno) a lo largo de la pista
+  const hillRanges = [];
+  for (const hl of def.hills || []) {
+    let c = 0, bd = Infinity;
+    samples.forEach((s, i) => { const d = (s.p.x - hl.at[0]) ** 2 + (s.p.z - hl.at[1]) ** 2; if (d < bd) { bd = d; c = i; } });
+    const half = Math.round(hl.len / 2 / 1.6);
+    for (let k = -half; k <= half; k++) {
+      const s = samples[(c + k + N) % N];
+      const u = k / half;
+      const h = hl.h * (hl.double ? Math.pow(Math.sin(Math.PI * (u + 1)), 2) : 0.5 * (1 + Math.cos(Math.PI * u)));
+      s.h = Math.max(s.h, h);
+    }
+    hillRanges.push([c - half - 1, c + half + 1, hl]);
+  }
+  for (const s of samples) s.p.y = s.h;
 
   // curvatura (radio) y velocidad recomendada para la IA
   for (let i = 0; i < N; i++) {
@@ -131,7 +167,7 @@ export function buildCircuit(B, def) {
       const dir = pb.clone().sub(pa);
       const len = dir.length();
       if (len < 0.2) continue;
-      segs.push({ mid, yaw: Math.atan2(dir.x, dir.z), len: len + 0.12 });
+      segs.push({ mid, yaw: Math.atan2(dir.x, dir.z), len: len + 0.12, h: (a.h + b.h) / 2 });
     }
   }
   const geo = st.round ? new THREE.CylinderGeometry(blockT / 2, blockT / 2, 1, 8).rotateX(Math.PI / 2) : new THREE.BoxGeometry(blockT, blockH, 1);
@@ -141,20 +177,52 @@ export function buildCircuit(B, def) {
   segs.forEach((s, i) => {
     q.setFromAxisAngle(Y, s.yaw);
     const y = st.round ? blockT / 2 : blockH / 2;
-    m4.compose(new THREE.Vector3(s.mid.x, y, s.mid.z), q, new THREE.Vector3(1, 1, s.len - 0.08));
+    m4.compose(new THREE.Vector3(s.mid.x, y + s.h, s.mid.z), q, new THREE.Vector3(1, 1, s.len - 0.08));
     blockMesh.setMatrixAt(i, m4);
     blockMesh.setColorAt(i, col.set(st.colors[i % st.colors.length]));
-    B.collider(RAPIER.ColliderDesc.cuboid(blockT / 2, 1.1, s.len / 2), { x: s.mid.x, y: 1.1, z: s.mid.z }, q,
+    B.collider(RAPIER.ColliderDesc.cuboid(blockT / 2, 1.1, s.len / 2), { x: s.mid.x, y: 1.1 + s.h, z: s.mid.z }, q,
       { friction: 0.1, restitution: 0.35, groups: BARRIER_GROUPS });
   });
   scene.add(blockMesh);
+
+  // superficie de las cuestas (visual + colisión de malla) con faldones laterales
+  for (const [i0, i1, hl] of hillRanges) {
+    const hw = width / 2 + blockT + 0.25;
+    const pos = [], idx = [], phys = [];
+    let n = 0;
+    for (let i = i0; i <= i1; i++) {
+      const sm = samples[(i + N) % N];
+      const l = sm.p.clone().addScaledVector(sm.n, hw), r = sm.p.clone().addScaledVector(sm.n, -hw);
+      // superficie (0,1), faldón izq (2), faldón dcho (3)
+      pos.push(l.x, sm.h, l.z, r.x, sm.h, r.z, l.x, 0, l.z, r.x, 0, r.z);
+      phys.push(l.x * B.S, sm.h * B.S, l.z * B.S, r.x * B.S, sm.h * B.S, r.z * B.S);
+      if (i < i1) {
+        const a = n * 4, b = a + 4;
+        idx.push(a, b, a + 1, a + 1, b, b + 1);
+        idx.push(a + 2, b + 2, a, a, b + 2, b);
+        idx.push(a + 1, b + 1, a + 3, a + 3, b + 1, b + 3);
+      }
+      n++;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: hl.color || def.hillColor || '#c8a165', roughness: 0.8, side: THREE.DoubleSide }));
+    mesh.receiveShadow = true; mesh.castShadow = true;
+    scene.add(mesh);
+    const tri = [];
+    for (let k = 0; k < n - 1; k++) { const a = k * 2, b = a + 2; tri.push(a, b, a + 1, a + 1, b, b + 1); }
+    const desc = RAPIER.ColliderDesc.trimesh(new Float32Array(phys), new Uint32Array(tri)).setFriction(0.9);
+    B.world.createCollider(desc, B.fixed);
+  }
 
   // ---------- Línea de salida ----------
   const s0 = samples[0];
   const line = new THREE.Mesh(new THREE.PlaneGeometry(width, 1.6), new THREE.MeshStandardMaterial({ map: checkerTexture(10, 2), roughness: 0.6 }));
   line.rotation.x = -Math.PI / 2;
   line.rotation.z = Math.atan2(s0.t.x, s0.t.z);
-  line.position.set(s0.p.x, 0.045, s0.p.z);
+  line.position.set(s0.p.x, 0.045 + s0.h, s0.p.z);
   line.receiveShadow = true;
   scene.add(line);
 
@@ -332,8 +400,46 @@ export function scaleTrack(T, S) {
   for (const s of c.samples) { s.p.multiplyScalar(S); s.radius *= S; }
   c.width *= S; c.spacing *= S; c.length *= S;
   T.bounds = { x: T.bounds.x * S, z: T.bounds.z * S, h: T.bounds.h * S };
-  for (const z of T.zones || []) { z.pos = z.pos.clone().multiplyScalar(S); z.r *= S; }
+  for (const z of T.zones || []) if (z.pos) { z.pos = z.pos.clone().multiplyScalar(S); z.r *= S; }
   const L = T.lights;
   if (L.fog) L.fog = [L.fog[0], L.fog[1] * S, L.fog[2] * S];
   for (const p of L.points || []) { p.pos = p.pos.map((v) => v * S); p.distance *= S; p.intensity *= Math.pow(S, p.decay ?? 2); }
+}
+
+// Parche sobre la pista (zona de derrape, turbo…). Devuelve la zona para la carrera.
+export function trackPatch(B, circuit, at, len, effect, { color = '#ffffff', map = null, opacity = 0.85, emissive = null, inset = 0.4 } = {}) {
+  const S = circuit.samples, N = S.length;
+  const c = circuit.sampleNear(at[0], at[1]).i;
+  const half = Math.max(1, Math.round(len / 2 / 1.6));
+  const hw = circuit.width / 2 - inset;
+  const pos = [], uv = [], idx = [];
+  for (let k = -half, n = 0; k <= half; k++, n++) {
+    const s = S[(c + k + N) % N];
+    const l = s.p.clone().addScaledVector(s.n, hw), r = s.p.clone().addScaledVector(s.n, -hw);
+    pos.push(l.x, s.h + 0.05, l.z, r.x, s.h + 0.05, r.z);
+    uv.push(0, n / (half * 2) * len / (hw * 2), 1, n / (half * 2) * len / (hw * 2));
+    if (k < half) { const a = n * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx); g.computeVertexNormals();
+  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
+    color, map, transparent: true, opacity, roughness: effect === 'slide' ? 0.05 : 0.4, metalness: effect === 'slide' ? 0.4 : 0,
+    emissive: emissive || '#000000', emissiveMap: emissive ? map : null, emissiveIntensity: emissive ? 0.9 : 0,
+    polygonOffset: true, polygonOffsetFactor: -3,
+  }));
+  m.receiveShadow = true; m.userData.dynamic = true;
+  B.scene.add(m);
+  return { from: (c - half + N) % N, to: (c + half) % N, effect, mesh: m };
+}
+
+export function chevronTexture() {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+  const g = c.getContext('2d');
+  g.fillStyle = '#0d47a1'; g.fillRect(0, 0, 128, 128);
+  g.fillStyle = '#4fc3f7';
+  for (const y of [8, 72]) { g.beginPath(); g.moveTo(14, y + 40); g.lineTo(64, y); g.lineTo(114, y + 40); g.lineTo(114, y + 56); g.lineTo(64, y + 16); g.lineTo(14, y + 56); g.fill(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
 }

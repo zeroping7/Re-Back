@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { tileTexture, labelTexture, canTexture } from '../textures.js';
-import { buildCircuit, startArch, room, mat } from './common.js';
+import { buildCircuit, startArch, room, mat, trackPatch, chevronTexture } from './common.js';
 
 // Circuito 2: "El supermercado". Pasillos, estanterías gigantes y carritos.
 const ROOM = { x: 64, z: 36, h: 34 };
@@ -48,10 +48,39 @@ function build(B) {
     start: [-33, 19],
     width: 7,
     limits: [ROOM.x - 1, ROOM.z - 1],
+    hills: [{ at: [-4, -14], len: 30, h: 1.6 }, { at: [30, 17], len: 24, h: 1.0, double: true }],
+    hillColor: '#c8a165',
     barrier: { colors: ['#ffd400', '#222222'], height: 0.9, roughness: 0.35 },
   });
   const { samples, sampleNear, yawOf, spot } = circuit;
   const anim = [];
+
+  // punto relativo a la pista: avance y desplazamiento lateral (fracción del ancho)
+  const onTrack = (x, z, along = 0, lat = 0) => { const s = circuit.sampleNear(x, z); return s.p.clone().addScaledVector(s.t, along).addScaledVector(s.n, lat * circuit.width / 2); };
+  const zones = [];
+  // suelo recién fregado (derrapa) y turbos
+  zones.push(Object.assign(trackPatch(B, circuit, [49, -12], 18, 'slide', { color: '#8fd8ff', opacity: 0.45 }), { particles: [0.6, 0.85, 1] }));
+  zones.push(trackPatch(B, circuit, [-51, -19], 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
+  zones.push(trackPatch(B, circuit, [-12, 23], 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
+  // pirámide de latas en la pista
+  {
+    const s = circuit.sampleNear(4, 17);
+    const canMat = new THREE.MeshStandardMaterial({ map: canTexture(), roughness: 0.3, metalness: 0.6 });
+    for (let row = 0; row < 3; row++) for (let k = 0; k < 4 - row; k++) {
+      const p = s.p.clone().addScaledVector(s.n, (k - (3 - row) / 2) * 1.5 + 1.2);
+      B.dynCyl(0.7, 1.8, p.x, s.p.y + 0.9 + row * 1.85, p.z, canMat, { density: 0.06 });
+    }
+  }
+  // cajas de cartón y rollos de papel
+  for (const [i, l] of [[0, -0.4], [0, 0.1], [2.4, -0.15]]) {
+    const p = onTrack(16, 22, i, l);
+    B.dynBox(2, 2, 2, p.x, p.y + 1.1, p.z, '#c8a165', { rot: [0, i * 0.3, 0], density: 0.05 });
+  }
+  { const p = onTrack(16, 22, 0.2, -0.15); B.dynBox(2, 2, 2, p.x, p.y + 3.2, p.z, '#b88d52', { density: 0.05 }); }
+  for (let k = 0; k < 6; k++) {
+    const p = onTrack(44, 23, (k % 3) * 1.4, -0.4 + Math.floor(k / 3) * 0.3);
+    B.dynCyl(0.6, 1.2, p.x, p.y + 0.65, p.z, '#ffffff', { density: 0.03 });
+  }
   const W = circuit.width;
   startArch(B, circuit, { color: '#2bb673', text: 'SÚPER CARRERA' });
 
@@ -210,6 +239,7 @@ function build(B) {
     update: (t) => { for (const f of anim) f(t); },
     bounds: { x: ROOM.x - 1.5, z: ROOM.z - 1.5, h: ROOM.h - 1 },
     itemSpots: [0.3, 0.72],
+    zones,
     dust: [0.85, 0.85, 0.85],
     lights: {
       background: '#cfd8dc',

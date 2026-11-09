@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
-import { createBuilder, clearMatCache, mergeStatic, scaleTrack, CAMERA_RAY_GROUPS } from './tracks/common.js';
+import { createBuilder, clearMatCache, mergeStatic, scaleTrack, CAMERA_RAY_GROUPS, WHEEL_RAY_GROUPS } from './tracks/common.js';
 import { Car } from './car.js';
 import { CARS, carTuning } from './cars.js';
 import { AIDriver } from './ai.js';
@@ -32,6 +32,7 @@ export class Race {
     scene.add(root);
     const B = createBuilder(root, this.world, RAPIER, S);
     const T = (this.T = trackDef.build(B));
+    this.dynamics = B.dynamics;
     scaleTrack(T, S);
     this.circuit = T.circuit;
     this.bounds = T.bounds;
@@ -225,8 +226,28 @@ export class Race {
   }
 
   zoneEffects(car) {
+    const idx = this.state(car).idx, c = this.circuit;
     for (const z of this.T.zones || []) {
       if (car.contacts === 0) continue;
+      if (z.from !== undefined) {
+        const inside = z.from <= z.to ? idx >= z.from && idx <= z.to : idx >= z.from || idx <= z.to;
+        if (!inside) continue;
+        const s = c.samples[idx];
+        const lat = Math.abs((car.currPos.x - s.p.x) * s.n.x + (car.currPos.z - s.p.z) * s.n.z);
+        if (lat > c.width / 2) continue;
+        if (z.effect === 'boost') {
+          if (car.fx.boost < 0.3 && car === this.player) this.sound('turbo', car.currPos);
+          car.fx.boost = Math.max(car.fx.boost, 0.8);
+        } else if (z.effect === 'slide') {
+          car.fx.slide = 0.2;
+          if (z.particles && car.speed > 6 && Math.random() < 0.5) {
+            const w = car.wheelState[2 + (Math.random() < 0.5 ? 0 : 1)];
+            this.effects.smoke.emit(w.point.x, w.point.y + 0.2, w.point.z, rnd(2), 1 + Math.random() * 3, rnd(2),
+              { life: 0.6, size: 0.4, size1: 1.2, alpha: 0.6, color: z.particles, grav: 12, drag: 1 });
+          }
+        }
+        continue;
+      }
       if (Math.hypot(car.currPos.x - z.pos.x, car.currPos.z - z.pos.z) > z.r) continue;
       if (z.effect === 'wet') {
         if (car.fx.wet < 0.2 && car.speed > 6) {
@@ -244,7 +265,12 @@ export class Race {
   respawn(car) {
     const st = this.state(car), c = this.circuit;
     const s = c.samples[st.idx];
-    car.reset(s.p, c.yawOf(s.t));
+    // altura real del suelo en ese punto (rampas, cuestas…)
+    const ray = new RAPIER.Ray({ x: s.p.x, y: s.p.y + 20, z: s.p.z }, { x: 0, y: -1, z: 0 });
+    const hit = this.world.castRay(ray, 40, true, undefined, WHEEL_RAY_GROUPS);
+    const pos = s.p.clone();
+    if (hit) pos.y = s.p.y + 20 - hit.timeOfImpact + 0.3;
+    car.reset(pos, c.yawOf(s.t));
     if (car.isPlayer) this.trauma = 0;
   }
 
@@ -365,6 +391,12 @@ export class Race {
 
   // ---------- Render ----------
   render(alpha, dt) {
+    const S = this.S;
+    for (const d of this.dynamics) {
+      const p = d.body.translation(), r = d.body.rotation();
+      d.mesh.position.set(p.x / S, p.y / S, p.z / S);
+      d.mesh.quaternion.set(r.x, r.y, r.z, r.w);
+    }
     for (const car of this.cars) {
       car.render(this.paused ? 1 : alpha);
       // menos detalle en coches lejanos

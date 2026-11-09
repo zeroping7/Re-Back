@@ -25,7 +25,7 @@ export class Car {
     const WHEELS = (this.W = wheelsFor(def));
     this.R = def.wheelR;
     // efectos de objetos (segundos restantes)
-    this.fx = { boost: 0, oil: 0, stun: 0, wet: 0 };
+    this.fx = { boost: 0, oil: 0, stun: 0, wet: 0, slide: 0 };
     this.item = null;
     this.steer = 0;
     this.spin = [0, 0, 0, 0];
@@ -170,7 +170,8 @@ export class Car {
       veh.setWheelEngineForce(i, (engine * (front ? 1 - rear : rear)) / 2);
       veh.setWheelBrake(i, front ? brakeF : brakeR);
       veh.setWheelSideFrictionStiffness(i, front ? t.sideFront : t.sideRear);
-      const oil = fx.oil > 0 ? 0.22 : 1;
+      // aceite: casi sin agarre · zona de derrape: agarre reducido pero controlable
+      const oil = fx.oil > 0 ? 0.22 : fx.slide > 0 ? (front ? 0.72 : 0.5) : 1;
       veh.setWheelFrictionSlip(i, (front ? t.gripFront : t.gripRear * (this.drifting ? t.driftRear : 1)) * oil);
     }
 

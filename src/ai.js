@@ -64,7 +64,7 @@ export class AIDriver {
     let steer = THREE.MathUtils.clamp(ang * 2.6, -1, 1);
 
     // velocidad: no pasarse en las curvas que vienen
-    const aLat = 62 * this.skill, decel = 30;
+    const aLat = 55 * this.skill, decel = 28;
     let vAllowed = Infinity;
     const nAhead = Math.ceil(42 / sp);
     for (let j = 1; j < nAhead; j += 1) {

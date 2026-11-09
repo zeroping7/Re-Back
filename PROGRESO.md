@@ -70,6 +70,15 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Modelos: perfiles suavizados (Chaikin) con normales suaves, pasos de rueda, matrículas, retrovisores,
   líneas de puertas, faros y pilotos con cristal, discos y pinzas de freno, llantas a escala con buje.
 
+### Diversión extra (v1.0.12+)
+- Listas de tarjetas (coches/circuitos) deslizables con el dedo.
+- Cuestas arriba y abajo en los tres circuitos (`hills` en `buildCircuit`: malla con colisión y bordes que suben).
+- Zonas de derrape controlable (`trackPatch` + `fx.slide`): suelo encerado (salón), fregado (súper), barro (jardín).
+- Flechas de turbo en el suelo.
+- Objetos sueltos para tirar: bolos, bloques, balones, latas, cajas, rollos de papel, macetas (`B.dynBox/dynCyl/dynBall`).
+- Coches algo más rápidos (vel. máx. 29, potencia 145) y con menos agarre (3,0 / 2,6). Ajustes guardados reiniciados (v3).
+- Recolocación con rayo hacia abajo (no aparece dentro de rampas).
+
 ## Pendiente / ideas
 - Probar en el móvil: rendimiento (Opciones → Calidad si va lento) y sentido del modo inclinación.
 - Multijugador online (opcional, futuro).
