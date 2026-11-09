@@ -1,6 +1,8 @@
 package com.zeroping7.reback;
 
 import android.os.Bundle;
+import android.view.InputDevice;
+import android.view.KeyEvent;
 import android.view.WindowManager;
 
 import androidx.core.view.WindowCompat;
@@ -22,6 +24,22 @@ public class MainActivity extends BridgeActivity {
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) hideSystemBars();
+    }
+
+    // Mando (CTL-05): los botones van al juego (Gamepad API) y el B no cierra la app
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        int src = event.getSource();
+        boolean fromPad = (src & InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD
+                || (src & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK;
+        int code = event.getKeyCode();
+        if (fromPad && (KeyEvent.isGamepadButton(code) || code == KeyEvent.KEYCODE_BACK)) {
+            if (code != KeyEvent.KEYCODE_BACK && getBridge() != null && getBridge().getWebView() != null) {
+                getBridge().getWebView().dispatchKeyEvent(event);
+            }
+            return true;
+        }
+        return super.dispatchKeyEvent(event);
     }
 
     // Pantalla completa inmersiva

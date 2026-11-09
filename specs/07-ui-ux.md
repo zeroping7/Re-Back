@@ -44,6 +44,7 @@ Inicio (toca para empezar)
 | UX-07 | Opción **acelerar solo** (gas automático; el freno sigue funcionando) | ✅ |
 | UX-08 | Botón de **cámara** en carrera: Normal → Lejos → Parachoques (también en Opciones; se guarda) | ✅ |
 | UX-09 | Monedas visibles en los menús y premio animado en resultados | ✅ |
+| UX-10 | **Previews** en las tarjetas de coche (render 3D del modelo) y de circuito (vista aérea del trazado con los coches en la salida) en vez de un color; imágenes en `public/previews/`, generadas con `node tests/previews.mjs`; si falta una, se usa el color | ✅ |
 
 ## Marcador en carrera
 
@@ -62,3 +63,5 @@ Inicio (toca para empezar)
 | CTL-01 | Botones ◀ ▶ ▲ ▼ grandes con vibración | ✅ |
 | CTL-02 | Inclinación del móvil (calibra al activar) | ✅ (sentido sin verificar en móvil) |
 | CTL-03 | Teclado: flechas/WASD, E/Intro arma, R recolocar, P/Esc pausa, C cámara | ✅ |
+| CTL-04 | **Mando** (Gamepad API, Bluetooth/USB): stick izq. o cruceta = volante analógico, RT/A acelerar, LT/B frenar, X/RB/LB disparar, Y cámara, Select recolocar, Start pausa. Al usar el mando se ocultan los botones táctiles (vuelven al tocar la pantalla) | ✅ |
+| CTL-05 | **Menús con mando**: cruceta/stick mueve un foco visible entre botones, A pulsa, B atrás (o reanudar en pausa), Start empieza; en el APK el botón B no cierra la app; Start pulsa el botón principal (¡A correr!) | ✅ (B en APK sin verificar con mando real) |

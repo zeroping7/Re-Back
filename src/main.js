@@ -12,6 +12,7 @@ import {
 import { CUPS, cupById, cupUnlocked, cupPrize, addPoints, standings, POINTS } from './cups.js';
 import { Showroom } from './showroom.js';
 import { Controls } from './controls.js';
+import { PadInput } from './gamepad.js';
 import { Hud } from './hud.js';
 import { Sfx } from './audio.js';
 import { tuning, setupTuningPanel, onTuningChange } from './tuning.js';
@@ -41,6 +42,7 @@ const TIPS = [
   'Las zonas brillantes resbalan: suelta un poco el gas al entrar.',
   'Los coches pesados empujan más; los ligeros aceleran y giran mejor.',
   'Queda entre los 3 primeros de una copa para abrir la siguiente.',
+  'Con mando: gatillo derecho acelera, el izquierdo frena y X dispara.',
 ];
 
 async function init() {
@@ -60,6 +62,8 @@ async function init() {
   const sfx = new Sfx();
   const controls = new Controls();
   controls.autoGas = !!settings.autoGas;
+  const pad = new PadInput(controls);
+  pad.onMove = () => sfx.play('click');
   const hud = new Hud();
   setupTuningPanel();
 
@@ -112,6 +116,10 @@ async function init() {
     }
   }
   const coins = (n) => n.toLocaleString('es-ES');
+  // Foto de la tarjeta (UX-10); si no carga, se ve el color de siempre
+  const PV = import.meta.env.BASE_URL + 'previews/';
+  const carPv = (d) => `<div class="sw pv car" style="--c:${d.color};background-image:url(${PV}car-${d.id}.webp),radial-gradient(ellipse at 50% 75%,${d.color}88,#0000 70%),linear-gradient(135deg,#ffffff1a,#0003)"></div>`;
+  const trackPv = (t, inner = '') => `<div class="sw pv track" style="background-image:url(${PV}track-${t.id}.webp),linear-gradient(135deg,${t.color},#0003)">${inner}</div>`;
 
   // Tarjetas de los coches que tienes (preparar carrera y campeonato)
   function carCards(el, rebuild) {
@@ -120,7 +128,7 @@ async function init() {
       const c = document.createElement('button');
       c.className = 'card' + (profile.selected === d.id ? ' sel' : '');
       const bar = (n, v) => `<div class="bar">${n}<i style="--v:${v * 20}%"></i></div>`;
-      c.innerHTML = `<div class="sw" style="background:linear-gradient(135deg,${d.color},#0004)"></div><b>${d.name}</b><small>${d.clase} · ${d.motor}</small>` +
+      c.innerHTML = `${carPv(d)}<b>${d.name}</b><small>${d.clase} · ${d.motor}</small>` +
         bar('Vel', d.stats.vel) + bar('Ace', d.stats.acel) + bar('Man', d.stats.manejo);
       c.addEventListener('click', () => { selectCar(d.id); sfx.play('click'); room.showCar(d.id); rebuild(); });
       el.append(c);
@@ -128,7 +136,7 @@ async function init() {
     if (CARS.some((x) => !isOwned(x.id))) {
       const c = document.createElement('button');
       c.className = 'card locked';
-      c.innerHTML = '<div class="sw" style="background:#ffffff22"></div><b>🔒 Más coches</b><small>Gana carreras y cómpralos en el Garaje</small>';
+      c.innerHTML = '<div class="sw pv more">🔒</div><b>Más coches</b><small>Gana carreras y cómpralos en el Garaje</small>';
       c.addEventListener('click', () => { sfx.play('click'); showScreen('m-garage'); });
       el.append(c);
     }
@@ -141,7 +149,7 @@ async function init() {
       const c = document.createElement('button');
       c.className = 'card' + (settings.track === t.id ? ' sel' : '');
       const star = mode === 'practice' ? `<span class="star ${profile.stars[t.id] ? 'got' : ''}">${profile.stars[t.id] ? '⭐' : '☆'}</span>` : '';
-      c.innerHTML = `<div class="sw" style="background:linear-gradient(135deg,${t.color},#0003)">${star}</div><b>${t.name}</b><small>${t.desc}</small>` +
+      c.innerHTML = `${trackPv(t, star)}<b>${t.name}</b><small>${t.desc}</small>` +
         `<div class="rec">⏱ ${fmtTime(best.lap)}${best.wins ? ' · 🏆' + best.wins : ''}</div>`;
       c.addEventListener('click', () => { settings.track = t.id; saveSettings(); sfx.play('click'); buildSetup(); });
       tracks.append(c);
@@ -221,7 +229,7 @@ async function init() {
       const own = isOwned(d.id);
       const c = document.createElement('button');
       c.className = 'card' + (gSel === d.id ? ' sel' : '') + (own ? '' : ' locked');
-      c.innerHTML = `<div class="sw" style="background:linear-gradient(135deg,${d.color},#0004)"></div><b>${own ? '' : '🔒 '}${d.name}</b><small>${d.clase}</small>` +
+      c.innerHTML = `${carPv(d)}<b>${own ? '' : '🔒 '}${d.name}</b><small>${d.clase}</small>` +
         (own ? `<div class="own">${profile.selected === d.id ? '✔ En uso' : 'Tuyo'}</div>` : `<div class="price">🪙 ${coins(d.price)}</div>`);
       c.addEventListener('click', () => { gSel = d.id; sfx.play('click'); room.showCar(d.id); buildGarage(); });
       list.append(c);
@@ -452,6 +460,7 @@ async function init() {
   function frame(now) {
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
+    pad.update(dt, { racing: !!race && !race.paused && race.phase !== 'done' && !$('m-results').offsetParent });
     if (race) {
       race.update(dt);
       race.render(race.acc / FIXED, dt);
@@ -471,9 +480,16 @@ async function init() {
   requestAnimationFrame(frame);
 
   window.__game = {
-    renderer, controls, settings, room, profile, showScreen, startRace, quit,
+    renderer, controls, pad, settings, room, profile, showScreen, startRace, quit,
     get race() { return race; }, get cup() { return cup; },
     startCup(id) { mode = 'cup'; cup = { id, idx: 0, table: {} }; startRace(); },
+    // fotos para las tarjetas (tests/previews.mjs)
+    carPreviews: () => import('./previews.js').then((m) => m.carPreviews()),
+    trackShot(opts) {
+      race.debugCam = 'preview'; race.previewCam = opts || {};
+      race.render(1, 0);
+      return renderer.domElement.toDataURL('image/webp', 0.85);
+    },
   };
 
   // modo prueba: salta los menús

@@ -18,7 +18,7 @@ Todo requisito se valora con una pregunta: *¿esto acerca el juego a cómo se si
    criterios de aceptación. Se apunta la petición en [`historial.md`](historial.md).
 3. **Implementación** pequeña y enfocada que cumpla la spec.
 4. **Verificación** contra los criterios de aceptación: `node tests/racesim.mjs`, capturas en Chrome headless
-   (`tests/ui.mjs`, `tests/race.mjs`, `tests/star.mjs`, `tests/spots.mjs`, `tests/garage.mjs`, `tests/damage.mjs`) y CI en verde.
+   (`tests/ui.mjs`, `tests/race.mjs`, `tests/star.mjs`, `tests/spots.mjs`, `tests/garage.mjs`, `tests/damage.mjs`, `tests/gamepad.mjs`) y CI en verde.
 5. **Cierre**: se marca el estado del requisito, se actualiza [`../PROGRESO.md`](../PROGRESO.md) y se publica
    (cada push a `main` genera web + APK).
 

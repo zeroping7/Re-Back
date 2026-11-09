@@ -122,3 +122,10 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Las mallas estáticas del circuito se fusionan por material (`mergeStatic`) para reducir llamadas de dibujo.
 - Depuración: `?test=1&track=super&rivals=3&auto=1&cam=top` (auto = el jugador conduce solo).
 - Pruebas: ver `specs/10-plataforma.md` (`racesim`, `ui.mjs`, `star.mjs`, `spots.mjs`…).
+
+### Previews y mando (noviembre 2026)
+- Tarjetas de coche y circuito con **foto**: render 3D de cada coche y vista aérea de cada circuito
+  (`public/previews/`, se regeneran con `node tests/previews.mjs` al añadir coches o circuitos).
+- **Mando** Bluetooth/USB: stick/cruceta para girar, RT/A acelerar, LT/B frenar, X/RB disparar, Y cámara,
+  Select recolocar, Start pausa. Menús con foco: cruceta, A elegir, B atrás, Start = ¡A correr!. Vibración del mando en golpes.
+  Los botones táctiles se ocultan al usar el mando. Prueba: `node tests/gamepad.mjs`.

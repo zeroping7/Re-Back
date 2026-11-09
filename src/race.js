@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rumble } from './gamepad.js';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { createBuilder, clearMatCache, mergeStatic, scaleTrack, CAMERA_RAY_GROUPS, WHEEL_RAY_GROUPS } from './tracks/common.js';
 import { Car } from './car.js';
@@ -503,6 +504,12 @@ export class Race {
       cam.position.set(0, Math.max(b.x, b.z) * 2.3, 0.01); cam.lookAt(0, 0, 0); cam.fov = 50; cam.updateProjectionMatrix();
       return;
     }
+    if (this.debugCam === 'preview') { // foto de la tarjeta del circuito (tests/previews.mjs)
+      const b = this.bounds, m = Math.max(b.x, b.z), o = this.previewCam || {};
+      cam.position.set(b.x * (o.x ?? 0.15), m * (o.y ?? 0.95), b.z * (o.z ?? 1.25));
+      cam.lookAt(0, 0, b.z * (o.lz ?? 0.1)); cam.fov = o.fov ?? 48; cam.updateProjectionMatrix();
+      return;
+    }
     if (this.debugCam === 'close') {
       cam.position.copy(p).add(new THREE.Vector3(2.4, 1.0, 2.0).applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.atan2(car.forward.x, car.forward.z)));
       cam.lookAt(p); cam.fov = 50; cam.updateProjectionMatrix();
@@ -624,4 +631,4 @@ export function getBest(id) { return loadBest(id); }
 const _qb = new THREE.Quaternion(), _qFlip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
 function rnd(a) { return (Math.random() * 2 - 1) * a; }
 function noise(x) { return Math.sin(x) * 0.6 + Math.sin(x * 2.3 + 1.7) * 0.3 + Math.sin(x * 5.1 + 0.3) * 0.1; }
-function vibrate(ms) { try { navigator.vibrate?.(ms); } catch { /* nada */ } }
+function vibrate(ms) { try { navigator.vibrate?.(ms); } catch { /* nada */ } rumble(ms * 2, Math.min(1, ms / 60)); }

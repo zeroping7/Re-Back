@@ -213,7 +213,7 @@ function disposeTree(o) {
   });
 }
 
-function carOnStand(def, color) {
+export function carOnStand(def, color) {
   const W = [
     { x: def.wheelX, z: def.wheelZf, front: true }, { x: -def.wheelX, z: def.wheelZf, front: true },
     { x: def.wheelX, z: def.wheelZr, front: false }, { x: -def.wheelX, z: def.wheelZr, front: false },

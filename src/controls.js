@@ -11,6 +11,7 @@ export class Controls {
     this.override = null; // para pruebas automáticas
     this.onReset = null; this.onCamera = null;
     this.autoGas = false; // acelerar solo (el freno sigue funcionando)
+    this.pad = null; // mando: { steer, gas, brake } (src/gamepad.js)
 
     const bind = (id, k) => {
       const el = document.getElementById(id);
@@ -76,7 +77,7 @@ export class Controls {
   releaseAll() {
     for (const k in this.state) this.state[k] = false;
     document.querySelectorAll('.pad.active').forEach((el) => el.classList.remove('active'));
-    this.keys.clear(); this.firePending = false;
+    this.keys.clear(); this.firePending = false; this.pad = null;
   }
 
   // Devuelve { steer: -1..1 (+ = izquierda), throttle, brake }
@@ -99,7 +100,15 @@ export class Controls {
       this.steerSmooth += Math.max(-rate * dt, Math.min(rate * dt, target - this.steerSmooth));
       steer = this.steerSmooth;
     }
-    return { steer, throttle: gas || (this.autoGas && !brake) ? 1 : 0, brake: brake ? 1 : 0 };
+    let throttle = gas || (this.autoGas && !brake) ? 1 : 0, brk = brake ? 1 : 0;
+    const p = this.pad;
+    if (p) {
+      if (p.steer !== 0 && !left && !right) { steer = p.steer; this.steerSmooth = steer; }
+      brk = Math.max(brk, p.brake);
+      throttle = Math.max(throttle, p.gas);
+      if (this.autoGas && p.brake > 0.1) throttle = Math.max(gas ? 1 : 0, p.gas);
+    }
+    return { steer, throttle, brake: brk };
   }
 }
 
