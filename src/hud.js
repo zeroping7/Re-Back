@@ -17,6 +17,14 @@ export class Hud {
     this.last = {};
   }
 
+  // aviso "MIRANDO ATRÁS" (CTL-06)
+  lookBack(on) {
+    if (on === this.lookOn) return;
+    this.lookOn = on;
+    if (!this.lookEl) { this.lookEl = document.createElement('div'); this.lookEl.id = 'h-lookback'; this.lookEl.textContent = '👀 ATRÁS'; this.el('hud').append(this.lookEl); }
+    this.lookEl.classList.toggle('hidden', !on);
+  }
+
   set(key, el, val) { if (this.last[key] !== val) { this.last[key] = val; el.textContent = val; } }
 
   message(text, secs = 1.5, cls = '') {

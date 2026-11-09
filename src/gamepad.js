@@ -1,6 +1,6 @@
 // Mando (CTL-04, CTL-05): conducción analógica en carrera y foco con cruceta en los menús.
 // Mapeo "standard" de la Gamepad API (Xbox / PlayStation / genéricos Bluetooth).
-const B = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, SELECT: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 };
+const B = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, SELECT: 8, START: 9, L3: 10, R3: 11, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 };
 const DEAD = 0.18;
 
 let lastPad = null;
@@ -45,7 +45,7 @@ export class PadInput {
   update(dt, ctx) {
     const p = this.readPad();
     lastPad = p;
-    if (!p) { this.controls.pad = null; return; }
+    if (!p) { this.controls.pad = null; this.controls.padLook = false; this.controls.camStick.x = this.controls.camStick.y = 0; return; }
     const val = (i) => p.buttons[i]?.value ?? 0;
     const down = (i) => !!p.buttons[i]?.pressed || val(i) > 0.5;
     const now = p.buttons.map((_, i) => down(i));
@@ -63,12 +63,16 @@ export class PadInput {
       const gas = Math.max(val(B.RT), now[B.A] ? 1 : 0);
       const brake = Math.max(val(B.LT), now[B.B] ? 1 : 0);
       this.controls.pad = { steer: -steer, gas: gas > 0.08 ? gas : 0, brake: brake > 0.08 ? brake : 0 };
-      if (hit(B.X) || hit(B.RB) || hit(B.LB)) this.controls.firePending = true;
+      if (hit(B.X) || hit(B.RB)) this.controls.firePending = true;
+      // cámara: LB o pulsar el stick derecho = mirar atrás; stick derecho = girar alrededor del coche
+      this.controls.padLook = now[B.LB] || now[B.R3];
+      const rx = p.axes[2] ?? 0, ry = p.axes[3] ?? 0, dz = (v) => (Math.abs(v) < 0.2 ? 0 : (v - Math.sign(v) * 0.2) / 0.8);
+      this.controls.camStick.x = dz(rx); this.controls.camStick.y = dz(ry);
       if (hit(B.Y)) this.controls.onCamera?.();
       if (hit(B.SELECT)) this.controls.onReset?.();
       if (hit(B.START)) this.controls.onPause?.();
     } else {
-      this.controls.pad = null;
+      this.controls.pad = null; this.controls.padLook = false;
       if (this.active) this.menu(dt, now, hit, ax, ay);
     }
     this.prev = now;

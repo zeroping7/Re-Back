@@ -1,0 +1,42 @@
+// Mirar atrás (CTL-06) y cámara con el stick derecho (CTL-07), con mando simulado
+import puppeteer from 'puppeteer-core';
+import fs from 'fs';
+const url = process.argv[2] || 'http://localhost:4173/';
+const out = process.argv[3] || 'tests/shots/camera';
+fs.mkdirSync(out, { recursive: true });
+const browser = await puppeteer.launch({ executablePath: '/usr/bin/google-chrome', headless: 'new',
+  args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const page = await browser.newPage();
+await page.setViewport({ width: 900, height: 420 });
+const errors = [];
+page.on('pageerror', (e) => errors.push(e.message));
+await page.evaluateOnNewDocument(() => {
+  const pad = { id: 'Fake pad', index: 0, connected: true, mapping: 'standard', axes: [0, 0, 0, 0], buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })) };
+  window.__pad = pad; navigator.getGamepads = () => [pad];
+});
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+await page.goto(url + '?test&track=salon&rivals=3', { waitUntil: 'load' });
+await page.waitForFunction(() => window.__game?.race?.started, { timeout: 90000 });
+await sleep(1500);
+const camFwd = () => page.evaluate(() => { const r = window.__game.race, c = r.camera, p = r.player; const d = { x: p.currPos.x - c.position.x, z: p.currPos.z - c.position.z }; return d.x * p.forward.x + d.z * p.forward.z; });
+let ok = true; const check = (n, c) => { console.log((c ? '✔ ' : '✘ ') + n); ok &&= !!c; };
+check('cámara normal detrás del coche', (await camFwd()) > 0);
+await page.screenshot({ path: `${out}/1-normal.png` });
+await page.evaluate(() => { window.__pad.buttons[4] = { pressed: true, value: 1 }; });
+await sleep(300);
+check('LB: mira hacia atrás', (await camFwd()) < 0);
+await page.screenshot({ path: `${out}/2-atras.png` });
+await page.evaluate(() => { window.__pad.buttons[4] = { pressed: false, value: 0 }; window.__pad.axes[2] = 1; });
+await sleep(1200);
+const side = await page.evaluate(() => { const r = window.__game.race, c = r.camera, p = r.player; const d = { x: c.position.x - p.currPos.x, z: c.position.z - p.currPos.z }; const l = Math.hypot(d.x, d.z); return (d.x * p.forward.x + d.z * p.forward.z) / l; });
+check('stick derecho gira la cámara alrededor: ' + side.toFixed(2), side > -0.5);
+await page.screenshot({ path: `${out}/3-stick.png` });
+await page.evaluate(() => { window.__pad.axes[2] = 0; });
+await sleep(1500);
+check('al soltar vuelve detrás', (await camFwd()) > 0);
+await page.keyboard.down('KeyQ'); await sleep(200);
+check('tecla Q mira atrás', (await camFwd()) < 0);
+await page.keyboard.up('KeyQ');
+console.log(errors.length ? 'ERRORES:\n' + errors.join('\n') : 'sin errores');
+await browser.close();
+process.exit(ok && !errors.length ? 0 : 1);

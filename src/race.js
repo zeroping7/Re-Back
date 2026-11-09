@@ -607,7 +607,10 @@ export class Race {
       cam.lookAt(p); cam.fov = 50; cam.updateProjectionMatrix();
       return;
     }
-    if (this.camMode === 'bumper' && this.phase !== 'countdown') return this.bumperCamera(dt);
+    // mirar atrás (CTL-06) y stick derecho (CTL-07)
+    const back = this.started && this.controls.lookBack, stick = this.controls.camStick || { x: 0, y: 0 };
+    this.hud.lookBack?.(back);
+    if (this.camMode === 'bumper' && this.phase !== 'countdown') return this.bumperCamera(dt, back);
     const tmp = new THREE.Vector3().copy(car.forward).setY(0);
     if (tmp.lengthSq() < 0.01) tmp.copy(this.camDir);
     tmp.normalize();
@@ -618,11 +621,18 @@ export class Race {
 
     const intro = this.phase === 'countdown' ? THREE.MathUtils.smoothstep(this.countdown, 0, 3.2) : 0;
     const far = this.camMode === 'far';
-    const wantDist0 = T.camDist * (far ? 1.55 : 1) + intro * 9;
-    const height = T.camHeight * (far ? 1.5 : 1) + intro * 5;
+    // giro alrededor del coche: suave con el stick, de golpe al mirar atrás
+    const orbitWant = back ? Math.PI : stick.x * 2.4;
+    if (back !== this.wasBack) { this.orbit = orbitWant; this.camDist = Math.min(this.camDist, T.camDist); }
+    this.wasBack = back;
+    this.orbit = (this.orbit || 0) + (orbitWant - (this.orbit || 0)) * (1 - Math.exp(-dt * 5));
+    this.camPitch = (this.camPitch || 0) + (-stick.y - (this.camPitch || 0)) * (1 - Math.exp(-dt * 5));
+    const cdir = this.orbit ? this.camDir.clone().applyAxisAngle(_Y, this.orbit) : this.camDir;
+    const wantDist0 = T.camDist * (far ? 1.55 : 1) * (1 - Math.max(0, this.camPitch) * 0.15) + intro * 9;
+    const height = T.camHeight * (far ? 1.5 : 1) * (1 + this.camPitch * 0.9) + intro * 5;
     let want = wantDist0;
     const from = p.clone(); from.y += 1.6;
-    const target = p.clone().addScaledVector(this.camDir, -want); target.y = p.y + height;
+    const target = p.clone().addScaledVector(cdir, -want); target.y = p.y + height;
     const dir = target.sub(from);
     const dl = dir.length(); dir.divideScalar(dl);
     this.camRay.origin = { x: from.x, y: from.y, z: from.z };
@@ -632,13 +642,13 @@ export class Race {
     this.camDist += (want - this.camDist) * (1 - Math.exp(-dt * (want < this.camDist ? 20 : 3)));
     this.camY += (p.y + height - this.camY) * (1 - Math.exp(-dt * 5));
 
-    cam.position.copy(p).addScaledVector(this.camDir, -this.camDist);
+    cam.position.copy(p).addScaledVector(cdir, -this.camDist);
     cam.position.y = Math.max(this.camY, p.y + 0.8, 0.6);
     const b = this.bounds;
     cam.position.x = THREE.MathUtils.clamp(cam.position.x, -b.x, b.x);
     cam.position.z = THREE.MathUtils.clamp(cam.position.z, -b.z, b.z);
     cam.position.y = Math.min(cam.position.y, b.h);
-    const look = p.clone().addScaledVector(this.camDir, 2.2); look.y += 0.7;
+    const look = p.clone().addScaledVector(cdir, 2.2); look.y += 0.7;
 
     this.trauma = Math.max(0, this.trauma - dt * 1.6);
     const sh = this.trauma * this.trauma, t = this.clock;
@@ -655,13 +665,14 @@ export class Race {
   }
 
   // Cámara en el parachoques: baja, pegada al coche, se inclina con él
-  bumperCamera(dt) {
+  bumperCamera(dt, back = false) {
     const cam = this.camera, car = this.player, m = car.model;
     const fw = new THREE.Vector3(0, 0, 1).applyQuaternion(m.quaternion);
     const up = new THREE.Vector3(0, 1, 0).applyQuaternion(m.quaternion);
-    cam.position.copy(m.position).addScaledVector(fw, 1.05).addScaledVector(up, 0.32 + car.def.wheelR * 0.5);
-    _qb.copy(m.quaternion).multiply(_qFlip);
-    cam.quaternion.slerp(_qb, 1 - Math.exp(-dt * 18));
+    cam.position.copy(m.position).addScaledVector(fw, back ? -1.05 : 1.05).addScaledVector(up, 0.32 + car.def.wheelR * 0.5);
+    if (back) _qb.copy(m.quaternion); else _qb.copy(m.quaternion).multiply(_qFlip);
+    if (back !== this.wasBack) cam.quaternion.copy(_qb); else cam.quaternion.slerp(_qb, 1 - Math.exp(-dt * 18));
+    this.wasBack = back;
     cam.rotateX(-0.05);
     // mantener la cámara normal al día para que el cambio de vuelta sea suave
     if (fw.x * fw.x + fw.z * fw.z > 0.05) this.camDir.set(fw.x, 0, fw.z).normalize();
@@ -710,6 +721,7 @@ function baseTuningDefaults(base) {
   return { ...base, camDist: base.camDist, camHeight: base.camHeight };
 }
 
+const _Y = new THREE.Vector3(0, 1, 0);
 const WATER_DROP = [[0.78, 0.9, 1], [0.6, 0.8, 0.95], [0.9, 0.96, 1]];
 const MUD = [[0.22, 0.14, 0.08], [0.3, 0.2, 0.12], [0.17, 0.11, 0.06]];
 const WAX_MARK = [0.75, 0.72, 0.62];

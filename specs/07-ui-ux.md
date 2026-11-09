@@ -67,7 +67,7 @@ Inicio (toca para empezar)
 | CTL-01 | Botones ◀ ▶ ▲ ▼ grandes con vibración | ✅ |
 | CTL-02 | Inclinación del móvil (calibra al activar) | ✅ (sentido sin verificar en móvil) |
 | CTL-03 | Teclado: flechas/WASD, E/Intro arma, R recolocar, P/Esc pausa, C cámara | ✅ |
-| CTL-04 | **Mando** (Gamepad API, Bluetooth/USB): stick izq. o cruceta = volante analógico, RT/A acelerar, LT/B frenar, X/RB/LB disparar, Y cámara, Select recolocar, Start pausa. Al usar el mando se ocultan los botones táctiles (vuelven al tocar la pantalla) | ✅ |
+| CTL-04 | **Mando** (Gamepad API, Bluetooth/USB): stick izq. o cruceta = volante analógico, RT/A acelerar, LT/B frenar, X/RB disparar, LB mirar atrás, Y cámara, Select recolocar, Start pausa. Al usar el mando se ocultan los botones táctiles (vuelven al tocar la pantalla) | ✅ |
 | CTL-05 | **Menús con mando**: cruceta/stick mueve un foco visible entre botones, A pulsa, B atrás (o reanudar en pausa), Start empieza; en el APK el botón B no cierra la app; Start pulsa el botón principal (¡A correr!) | ✅ (B en APK sin verificar con mando real) |
-| CTL-06 | **Mirar atrás** mientras se mantiene: botón 👀 táctil, tecla Q, LB o pulsar el stick derecho | 🚧 |
-| CTL-07 | **Stick derecho** mueve la cámara: izquierda/derecha gira alrededor del coche, arriba/abajo sube o baja; al soltar vuelve sola | 🚧 |
+| CTL-06 | **Mirar atrás** mientras se mantiene: botón 👀 táctil, tecla Q, LB o pulsar el stick derecho | ✅ |
+| CTL-07 | **Stick derecho** mueve la cámara: izquierda/derecha gira alrededor del coche, arriba/abajo sube o baja; al soltar vuelve sola | ✅ |

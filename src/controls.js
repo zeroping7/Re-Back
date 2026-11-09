@@ -3,7 +3,9 @@ const KEY_MODE = 'reback.controlMode';
 
 export class Controls {
   constructor() {
-    this.state = { left: false, right: false, gas: false, brake: false };
+    this.state = { left: false, right: false, gas: false, brake: false, look: false };
+    this.camStick = { x: 0, y: 0 }; // stick derecho del mando (CTL-07)
+    this.padLook = false;
     this.keys = new Set();
     this.mode = localStorage.getItem(KEY_MODE) || 'buttons'; // 'buttons' | 'tilt'
     this.tilt = 0; this.tiltZero = null;
@@ -23,7 +25,7 @@ export class Controls {
       el.addEventListener('lostpointercapture', off);
       el.addEventListener('contextmenu', (e) => e.preventDefault());
     };
-    bind('btn-left', 'left'); bind('btn-right', 'right'); bind('btn-gas', 'gas'); bind('btn-brake', 'brake');
+    bind('btn-left', 'left'); bind('btn-right', 'right'); bind('btn-gas', 'gas'); bind('btn-brake', 'brake'); bind('btn-look', 'look');
     this.firePending = false;
     const item = document.getElementById('btn-item');
     item.addEventListener('pointerdown', (e) => { e.preventDefault(); this.firePending = true; vibrate(15); });
@@ -72,12 +74,15 @@ export class Controls {
     this.applyMode();
   }
 
+  // Mirar atrás mientras se mantiene (CTL-06)
+  get lookBack() { return this.state.look || this.padLook || this.keys.has('KeyQ'); }
+
   consumeFire() { const f = this.firePending; this.firePending = false; return f; }
 
   releaseAll() {
     for (const k in this.state) this.state[k] = false;
     document.querySelectorAll('.pad.active').forEach((el) => el.classList.remove('active'));
-    this.keys.clear(); this.firePending = false; this.pad = null;
+    this.keys.clear(); this.firePending = false; this.pad = null; this.padLook = false; this.camStick.x = this.camStick.y = 0;
   }
 
   // Devuelve { steer: -1..1 (+ = izquierda), throttle, brake }
