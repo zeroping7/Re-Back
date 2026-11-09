@@ -134,3 +134,15 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Barro, suelo fregado, cera y agua con texturas nuevas (brillo, relieve, bordes irregulares) y orilla de barro en charco y estanque.
 - Efectos: grumos de barro, salpicaduras y ondas en el agua, estelas, huellas de barro/mojadas al salir;
   el coche se ensucia con el barro y el agua lo lava. Capturas: `node tests/surfaces.mjs`.
+
+### Gran ampliación (petición 15, noviembre 2026)
+- **Cámara**: 👀 mirar atrás (botón, Q, LB o stick derecho pulsado) y stick derecho para girar la cámara.
+- **Variantes**: cada circuito **Al revés** (se abre con la Copa Plata) y en **Espejo** (con la Copa Oro), con físicas reflejadas.
+- **Copa Platino** 💎 (se abre con Oro): circuitos al revés y en espejo, premio 10.000. Plata y Oro ahora con 4 carreras.
+- **Fantasma** 👻 en Contrarreloj (tu mejor vuelta por circuito y variante) y **Repetición** 🎬 con cámaras de TV.
+- **Música** con estrofa/estribillo y canción propia por circuito y para la batalla.
+- **Coches**: Morsa, Grillo, Saeta y el secreto **Cometa** (todas las estrellas ⭐).
+- **Circuitos**: Museo de noche, El muelle y Parque infantil (arena que derrapa), con ambiente sonoro propio.
+- **Batalla de la Estrella** ⭐ en el Cuarto de juegos: relojes de 60 s, robar tocando o disparando.
+- Pendiente para más adelante: **editor de circuitos** y **multijugador** (pantalla partida con dos mandos y luego online).
+- Pruebas nuevas: `tests/camera.mjs`, `tests/variants.mjs`, `tests/replay.mjs`, `tests/battleui.mjs`; `node tests/racesim.mjs arena 3` simula una batalla.

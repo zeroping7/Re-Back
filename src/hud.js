@@ -46,7 +46,7 @@ export class Hud {
     this.mapPts = pts.map((p) => this.toMap(p.x, p.z));
   }
 
-  drawMap(cars, player) {
+  drawMap(cars, player, battle) {
     const g = this.ctx, W = this.map.width, H = this.map.height;
     g.clearRect(0, 0, W, H);
     g.lineJoin = 'round';
@@ -62,14 +62,42 @@ export class Hud {
       const [x, y] = this.toMap(c.currPos.x, c.currPos.z);
       g.fillStyle = c.color; g.beginPath(); g.arc(x, y, 4, 0, Math.PI * 2); g.fill();
     }
+    if (battle) { // estrella
+      const sp = battle.holder ? battle.holder.currPos : battle.pos;
+      const [bx, by] = this.toMap(sp.x, sp.z);
+      g.font = '15px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('⭐', bx, by - (battle.holder ? 9 : 0));
+    }
     const [x, y] = this.toMap(player.currPos.x, player.currPos.z);
     g.fillStyle = '#fff'; g.beginPath(); g.arc(x, y, 6, 0, Math.PI * 2); g.fill();
     g.fillStyle = player.color; g.beginPath(); g.arc(x, y, 4, 0, Math.PI * 2); g.fill();
   }
 
+  // Batalla de la Estrella: relojes de todos (UX-14)
+  battlePanel(d) {
+    const B = d.battle;
+    document.getElementById('hud').classList.toggle('battle-mode', !!B);
+    if (!B) { if (this.bEl) this.bEl.classList.add('hidden'); return; }
+    if (!this.bEl) { this.bEl = document.createElement('div'); this.bEl.id = 'h-battle'; this.el('hud').append(this.bEl); }
+    this.bEl.classList.remove('hidden');
+    this.bT = (this.bT || 0) + 1;
+    if (this.bT % 6) return;
+    const rows = [...d.cars].sort((a, b) => B.timers.get(a) - B.timers.get(b)).map((c) => {
+      const left = B.timers.get(c), pct = (left / 60) * 100;
+      return `<div class="br${c === d.player ? ' me' : ''}${c === B.holder ? ' hold' : ''}"><span class="dot" style="background:${c.color}"></span>` +
+        `<span class="nm">${c === B.holder ? '⭐ ' : ''}${c.name}</span><i><b style="width:${pct}%;background:${c.color}"></b></i><span class="tm">${left.toFixed(1)}</span></div>`;
+    }).join('');
+    this.bEl.innerHTML = rows;
+  }
+
   update(d) {
     this.set('speed', this.speed, String(Math.round(d.speed)));
-    if (d.practice) {
+    if (d.battle) {
+      this.set('pos', this.pos, `${d.place}º`);
+      this.set('postot', this.posTot, `/${d.total}`);
+      this.set('lap', this.lap, d.battle.holder === d.player ? '⭐ ¡LA TIENES!' : '⭐ BATALLA');
+      const left = d.battle.timers.get(d.player);
+      this.set('time', this.time, left.toFixed(1) + ' s');
+    } else if (d.practice) {
       this.set('pos', this.pos, '');
       this.set('postot', this.posTot, '');
       this.set('lap', this.lap, `VUELTA ${d.lap}`);
@@ -78,7 +106,7 @@ export class Hud {
       this.set('postot', this.posTot, `/${d.total}`);
       this.set('lap', this.lap, `VUELTA ${d.lap}/${d.laps}`);
     }
-    this.set('time', this.time, fmtTime(d.lapTime));
+    if (!d.battle) this.set('time', this.time, fmtTime(d.lapTime));
     const hp = Math.round(d.health);
     if (this.last.hp !== hp) {
       this.last.hp = hp;
@@ -95,6 +123,7 @@ export class Hud {
       this.item.classList.toggle('bomb', d.bomb !== undefined);
     }
     this.mapT -= 1;
-    if (this.mapT <= 0) { this.mapT = 3; this.drawMap(d.cars, d.player); }
+    if (this.mapT <= 0) { this.mapT = 3; this.drawMap(d.cars, d.player, d.battle); }
+    this.battlePanel(d);
   }
 }

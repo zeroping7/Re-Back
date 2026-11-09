@@ -187,12 +187,13 @@ export function buildCircuit(B, def) {
   for (const s of samples) s.p.y = s.h;
 
   // ---------- Bordes ----------
-  const st = def.barrier;
+  const noBarrier = def.barrier === false;
+  const st = noBarrier ? { colors: ['#ffffff'] } : def.barrier;
   const gaps = def.gaps && (B.reverse ? def.gaps.map(([a, b, sd]) => [(N - b) % N, (N - a) % N, sd === undefined ? sd : -sd]) : def.gaps);
   // bordes visibles bajos y sobrios; la colisión es un muro invisible más alto
   const blockH = st.height ?? 0.6, blockT = st.thick ?? 0.6;
   const segs = [];
-  for (const side of [1, -1]) {
+  for (const side of noBarrier ? [] : [1, -1]) {
     for (let i = 0; i < N; i++) {
       const a = samples[i], b = samples[(i + 1) % N];
       if (gaps && gaps.some(([from, to, sd]) => (sd === undefined || sd === side) && inRange(i, from, to, N))) continue;
@@ -218,7 +219,7 @@ export function buildCircuit(B, def) {
     B.collider(RAPIER.ColliderDesc.cuboid(blockT / 2, 1.1, sg.len / 2), { x: sg.mid.x, y: 1.1 + sg.h, z: sg.mid.z }, q,
       { friction: 0.05, restitution: 0.5, groups: BARRIER_GROUPS });
   });
-  scene.add(blockMesh);
+  if (segs.length) scene.add(blockMesh);
 
   // ---------- Superficies elevadas (malla visible + colisión triangular sin aristas internas) ----------
   for (const e of elev) {
@@ -291,12 +292,14 @@ export function buildCircuit(B, def) {
 
   // ---------- Línea de salida ----------
   const s0 = samples[0];
+  if (!def.noLine) {
   const line = new THREE.Mesh(new THREE.PlaneGeometry(width, 1.6), new THREE.MeshStandardMaterial({ map: checkerTexture(10, 2), roughness: 0.6 }));
   line.rotation.x = -Math.PI / 2;
   line.rotation.z = Math.atan2(s0.t.x, s0.t.z);
   line.position.set(s0.p.x, 0.045 + s0.h, s0.p.z);
   line.receiveShadow = true;
   scene.add(line);
+  }
 
   const C = { curve, samples, N, length, width, spacing: 1.6, elev, at, minRadius, straightest };
   function sampleNear(x, z) {

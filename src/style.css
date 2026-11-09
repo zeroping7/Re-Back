@@ -359,3 +359,21 @@ body.pad-mode #btn-look { display: none; }
 @keyframes blink { 50% { opacity: 0; } }
 #btn-replay-skip { position: absolute; right: calc(18px + env(safe-area-inset-right)); bottom: 6px; padding: 6px 16px; font-size: 16px; }
 .card.secret .sw.pv.car { filter: brightness(0) drop-shadow(0 0 6px #7fa8ff); }
+
+/* ===== Batalla de la Estrella (UX-14) ===== */
+#hud.battle-mode #h-last, #hud.battle-mode #h-best { display: none; }
+#h-battle { position: absolute; top: 58px; left: 50%; transform: translateX(-50%); width: 260px; display: flex; flex-direction: column; gap: 3px; pointer-events: none; }
+#h-battle .br { display: flex; align-items: center; gap: 6px; background: #0007; border-radius: 8px; padding: 2px 8px; font-size: 12px; font-weight: 800; color: #fff; }
+#h-battle .br.me { outline: 2px solid #fff8; }
+#h-battle .br.hold { background: #ffb30066; }
+#h-battle .nm { width: 70px; white-space: nowrap; overflow: hidden; }
+#h-battle i { flex: 1; height: 6px; border-radius: 3px; background: #ffffff22; overflow: hidden; }
+#h-battle i b { display: block; height: 100%; }
+#h-battle .tm { width: 34px; text-align: right; font-family: var(--title); font-style: italic; }
+#h-battle .dot { width: 9px; height: 9px; border-radius: 50%; }
+#m-main .row2 { display: flex; gap: 8px; }
+#m-main .row2 .big-btn { flex: 1; min-width: 0; }
+#m-setup.battle .no-battle { display: none !important; }
+#m-setup:not(.battle) .battle-only { display: none; }
+.battle-info { background: #ffb3002e; border: 1px solid #ffb30088; border-radius: 12px; padding: 8px 12px; font-size: 13px; margin: 4px 0 8px; max-width: 520px; }
+#m-main .row2 .big-btn { font-size: 17px; white-space: nowrap; padding-left: 14px; padding-right: 10px; }

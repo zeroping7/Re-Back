@@ -25,7 +25,7 @@
 
 ```
 Inicio (toca para empezar)
- └─ Menú principal: Carrera rápida · Campeonato · Contrarreloj · Garaje · Opciones
+ └─ Menú principal: Carrera rápida · Campeonato · Contrarreloj · Batalla · Garaje · Opciones
      ├─ Carrera rápida → circuito, coche (solo los tuyos), vueltas, rivales, dificultad → Carga → Carrera → Resultados (+🪙)
      ├─ Campeonato → copa (Bronce/Plata/Oro) → coche → 3 carreras con clasificación entre medias → Podio final (+🪙)
      ├─ Contrarreloj → circuito, coche → Carga → Vueltas libres con récord y estrella oculta
@@ -48,7 +48,7 @@ Inicio (toca para empezar)
 | UX-11 | **Fantasma** en Contrarreloj: coche translúcido que repite tu mejor vuelta en ese circuito y variante (se guarda en el móvil) | ✅ |
 | UX-12 | **Repetición** al acabar la carrera: botón en resultados; cámaras de TV a ras de suelo junto a la pista que cambian con cortes, alguna toma aérea y de persecución; explosiones repetidas; se sale tocando o con B | ✅ |
 | UX-13 | **Variantes de circuito**: Normal, Al revés (se abre con la Copa Plata) y Espejo (con la Copa Oro); récords y fantasmas por variante | ✅ |
-| UX-14 | **Batalla de la Estrella**: arena cerrada; la estrella aparece en el centro, quien la lleva gasta su reloj (60 s); se roba tocando al que la lleva; gana quien vacía su reloj; rivales con IA de persecución/huida | 🚧 |
+| UX-14 | **Batalla de la Estrella**: arena cerrada; la estrella aparece en el centro, quien la lleva gasta su reloj (60 s); se roba tocando al que la lleva; gana quien vacía su reloj; rivales con IA de persecución/huida | ✅ |
 
 ## Marcador en carrera
 

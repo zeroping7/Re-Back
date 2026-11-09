@@ -1,0 +1,33 @@
+// Batalla de la Estrella en el navegador: menú, marcador y resultados (UX-14)
+import puppeteer from 'puppeteer-core';
+import fs from 'fs';
+const url = process.argv[2] || 'http://localhost:4173/';
+const out = process.argv[3] || 'tests/shots/battle';
+fs.mkdirSync(out, { recursive: true });
+const browser = await puppeteer.launch({ executablePath: '/usr/bin/google-chrome', headless: 'new',
+  args: ['--no-sandbox', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const page = await browser.newPage();
+await page.setViewport({ width: 900, height: 420 });
+const errors = [];
+page.on('pageerror', (e) => errors.push(e.message));
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const until = async (fn, secs) => { for (let t = 0; t < secs; t++) { if (await page.evaluate(fn).catch(() => false)) return true; await sleep(1000); } return false; };
+await page.goto(url, { waitUntil: 'load' });
+await sleep(2500);
+await page.click('#btn-start'); await sleep(1500);
+await page.screenshot({ path: `${out}/1-main.png` });
+await page.click('[data-go="battle"]'); await sleep(1200);
+await page.screenshot({ path: `${out}/2-setup.png` });
+await page.goto(url + '?test&auto&battle&rivals=3', { waitUntil: 'load' });
+await until(() => window.__game?.race?.started, 90);
+await sleep(9000);
+await page.screenshot({ path: `${out}/3-battle.png` });
+await page.evaluate(() => { window.__game.race.debugCam = 'preview'; });
+await sleep(300);
+await page.screenshot({ path: `${out}/4-arena.png` });
+await page.evaluate(() => { window.__game.race.debugCam = null; });
+const ok = await until(() => !document.getElementById('m-results').classList.contains('hidden'), 280);
+console.log(ok ? '✔ resultados de la batalla' : '✘ la batalla no terminó');
+await page.screenshot({ path: `${out}/5-results.png` });
+console.log(errors.length ? 'ERRORES:\n' + errors.join('\n') : 'sin errores');
+await browser.close();

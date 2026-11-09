@@ -158,8 +158,10 @@ export class PadInput {
       const dx = (q.left + q.width / 2) - cx, dy = (q.top + q.height / 2) - cy;
       const along = dx * v[0] + dy * v[1];
       if (along <= 4) continue;
-      const across = Math.abs(dx * v[1] + dy * v[0]);
-      const score = along + across * 2.2;
+      // separación lateral entre los bordes (0 si se solapan) + un poco de distancia entre centros
+      const gap = v[0] ? Math.max(0, q.top - r.bottom, r.top - q.bottom) : Math.max(0, q.left - r.right, r.left - q.right);
+      const across = gap * 4 + Math.abs(dx * v[1] + dy * v[0]) * (gap > 0 ? 0.6 : 0.2);
+      const score = along + across + (q.left + q.top) * 0.001;
       if (score < bestScore) { bestScore = score; best = el; }
     }
     if (best) { this.setFocus(best, list); this.onMove?.(); }

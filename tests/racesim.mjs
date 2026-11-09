@@ -15,7 +15,9 @@ const controls = { read: () => ({ steer: 0, throttle: 0, brake: 0 }), consumeFir
 let done = null;
 const practice = !!process.env.STAR;
 let starAt = null;
-const race = new Race({ renderer: null, envMap: null, sfx, controls, hud, trackDef: trackById(trackId), carDef: carById(carId), laps, rivals, difficulty: +(process.env.DIFF || 0.94), baseTuning: tuning, onFinish: (r) => { done = r; },
+const battle = trackId === 'arena';
+const { ARENA } = await import('../src/battle.js');
+const race = new Race({ renderer: null, envMap: null, sfx, controls, hud, battle, trackDef: battle ? ARENA : trackById(trackId), carDef: carById(carId), laps, rivals, difficulty: +(process.env.DIFF || 0.94), baseTuning: tuning, onFinish: (r) => { done = r; },
   practice, star: practice ? { taken: false } : null, onStar: () => { starAt = race.time; return 500; } });
 race.autoPlayer = true;
 // el jugador usa objetos automáticamente
@@ -27,7 +29,7 @@ let t = 0;
 const playerAI = race.playerAI;
 while (t < 240) {
   const st = race.state(race.player);
-  if (race.player.item && playerAI.shouldUse(race.player.item, race, st)) race.items.fire(race.player);
+  if (!battle && race.player.item && playerAI.shouldUse(race.player.item, race, st)) race.items.fire(race.player);
   race.update(FIXED);
   t += FIXED;
   if (practice && race.star) { const d = race.player.currPos.distanceTo(race.star.pos); if (d < (globalThis.minStar ?? 1e9)) { globalThis.minStar = d; globalThis.minStarY = race.player.currPos.y - race.star.pos.y; } }
@@ -41,6 +43,7 @@ if (practice) {
   console.log(trackId, carId, 'STAR', starAt !== null ? `cogida en t=${starAt.toFixed(1)}` : 'NO cogida', s ? `pos=${s.pos.x.toFixed(1)},${s.pos.y.toFixed(1)},${s.pos.z.toFixed(1)}` : 'sin estrella');
   process.exit(0);
 }
+if (battle) { console.log('  relojes:', [...race.battleState.timers].map(([c, v]) => `${c.name}=${v.toFixed(1)}`).join(' '), 'portador:', race.battleState.holder?.name); }
 const r = race.results();
 console.log(trackId, `len=${race.circuit.length.toFixed(0)} t=${t.toFixed(1)}`);
 for (const x of r) { const car = race.cars.find((c) => c.name === x.name); console.log(`  ${x.place}. ${x.name.padEnd(6)} fin=${x.finished} time=${x.time.toFixed(1)} best=${x.best.toFixed(2)} laps=${x.laps} resp=${respawns.get(x.name) || 0} hp=${car.health.toFixed(0)}`); }

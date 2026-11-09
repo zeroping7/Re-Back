@@ -33,7 +33,7 @@ check('foco inicial: ' + (await focus()), !!(await focus()));
 await page.screenshot({ path: `${out}/1-main.png` });
 // bajar hasta Contrarreloj
 let guard = 0;
-while (!(await focus())?.includes('Contrarreloj') && guard++ < 8) await tap(DOWN);
+while (!(await focus())?.includes('Contrarreloj') && guard++ < 8) { await tap(DOWN); console.log('  foco:', await focus()); }
 check('cruceta llega a Contrarreloj', (await focus())?.includes('Contrarreloj'));
 await tap(A); await sleep(800);
 check('A abre Contrarreloj', (await screen()) === 'm-setup');
@@ -48,7 +48,7 @@ check('el foco recuerda Contrarreloj', (await focus())?.includes('Contrarreloj')
 await tap(A); await sleep(800);
 check('reabre Contrarreloj', (await screen()) === 'm-setup' && (await page.evaluate(() => document.getElementById('setup-title').textContent)) === 'Contrarreloj');
 await tap(DOWN); await sleep(200);
-check('abajo pasa a los coches: ' + (await focus()), /Furgo|Pulga|Más/.test(await focus()));
+check('abajo pasa al sentido o a los coches: ' + (await focus()), /Furgo|Pulga|Más|Normal|revés|Espejo/.test(await focus()));
 await tap(START); // Start = ¡A correr!
 await page.waitForFunction(() => window.__game.race && window.__game.race.started, { timeout: 90000 });
 check('carrera empezada; botones táctiles ocultos', await page.evaluate(() => document.body.classList.contains('pad-mode') && !document.getElementById('steer-pad').offsetParent));

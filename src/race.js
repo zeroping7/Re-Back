@@ -7,6 +7,7 @@ import { CARS, carById, carTuning, rivalPool } from './cars.js';
 import { AIDriver } from './ai.js';
 import { Items, haloTexture } from './items.js';
 import { Particles, SkidMarks, Ripples } from './effects.js';
+import { setupBattle, battleStep, battlePlaces, battleRender, dropStar, BattleDriver } from './battle.js';
 import { loadGhost, saveGhost, ghostModel, poseAt, poseLerp, ReplayRecorder, Director, GHOST_HZ } from './replay.js';
 
 export const FIXED = 1 / 60;
@@ -15,11 +16,13 @@ const RIVAL_NAMES = ['Turbo', 'Pila', 'Zumbi', 'Trasto', 'Muelle', 'Chapa', 'Tue
 
 // Una carrera completa: escena, física, coches, IA, objetos, vueltas y cámara.
 export class Race {
-  constructor({ renderer, envMap, sfx, controls, hud, trackDef, carDef, carUpgrades = {}, laps = 3, rivals = 3, difficulty = 1, baseTuning, onFinish, practice = false, star = null, onStar = null, camMode = 'normal' }) {
+  constructor({ renderer, envMap, sfx, controls, hud, trackDef, carDef, carUpgrades = {}, laps = 3, rivals = 3, difficulty = 1, baseTuning, onFinish, practice = false, star = null, onStar = null, camMode = 'normal', battle = false }) {
     this.carUpgrades = carUpgrades;
     this.renderer = renderer; this.sfx = sfx; this.controls = controls; this.hud = hud;
     this.trackDef = trackDef; this.laps = laps; this.baseTuning = baseTuning; this.onFinish = onFinish;
     this.practice = practice;
+    this.battle = battle;
+    if (battle) this.laps = laps = 999;
     this.camMode = camMode;
     this.time = 0; this.phase = 'countdown'; this.countdown = 3.2; this.started = false; this.paused = false;
     this.acc = 0; this.trauma = 0; this.clock = 0;
@@ -82,6 +85,11 @@ export class Race {
       else this.ai.set(car, new AIDriver(car, this.circuit, { skill, seed: i + 1 }));
     }
     this.playerAI = new AIDriver(this.player, this.circuit, { skill: 1, seed: 99 }); // para después de la meta
+    if (battle) {
+      for (const car of this.cars) if (!car.isPlayer) this.ai.set(car, new BattleDriver(car, this, { skill: difficulty, seed: car.index + 1 }));
+      this.playerAI = new BattleDriver(this.player, this, { skill: 1, seed: 99 });
+      setupBattle(this);
+    }
     this.sfx.setEngine?.(carDef.motor === 'Nitro' ? 'nitro' : 'electric');
 
     // ---------- Objetos ----------
@@ -198,7 +206,7 @@ export class Race {
       if (!this.started) input = car.isPlayer ? { ...playerInput, throttle: 0, brake: 0, hold: true } : hold;
       else if (car.isPlayer) input = st.finished || this.autoPlayer ? this.playerAI.update(dt, this, st) : playerInput;
       else input = this.ai.get(car).update(dt, this, st);
-      if (!car.isPlayer && this.started && !this.practice) {
+      if (!car.isPlayer && this.started && !this.practice && !this.battle) {
         const ps = this.state(this.player);
         const diff = (st.progress - ps.progress) / this.circuit.N;
         car.rubber = THREE.MathUtils.clamp(1 - diff * 0.45, 0.9, 1.1);
@@ -212,6 +220,7 @@ export class Race {
       this.zoneEffects(car);
       this.carEffects(car);
     }
+    if (this.battle) battleStep(this, dt);
     this.updatePlaces();
     // 30 Hz: fantasma y repetición
     if (this.started && (this.stepN++ & 1) === 0) {
@@ -223,6 +232,12 @@ export class Race {
   trackProgress(car, dt) {
     const st = this.state(car), c = this.circuit;
     const p = car.currPos;
+    if (this.battle) { // arena: sin vueltas ni sentido; solo recolocar si vuelca o se sale del cuarto
+      st.idx = c.sampleNear(p.x, p.z).i;
+      const b = this.bounds;
+      if (car.upsideTime > 1.4 || p.y < -4 || Math.abs(p.x) > b.x + 2 || Math.abs(p.z) > b.z + 2) this.respawn(car);
+      return;
+    }
     const ni = c.nearestFrom(st.idx, p.x, p.z, 8, 20);
     let d = ni - st.idx;
     if (d < -c.N / 2) d += c.N;
@@ -393,6 +408,7 @@ export class Race {
 
   respawn(car) {
     const st = this.state(car), c = this.circuit;
+    if (this.battle && this.battleState?.holder === car) dropStar(this, car.currPos);
     const s = c.samples[st.idx];
     // altura real del suelo en ese punto (rampas, cuestas…)
     const ray = new RAPIER.Ray({ x: s.p.x, y: s.p.y + 20, z: s.p.z }, { x: 0, y: -1, z: 0 });
@@ -451,6 +467,7 @@ export class Race {
   }
 
   updatePlaces() {
+    if (this.battle && this.battleState) return battlePlaces(this);
     const list = [...this.cars].sort((a, b) => {
       const A = this.state(a), Bs = this.state(b);
       if (A.finished && Bs.finished) return A.finishTime - Bs.finishTime;
@@ -603,6 +620,7 @@ export class Race {
       const far = car !== this.player && car.model.position.distanceToSquared(this.camera.position) > 30 * 30;
       for (const m of car.model.userData.detail) m.visible = !far;
     }
+    if (this.battle) battleRender(this);
     if (this.ghostMesh) {
       const st0 = this.state(this.player), gt = this.time - st0.lapStart;
       const show = this.started && gt <= this.ghost.time;
@@ -629,6 +647,7 @@ export class Race {
       health: this.player.health,
       bomb: this.items.bombs.get(this.player)?.t,
       cars: this.cars, player: this.player,
+      battle: this.battleState,
     });
   }
 

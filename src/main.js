@@ -4,6 +4,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import '@fontsource/russo-one/latin-400.css';
 import { Race, FIXED, fmtTime, getBest } from './race.js';
 import { TRACKS, trackById, trackFromKey, VARIANTS, variantUnlocked } from './tracks/index.js';
+import { ARENA } from './battle.js';
 import { CARS, carById, UPGRADES, MAX_LEVEL, carTuning, tractionName } from './cars.js';
 import {
   profile, isOwned, upgradesOf, upgradeCost, sellValue, buyCar, sellCar, buyUpgrade, selectCar, raceReward, addMoney,
@@ -43,6 +44,8 @@ const TIPS = [
   'Los coches pesados empujan más; los ligeros aceleran y giran mejor.',
   'Queda entre los 3 primeros de una copa para abrir la siguiente.',
   'Con mando: gatillo derecho acelera, el izquierdo frena y X dispara.',
+  'En la Batalla, dispara al que lleva la estrella para que la suelte.',
+  'Mantén 👀 (o LB) para mirar atrás.',
 ];
 
 async function init() {
@@ -84,10 +87,11 @@ async function init() {
   document.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => {
     sfx.play('click');
     const go = b.dataset.go;
-    if (go === 'race' || go === 'practice') {
+    if (go === 'race' || go === 'practice' || go === 'battle') {
       mode = go;
-      $('setup-title').textContent = go === 'race' ? 'Carrera rápida' : 'Contrarreloj';
+      $('setup-title').textContent = go === 'race' ? 'Carrera rápida' : go === 'battle' ? 'Batalla de la Estrella' : 'Contrarreloj';
       $('race-opts').style.display = go === 'practice' ? 'none' : '';
+      $('m-setup').classList.toggle('battle', go === 'battle');
       buildSetup();
       showScreen('m-setup');
     } else if (go === 'cups') { buildCups(); showScreen('m-cups'); }
@@ -306,6 +310,7 @@ async function init() {
       const c = cupById(cup.id);
       return { track: c.tracks[cup.idx], laps: c.laps, rivals: c.rivals, diff: c.diff, practice: false, kind: `${c.icon} ${c.name} · Carrera ${cup.idx + 1} de ${c.tracks.length}` };
     }
+    if (mode === 'battle') return { track: 'arena', battle: true, laps: 1, rivals: Math.max(1, settings.rivals), diff: settings.diff, practice: false, kind: '⭐ Batalla de la Estrella' };
     if (mode === 'practice') return { track: trackKey(), laps: 3, rivals: 0, diff: 1, practice: true, kind: '⏱ Contrarreloj' };
     return { track: trackKey(), laps: settings.laps, rivals: settings.rivals, diff: settings.diff, practice: false, kind: '🏁 Carrera rápida' };
   }
@@ -313,7 +318,7 @@ async function init() {
   function showLoading(def, cfg) {
     $('ld-kind').textContent = cfg.kind;
     $('ld-name').textContent = def.name;
-    $('ld-desc').textContent = def.desc + (cfg.practice && def.variant ? '' : cfg.practice ? (profile.stars[def.id] ? ' · ⭐ estrella conseguida' : ' · ☆ busca la estrella') : ` · ${cfg.laps} vueltas · ${cfg.rivals + 1} coches`);
+    $('ld-desc').textContent = cfg.battle ? `${def.desc} · ${cfg.rivals + 1} coches · reloj de 60 s` : def.desc + (cfg.practice && def.variant ? '' : cfg.practice ? (profile.stars[def.id] ? ' · ⭐ estrella conseguida' : ' · ☆ busca la estrella') : ` · ${cfg.laps} vueltas · ${cfg.rivals + 1} coches`);
     $('ld-tip').textContent = '💡 ' + TIPS[Math.floor(Math.random() * TIPS.length)];
     $('loading').style.setProperty('--tc', def.color);
     $('loading').classList.remove('hidden', 'go');
@@ -324,7 +329,7 @@ async function init() {
   function startRace() {
     const token = ++loadToken;
     if (race) { race.dispose(); race = null; }
-    const cfg = raceConfig(), def = trackFromKey(cfg.track);
+    const cfg = raceConfig(), def = cfg.battle ? ARENA : trackFromKey(cfg.track);
     showScreen(null);
     $('hud').classList.add('hidden');
     $('tune-panel').classList.add('hidden');
@@ -342,6 +347,7 @@ async function init() {
         laps: cfg.laps, rivals: cfg.rivals, difficulty: cfg.diff, practice: cfg.practice,
         baseTuning: tuning, onFinish: showResults, camMode: settings.cam,
         star: cfg.practice && !def.variant ? { taken: !!profile.stars[def.id] } : null,
+        battle: !!cfg.battle,
         onStar: () => {
           const got = takeStar(def.id) ? STAR_PRIZE : 0;
           if (checkSecret()) setTimeout(() => { hud.message('🚀 ¡Coche secreto desbloqueado: Cometa!', 3.5, 'big'); sfx.play('cup'); }, 2600);
@@ -360,8 +366,8 @@ async function init() {
       resize();
       $('loading').classList.add('hidden');
       $('hud').classList.remove('hidden');
-      sfx.startMusic('race', def.id);
-      sfx.startAmbient(def.id);
+      sfx.startMusic('race', cfg.battle ? 'batalla' : def.id);
+      sfx.startAmbient(cfg.battle ? 'salon' : def.id);
     }, 30));
   }
   $('btn-go').addEventListener('click', () => { sfx.play('click'); startRace(); });
@@ -399,7 +405,7 @@ async function init() {
     const cfg = raceConfig(), inCup = mode === 'cup';
     const me = res.find((r) => r.player);
     if (inCup) addPoints(cup, res);
-    $('res-kind').textContent = `${cfg.kind} · ${trackFromKey(cfg.track).name}`;
+    $('res-kind').textContent = `${cfg.kind} · ${cfg.battle ? ARENA.name : trackFromKey(cfg.track).name}`;
     $('res-title').textContent = me.place === 1 ? '🏆 ¡Has ganado!' : `Has quedado ${me.place}º`;
     $('res-table').innerHTML = res.map((r) => `<tr class="${r.player ? 'me' : ''}"><td>${r.place}º</td><td><span class="dot" style="background:${r.color}"></span>${r.name}</td>` +
       `<td>${r.finished ? fmtTime(r.time) : '—'}</td><td>⏱ ${fmtTime(r.best)}</td>${inCup ? `<td class="pts">+${POINTS[r.place - 1] || 0}</td>` : ''}</tr>`).join('');
@@ -410,7 +416,7 @@ async function init() {
     document.querySelector('#m-results .res-col').classList.toggle('wide', inCup);
     if (inCup) $('cup-table').innerHTML = standingsRows(standings(cup));
     const best = getBest(cfg.track);
-    $('res-best').textContent = `Récord del circuito: vuelta ${fmtTime(best.lap)} · carrera ${fmtTime(best.race)}`;
+    $('res-best').textContent = cfg.battle ? 'Tiempo = segundos que cada uno llevó la estrella' : `Récord del circuito: vuelta ${fmtTime(best.lap)} · carrera ${fmtTime(best.race)}`;
     const btns = $('res-btns'); btns.innerHTML = '';
     const btn = (label, cls, fn) => {
       const b = document.createElement('button');
@@ -549,7 +555,7 @@ async function init() {
     if (params.has('laps')) settings.laps = +params.get('laps');
     if (params.has('diff')) settings.diff = +params.get('diff');
     if (params.get('camMode')) settings.cam = params.get('camMode');
-    mode = params.has('practice') ? 'practice' : 'race';
+    mode = params.has('practice') ? 'practice' : params.has('battle') ? 'battle' : 'race';
     sfx.start();
     if (params.get('cup')) { mode = 'cup'; cup = { id: params.get('cup'), idx: +(params.get('cupIdx') || 0), table: {} }; }
     if (params.get('screen')) { sfx.startMusic('menu'); showScreen(params.get('screen')); if (params.get('screen') === 'm-cups') buildCups(); }

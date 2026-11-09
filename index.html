@@ -69,7 +69,10 @@
       <p class="sub">Carreras de coches teledirigidos</p>
       <button class="big-btn" data-go="race"><span>🏁</span>Carrera rápida</button>
       <button class="big-btn gold" data-go="cups"><span>🏆</span>Campeonato</button>
-      <button class="big-btn alt" data-go="practice"><span>⏱</span>Contrarreloj</button>
+      <div class="row2">
+        <button class="big-btn alt" data-go="practice"><span>⏱</span>Contrarreloj</button>
+        <button class="big-btn alt" data-go="battle"><span>⭐</span>Batalla</button>
+      </div>
       <button class="big-btn alt" data-go="garage"><span>🔧</span>Garaje</button>
       <button class="big-btn alt" data-go="settings"><span>⚙</span>Opciones</button>
     </div>
@@ -82,13 +85,14 @@
         <button class="icon back" data-go="main">←</button>
         <h2 id="setup-title">Carrera</h2>
       </div>
-      <h3>Circuito</h3>
-      <div id="tracks" class="cards"></div>
-      <div class="opt variant-opt"><span>Sentido</span><div class="seg" id="opt-variant"></div></div>
+      <h3 class="no-battle">Circuito</h3>
+      <div id="tracks" class="cards no-battle"></div>
+      <p class="battle-only battle-info">⭐ Coge la estrella y aguántala: quien la lleva gasta su reloj de 60 s. Róbala tocando al que la tiene. ¡Gana quien vacíe su reloj!</p>
+      <div class="opt variant-opt no-battle"><span>Sentido</span><div class="seg" id="opt-variant"></div></div>
       <h3>Coche</h3>
       <div id="cars" class="cards"></div>
       <div id="race-opts">
-        <div class="opt"><span>Vueltas</span><div class="seg" id="opt-laps"></div></div>
+        <div class="opt no-battle"><span>Vueltas</span><div class="seg" id="opt-laps"></div></div>
         <div class="opt"><span>Rivales</span><div class="seg" id="opt-rivals"></div></div>
         <div class="opt"><span>Dificultad</span><div class="seg" id="opt-diff"></div></div>
       </div>
