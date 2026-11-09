@@ -63,6 +63,11 @@ const STYLES = {
     tailX: 0.3, tailY: 0.35, tailZ: -0.93,
     wing: null, decal: null, slick: true,
   },
+  rocket: {
+    profile: null, cab: null,
+    tailX: 0.2, tailY: 0.22, tailZ: -0.9,
+    wing: null, decal: null, slick: true,
+  },
 };
 
 // suaviza un perfil poligonal (Chaikin): esquinas redondeadas como una carrocería real
@@ -743,6 +748,37 @@ const EXTRAS = {
     add(new THREE.BoxGeometry(0.9, 0.08, 0.1), M.chrome, 0, P + 0.18, 0.93, undefined, false);
     add(new THREE.BoxGeometry(0.9, 0.08, 0.1), M.chrome, 0, P + 0.18, -0.93, undefined, false);
     add(new THREE.PlaneGeometry(0.26, 0.26).rotateX(-Math.PI / 2).rotateY(Math.PI), decalMat(def.number || '2'), 0, P + 0.86, -0.1, undefined, false);
+  },
+  // Cometa (coche secreto): cohete de juguete con aletas, cabina de burbuja y tobera encendida
+  rocket({ add, paint, P, def }) {
+    const body = new THREE.CylinderGeometry(0.3, 0.34, 1.45, 18, 1).rotateX(Math.PI / 2);
+    planarUV(body, 1.05, 0.4);
+    add(body, paint, 0, P + 0.38, -0.12);
+    const nose = new THREE.ConeGeometry(0.3, 0.62, 18).rotateX(Math.PI / 2);
+    planarUV(nose, 1.05, 0.4);
+    add(nose, paint, 0, P + 0.38, 0.91);
+    add(new THREE.SphereGeometry(0.06, 10, 8), M.chrome, 0, P + 0.38, 1.22, undefined, false);
+    // anillos cromados
+    for (const z of [0.6, -0.55]) add(new THREE.TorusGeometry(0.315, 0.025, 6, 24), M.chrome, 0, P + 0.38, z, undefined, false);
+    // cabina
+    const dome = new THREE.SphereGeometry(0.24, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2);
+    dome.scale(1, 0.85, 1.6);
+    add(dome, M.glass, 0, P + 0.6, 0.22);
+    // aletas
+    const fin = new THREE.BufferGeometry();
+    fin.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, -0.55, 0, 0.42, -0.62, 0, 0, 0, 0, 0.42, -0.62, 0, 0, -0.55], 3));
+    fin.computeVertexNormals();
+    const finMat = new THREE.MeshStandardMaterial({ color: '#ffd400', metalness: 0.3, roughness: 0.35, side: THREE.DoubleSide });
+    for (const a of [Math.PI / 2, -Math.PI / 2, 0]) {
+      const f = add(fin, finMat, 0, P + 0.38, -0.25);
+      f.rotation.z = a; f.translateY(0.26);
+    }
+    // tobera con llama azul
+    add(new THREE.CylinderGeometry(0.2, 0.27, 0.22, 16).rotateX(Math.PI / 2), M.chrome, 0, P + 0.38, -0.92, undefined, false);
+    const glow = new THREE.MeshStandardMaterial({ color: '#7fd6ff', emissive: '#4fc3ff', emissiveIntensity: 2.2 });
+    add(new THREE.CircleGeometry(0.17, 16).rotateY(Math.PI), glow, 0, P + 0.38, -1.035, undefined, false);
+    add(new THREE.PlaneGeometry(0.24, 0.24).rotateY(Math.PI / 2), decalMat(def.number || '0'), 0.33, P + 0.4, -0.2, undefined, false);
+    add(new THREE.PlaneGeometry(0.24, 0.24).rotateY(-Math.PI / 2), decalMat(def.number || '0'), -0.33, P + 0.4, -0.2, undefined, false);
   },
 };
 

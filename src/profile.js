@@ -1,4 +1,5 @@
 import { CARS, carById, UPGRADES, MAX_LEVEL } from './cars.js';
+import { TRACKS } from './tracks/index.js';
 
 // Partida guardada: dinero, coches comprados y sus mejoras
 const KEY = 'reback.profile.v1';
@@ -45,7 +46,7 @@ export const sellValue = (id) => Math.round((spentOn(id) * 0.6) / 50) * 50;
 
 export function buyCar(id) {
   const c = carById(id);
-  if (isOwned(id) || profile.money < c.price) return false;
+  if (c.secret || isOwned(id) || profile.money < c.price) return false;
   profile.money -= c.price;
   profile.owned[id] = {};
   profile.selected = id;
@@ -93,6 +94,14 @@ export function takeStar(trackId) {
   if (profile.stars[trackId]) return false;
   profile.stars[trackId] = true;
   addMoney(STAR_PRIZE);
+  return true;
+}
+// COC-05: todas las estrellas → coche secreto (devuelve true si se acaba de ganar)
+export const starsGot = () => TRACKS.filter((t) => profile.stars[t.id]).length;
+export function checkSecret() {
+  if (profile.owned.cometa || starsGot() < TRACKS.length) return false;
+  profile.owned.cometa = {};
+  saveProfile();
   return true;
 }
 

@@ -7,7 +7,7 @@ import { TRACKS, trackById, trackFromKey, VARIANTS, variantUnlocked } from './tr
 import { CARS, carById, UPGRADES, MAX_LEVEL, carTuning, tractionName } from './cars.js';
 import {
   profile, isOwned, upgradesOf, upgradeCost, sellValue, buyCar, sellCar, buyUpgrade, selectCar, raceReward, addMoney,
-  onProfileChange, setCupResult, takeStar, STAR_PRIZE,
+  onProfileChange, setCupResult, takeStar, STAR_PRIZE, checkSecret, starsGot,
 } from './profile.js';
 import { CUPS, cupById, cupUnlocked, cupPrize, addPoints, standings, POINTS } from './cups.js';
 import { Showroom } from './showroom.js';
@@ -98,6 +98,7 @@ async function init() {
     if (bump) { $('money').classList.remove('bump'); void $('money').offsetWidth; $('money').classList.add('bump'); }
   }
   onProfileChange(() => updateMoney(true));
+  checkSecret();
   updateMoney();
 
   function seg(id, options, get, set) {
@@ -247,10 +248,12 @@ async function init() {
   function buildGarage() {
     const list = $('g-cars'); list.innerHTML = '';
     for (const d of CARS) {
-      const own = isOwned(d.id);
+      const own = isOwned(d.id), hidden = d.secret && !own;
       const c = document.createElement('button');
-      c.className = 'card' + (gSel === d.id ? ' sel' : '') + (own ? '' : ' locked');
-      c.innerHTML = `${carPv(d)}<b>${own ? '' : '🔒 '}${d.name}</b><small>${d.clase}</small>` +
+      c.className = 'card' + (gSel === d.id ? ' sel' : '') + (own ? '' : ' locked') + (hidden ? ' secret' : '');
+      c.innerHTML = hidden
+        ? `${carPv(d)}<b>❓ Secreto</b><small>Consigue todas las estrellas</small><div class="price">⭐ ${starsGot()}/${TRACKS.length}</div>`
+        : `${carPv(d)}<b>${own ? '' : '🔒 '}${d.name}</b><small>${d.clase}</small>` +
         (own ? `<div class="own">${profile.selected === d.id ? '✔ En uso' : 'Tuyo'}</div>` : `<div class="price">🪙 ${coins(d.price)}</div>`);
       c.addEventListener('click', () => { gSel = d.id; sfx.play('click'); room.showCar(d.id); buildGarage(); });
       list.append(c);
@@ -270,7 +273,11 @@ async function init() {
     }).join('');
     const act = $('g-actions'); act.innerHTML = '';
     const btn = (label, cls, ok, fn) => { const b = document.createElement('button'); b.innerHTML = label; b.className = cls; b.disabled = !ok; b.onclick = fn; act.append(b); };
-    if (!own) {
+    if (d.secret && !own) {
+      $('g-name').textContent = '❓ Coche secreto';
+      $('g-desc').textContent = `Consigue las ${TRACKS.length} estrellas ocultas en Contrarreloj (llevas ${starsGot()})`;
+      btn(`⭐ ${starsGot()}/${TRACKS.length}`, 'buy', false, () => {});
+    } else if (!own) {
       btn(`Comprar · 🪙 ${coins(d.price)}`, 'buy', profile.money >= d.price, () => { if (buyCar(d.id)) { sfx.play('finish'); buildGarage(); } });
     } else {
       btn(profile.selected === d.id ? '✔ En uso' : 'Usar este', 'use', profile.selected !== d.id, () => { selectCar(d.id); sfx.play('click'); buildGarage(); });
@@ -335,7 +342,11 @@ async function init() {
         laps: cfg.laps, rivals: cfg.rivals, difficulty: cfg.diff, practice: cfg.practice,
         baseTuning: tuning, onFinish: showResults, camMode: settings.cam,
         star: cfg.practice && !def.variant ? { taken: !!profile.stars[def.id] } : null,
-        onStar: () => (takeStar(def.id) ? STAR_PRIZE : 0),
+        onStar: () => {
+          const got = takeStar(def.id) ? STAR_PRIZE : 0;
+          if (checkSecret()) setTimeout(() => { hud.message('🚀 ¡Coche secreto desbloqueado: Cometa!', 3.5, 'big'); sfx.play('cup'); }, 2600);
+          return got;
+        },
       });
       r.sun.castShadow = q.shadow;
       if (params.get('cam')) r.debugCam = params.get('cam');

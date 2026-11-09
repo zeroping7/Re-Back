@@ -358,3 +358,4 @@ body.pad-mode #btn-look { display: none; }
 #replay-ui .rp-badge i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #ff3b30; margin-right: 6px; animation: blink 1s steps(2) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 #btn-replay-skip { position: absolute; right: calc(18px + env(safe-area-inset-right)); bottom: 6px; padding: 6px 16px; font-size: 16px; }
+.card.secret .sw.pv.car { filter: brightness(0) drop-shadow(0 0 6px #7fa8ff); }

@@ -63,6 +63,36 @@ export const CARS = [
     mods: { engine: 1.1, maxSpeed: 0.88, grip: 1.0, steer: 1.1, susp: 1 },
     stats: { vel: 1, acel: 4, manejo: 4 },
   },
+  // COC-04: coches nuevos
+  {
+    id: 'morsa', price: 3500, name: 'Morsa', desc: 'Camión pesado: empuja a todos', color: '#6d4c41', style: 'truck', number: '12', pattern: 'stripes', rimColor: '#ffcc80',
+    clase: 'Avanzado', motor: 'Eléctrico', mass: 12.5, rearBias: 50,
+    wheelR: 0.45, wheelX: 0.66, wheelZf: 0.76, wheelZr: -0.76,
+    mods: { engine: 1.04, maxSpeed: 0.96, grip: 1.08, steer: 0.9, susp: 0.72 },
+    stats: { vel: 2, acel: 3, manejo: 3 },
+  },
+  {
+    id: 'grillo', price: 6500, name: 'Grillo', desc: 'Buggy de giro rapidísimo', color: '#64dd17', style: 'buggy', number: '6', pattern: 'flames',
+    clase: 'Semi-pro', motor: 'Eléctrico', mass: 7.5, rearBias: 75,
+    wheelR: 0.36, wheelX: 0.6, wheelZf: 0.74, wheelZr: -0.72,
+    mods: { engine: 1.12, maxSpeed: 1.04, grip: 1.02, steer: 1.18, susp: 1.05 },
+    stats: { vel: 4, acel: 4, manejo: 5 },
+  },
+  {
+    id: 'saeta', price: 12500, name: 'Saeta', desc: 'Turismo de nitro: el más rápido en recta', color: '#00b8d4', style: 'touring', number: '11', pattern: 'rally', rimColor: '#212121',
+    clase: 'Pro', motor: 'Nitro', mass: 8, rearBias: 80,
+    wheelR: 0.33, wheelX: 0.62, wheelZf: 0.78, wheelZr: -0.76,
+    mods: { engine: 1.1, maxSpeed: 1.16, grip: 1.12, steer: 1.0, susp: 1.35 },
+    stats: { vel: 5, acel: 4, manejo: 4 },
+  },
+  // COC-05: coche secreto, se regala al conseguir todas las estrellas ocultas
+  {
+    id: 'cometa', price: 20000, secret: true, name: 'Cometa', desc: 'Cohete secreto: se gana con todas las estrellas', color: '#3d5afe', style: 'rocket', number: '0', pattern: 'flames', rimColor: '#ffd400',
+    clase: 'Pro', motor: 'Nitro', mass: 7.5, rearBias: 85,
+    wheelR: 0.35, wheelX: 0.6, wheelZf: 0.76, wheelZr: -0.72,
+    mods: { engine: 1.18, maxSpeed: 1.18, grip: 1.15, steer: 1.08, susp: 1.2 },
+    stats: { vel: 5, acel: 5, manejo: 5 },
+  },
 ];
 
 // ordenados de más barato a más caro
@@ -74,7 +104,7 @@ export const carById = (id) => CARS.find((c) => c.id === id) || CARS[0];
 export const CLASSES = ['Novato', 'Aficionado', 'Avanzado', 'Semi-pro', 'Pro'];
 export function rivalPool(diff) {
   const lo = diff < 0.9 ? 0 : diff < 1 ? 1 : 2, hi = lo === 2 ? 4 : lo + 1;
-  return CARS.filter((c) => { const k = CLASSES.indexOf(c.clase); return k >= lo && k <= hi; });
+  return CARS.filter((c) => { const k = CLASSES.indexOf(c.clase); return !c.secret && k >= lo && k <= hi; });
 }
 // Texto de la tracción para la ficha
 export function tractionName(def, base = 90) {
