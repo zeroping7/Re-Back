@@ -177,7 +177,8 @@ export function buildCircuit(B, def) {
 
   // ---------- Bordes ----------
   const st = def.barrier;
-  const blockH = st.height ?? 1.0, blockT = st.thick ?? 0.7;
+  // bordes visibles bajos y sobrios; la colisión es un muro invisible más alto
+  const blockH = st.height ?? 0.6, blockT = st.thick ?? 0.6;
   const segs = [];
   for (const side of [1, -1]) {
     for (let i = 0; i < N; i++) {
@@ -268,6 +269,9 @@ export function buildCircuit(B, def) {
     const desc = RAPIER.ColliderDesc.trimesh(new Float32Array(phys), new Uint32Array(tri), RAPIER.TriMeshFlags.FIX_INTERNAL_EDGES).setFriction(0.9);
     B.world.createCollider(desc, B.fixed);
   }
+
+  // ---------- Carteles de flechas en las curvas cerradas ----------
+  if (def.chevrons !== false) cornerSigns(scene, samples, width, blockT, def.chevrons || {});
 
   // ---------- Línea de salida ----------
   const s0 = samples[0];
@@ -524,5 +528,65 @@ export function chevronTexture() {
   g.fillStyle = '#4fc3f7';
   for (const y of [8, 72]) { g.beginPath(); g.moveTo(14, y + 40); g.lineTo(64, y); g.lineTo(114, y + 40); g.lineTo(114, y + 56); g.lineTo(64, y + 16); g.lineTo(14, y + 56); g.fill(); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+// Carteles con flechas en el exterior de las curvas cerradas (para leer el trazado de lejos)
+function cornerSigns(scene, samples, width, blockT, { bg = '#d62828', fg = '#ffffff', maxR = 9, max = 8 } = {}) {
+  const N = samples.length;
+  const runs = [];
+  let cur = null;
+  for (let i = 0; i < N; i++) {
+    const s = samples[i];
+    if (s.radius < maxR) {
+      if (!cur) cur = { apex: i, r: s.radius, turn: s.turn, len: 0 };
+      cur.len++;
+      if (s.radius < cur.r) { cur.r = s.radius; cur.apex = i; cur.turn = s.turn; }
+    } else if (cur) { runs.push(cur); cur = null; }
+  }
+  if (cur) runs.push(cur);
+  const corners = runs.filter((c) => c.apex > 6 && c.apex < N - 6 && samples[c.apex].h < 0.05).sort((a, b) => a.r - b.r).slice(0, max);
+  const tex = { '-1': chevronSignTexture(bg, fg, -1), '1': chevronSignTexture(bg, fg, 1) };
+  const mats = { '-1': new THREE.MeshStandardMaterial({ map: tex['-1'], emissive: '#ffffff', emissiveMap: tex['-1'], emissiveIntensity: 0.25, roughness: 0.5 }),
+    '1': new THREE.MeshStandardMaterial({ map: tex['1'], emissive: '#ffffff', emissiveMap: tex['1'], emissiveIntensity: 0.25, roughness: 0.5 }) };
+  const back = mat('#333333');
+  const board = new THREE.PlaneGeometry(2.8, 1.3);
+  const post = new THREE.CylinderGeometry(0.07, 0.07, 1.1, 5);
+  for (const c of corners) {
+    // turn < 0 = curva a la izquierda (el exterior queda a la derecha, +n)
+    const dir = c.turn < 0 ? -1 : 1;
+    for (const k of [-3, 0, 3]) {
+      const s = samples[(c.apex + k + N) % N];
+      const out = s.n.clone().multiplyScalar(-c.turn || 1);
+      const p = s.p.clone().addScaledVector(out, width / 2 + blockT + 1.6);
+      const yaw = Math.atan2(-s.t.x, -s.t.z);
+      const m = new THREE.Mesh(board, mats[String(dir)]);
+      m.position.set(p.x, s.h + 1.75, p.z); m.rotation.y = yaw; m.castShadow = true;
+      const b = new THREE.Mesh(board, back);
+      b.position.copy(m.position); b.rotation.y = yaw + Math.PI;
+      scene.add(m, b);
+      for (const sd of [-1, 1]) {
+        const po = new THREE.Mesh(post, back);
+        po.position.set(p.x + Math.cos(yaw) * sd * 1.1, s.h + 0.55, p.z - Math.sin(yaw) * sd * 1.1);
+        scene.add(po);
+      }
+    }
+  }
+}
+
+function chevronSignTexture(bg, fg, dir) {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 120;
+  const g = c.getContext('2d');
+  g.fillStyle = bg; g.fillRect(0, 0, 256, 120);
+  g.strokeStyle = '#ffffff55'; g.lineWidth = 6; g.strokeRect(3, 3, 250, 114);
+  g.fillStyle = fg;
+  for (let k = 0; k < 3; k++) {
+    const x0 = 46 + k * 70;
+    g.beginPath();
+    if (dir < 0) { g.moveTo(x0 + 34, 14); g.lineTo(x0, 60); g.lineTo(x0 + 34, 106); g.lineTo(x0 + 56, 106); g.lineTo(x0 + 22, 60); g.lineTo(x0 + 56, 14); }
+    else { g.moveTo(x0 + 22, 14); g.lineTo(x0 + 56, 60); g.lineTo(x0 + 22, 106); g.lineTo(x0, 106); g.lineTo(x0 + 34, 60); g.lineTo(x0, 14); }
+    g.fill();
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
   return t;
 }

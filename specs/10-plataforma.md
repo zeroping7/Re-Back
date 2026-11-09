@@ -11,6 +11,8 @@
 | Ruta | Contenido |
 |---|---|
 | `src/main.js` | Arranque, menús, flujo de pantallas, campeonato |
+| `src/showroom.js` | Taller 3D de los menús (peana, vistas, podio, confeti) |
+| `src/cups.js` | Copas, puntos y clasificación |
 | `src/race.js` | Una carrera: escena, física, coches, IA, objetos, vueltas, cámara |
 | `src/car.js`, `src/carModel.js`, `src/cars.js` | Física del coche, modelos 3D, catálogo |
 | `src/ai.js`, `src/items.js` | Rivales y armas |
@@ -41,6 +43,10 @@
 - `node tests/racesim.mjs <salon|super|jardin> <rivales> <vueltas> [coche]`: carrera completa sin gráficos;
   todos terminan.
 - `node tests/race.mjs "<url>?test=1&auto=1&track=…"`: capturas de una carrera con el jugador en automático.
+- `STAR=1 node tests/racesim.mjs <circuito> 0 2 [coche]`: Contrarreloj; comprueba que la estrella se puede coger.
+  `DIFF=1.02 node tests/racesim.mjs …`: otra dificultad (rivales de otra clase).
+- `node tests/ui.mjs http://localhost:4173/`: capturas de toda la interfaz (taller, copas, garaje, opciones, carga, carrera, resultados de copa y podio).
+- `tests/star.mjs <circuito> <normal|far|bumper>`, `tests/spots.mjs <circuito>`: estrella, cámaras, carteles de flechas y cajas.
 - `tests/menu.mjs`, `tests/garage.mjs`, `tests/shop.mjs`, `tests/damage.mjs`: menús, garaje, compra, daños.
 - `node tests/layout.mjs '<puntos>' 7 <nombre> '[x,z]'`: radios y separación de un trazado.
-- Parámetros de depuración: `?test=1&track=…&car=…&rivals=…&laps=…&auto=1&practice=1&cam=top|close`.
+- Parámetros de depuración: `?test=1&track=…&car=…&rivals=…&laps=…&diff=…&auto=1&practice=1&cam=top|close&camMode=normal|far|bumper&cup=bronce&cupIdx=0&screen=m-cups`.

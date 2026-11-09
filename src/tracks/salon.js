@@ -9,6 +9,7 @@ const FLOOR_REPEAT = [30, 21.5];
 export default {
   id: 'salon',
   name: 'El salón',
+  short: 'Salón',
   desc: 'Parqué, rampa-libro y túnel bajo la mesa',
   color: '#e8a23b',
   build,
@@ -93,7 +94,8 @@ function build(B) {
     hillMaterial: floorMat,
     rampMaterial: new THREE.MeshStandardMaterial({ map: bookTex, roughness: 0.55 }),
     groundUV,
-    barrier: { colors: ['#e63946', '#f1c40f', '#2a9df4', '#2ecc71', '#ff8c1a', '#9b59b6'] },
+    barrier: { colors: ['#c62828', '#f5f5f5'] },
+    chevrons: { bg: '#c62828', fg: '#ffffff' },
   });
 
   const W = circuit.width;
@@ -123,13 +125,6 @@ function build(B) {
       B.dynCyl(0.4, 2.2, p.x, s.p.y + 1.1, p.z, k++ % 2 ? pinM : mat('#e53935'), { density: 0.08 });
     }
   }
-  // bloques de juguete sueltos y un balón
-  for (const [i, l] of [[0, -0.5], [1.5, 0.1], [3, 0.55], [4.5, -0.2]]) {
-    const sb = samples[circuit.at(0.93)];
-    const p = sb.p.clone().addScaledVector(sb.t, i).addScaledVector(sb.n, l * W / 2);
-    B.dynBox(1.4, 1.4, 1.4, p.x, p.y + 0.8, p.z, ['#e63946', '#2a9df4', '#f1c40f', '#2ecc71'][Math.round(i / 1.5)], { rot: [0, i, 0], density: 0.1 });
-  }
-  { const sb = samples[circuit.at(0.6)]; const p = sb.p.clone().addScaledVector(sb.n, 0.3 * W / 2); B.dynBall(1.3, p.x, p.y + 1.4, p.z, '#ff7043', { density: 0.03 }); }
 
   // Alfombra (visual)
   const rug = new THREE.Mesh(new THREE.PlaneGeometry(30, 22), new THREE.MeshStandardMaterial({ map: rugTexture(), roughness: 1 }));
@@ -326,30 +321,6 @@ function build(B) {
   // ---------- Detalles sueltos ----------
   {
     const put = (x, z, r, fn) => { const p = spot(x, z, r); if (p) fn(p[0], p[1]); };
-    put(-16, 2, 3, (x, z) => {
-      box(2.4, 2.4, 2.4, x, 1.2, z, '#e63946', { rot: [0, 0.3, 0] });
-      box(2.4, 2.4, 2.4, x + 2.5, 1.2, z + 1, '#2a9df4', { rot: [0, 0.8, 0] });
-      box(2.4, 2.4, 2.4, x + 1.2, 3.6, z + 0.5, '#f1c40f', { rot: [0, 0.1, 0] });
-    });
-    put(-26, -28, 3.2, (x, z) => {
-      const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(3, 1), mat('#f5f5f5'));
-      ball.position.set(x, 3, z); ball.castShadow = true; scene.add(ball);
-      const ball2 = new THREE.Mesh(new THREE.IcosahedronGeometry(3.02, 1), new THREE.MeshStandardMaterial({ color: '#e74c3c', flatShading: true, wireframe: true }));
-      ball2.position.copy(ball.position); ball2.userData.dynamic = true; scene.add(ball2);
-      collider(RAPIER.ColliderDesc.ball(3), ball.position, null, { restitution: 0.6 });
-    });
-    put(30, 32, 3.5, (x, z) => {
-      box(3, 1.4, 7, x, 0.7, z, '#4a6fa5', { rot: [0, 1.4, 0] });
-      box(3.1, 0.4, 7.1, x, 0.2, z, '#f5f5f5', { rot: [0, 1.4, 0], solid: false });
-    });
-    put(-42, 29, 4, (x, z) => {
-      box(6, 0.4, 8, x, 0.2, z, '#e67e22', { rot: [0, 0.2, 0] });
-      box(6, 0.4, 8, x + 0.4, 0.6, z + 0.3, '#ecf0f1', { rot: [0, -0.15, 0] });
-    });
-    put(43, -29, 3, (x, z) => {
-      box(5, 2.5, 2.5, x, 1.25, z, '#2ecc71');
-      box(2.5, 2.5, 5, x, 3.75, z, '#9b59b6', { rot: [0, 0.3, 0] });
-    });
     // pato de goma gigante
     put(-6, 12, 3, (x, z) => {
       const y = mat('#ffd60a'), o = mat('#ff8800');

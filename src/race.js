@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { createBuilder, clearMatCache, mergeStatic, scaleTrack, CAMERA_RAY_GROUPS, WHEEL_RAY_GROUPS } from './tracks/common.js';
 import { Car } from './car.js';
-import { CARS, carTuning } from './cars.js';
+import { CARS, carTuning, rivalPool } from './cars.js';
 import { AIDriver } from './ai.js';
-import { Items } from './items.js';
+import { Items, haloTexture } from './items.js';
 import { Particles, SkidMarks } from './effects.js';
 
 export const FIXED = 1 / 60;
@@ -13,11 +13,12 @@ const RIVAL_NAMES = ['Turbo', 'Pila', 'Zumbi', 'Trasto', 'Muelle', 'Chapa', 'Tue
 
 // Una carrera completa: escena, física, coches, IA, objetos, vueltas y cámara.
 export class Race {
-  constructor({ renderer, envMap, sfx, controls, hud, trackDef, carDef, carUpgrades = {}, laps = 3, rivals = 3, difficulty = 1, baseTuning, onFinish, practice = false }) {
+  constructor({ renderer, envMap, sfx, controls, hud, trackDef, carDef, carUpgrades = {}, laps = 3, rivals = 3, difficulty = 1, baseTuning, onFinish, practice = false, star = null, onStar = null, camMode = 'normal' }) {
     this.carUpgrades = carUpgrades;
     this.renderer = renderer; this.sfx = sfx; this.controls = controls; this.hud = hud;
     this.trackDef = trackDef; this.laps = laps; this.baseTuning = baseTuning; this.onFinish = onFinish;
     this.practice = practice;
+    this.camMode = camMode;
     this.time = 0; this.phase = 'countdown'; this.countdown = 3.2; this.started = false; this.paused = false;
     this.acc = 0; this.trauma = 0; this.clock = 0;
 
@@ -56,7 +57,9 @@ export class Race {
     this.states = new Map();
     this.ai = new Map();
     const total = practice ? 1 : rivals + 1;
-    const rivalDefs = CARS.filter((c) => c.id !== carDef.id);
+    // rivales de la clase que toca según la dificultad (como las copas por categorías)
+    const pool = rivalPool(difficulty).filter((c) => c.id !== carDef.id);
+    const rivalDefs = pool.length ? pool : CARS.filter((c) => c.id !== carDef.id);
     for (let i = 0; i < total; i++) {
       const isPlayer = i === total - 1; // el jugador sale el último
       const def = isPlayer ? carDef : rivalDefs[i % rivalDefs.length];
@@ -73,10 +76,15 @@ export class Race {
       else this.ai.set(car, new AIDriver(car, this.circuit, { skill, seed: i + 1 }));
     }
     this.playerAI = new AIDriver(this.player, this.circuit, { skill: 1, seed: 99 }); // para después de la meta
+    this.sfx.setEngine?.(carDef.motor === 'Nitro' ? 'nitro' : 'electric');
 
     // ---------- Objetos ----------
     this.items = new Items(this);
     if (!practice) this.items.createPickups(T.itemSpots);
+
+    // ---------- Estrella oculta (solo Contrarreloj) ----------
+    this.onStar = onStar;
+    this.star = practice && star ? this.createStar(star.taken) : null;
 
     // ---------- Cámara inicial ----------
     this.camDir = new THREE.Vector3().copy(this.player.forward).setY(0).normalize();
@@ -141,6 +149,7 @@ export class Race {
 
     this.T.update?.(this.clock);
     this.items.update(dt);
+    if (this.star) this.updateStar(dt);
     this.effects.smoke.update(dt); this.effects.sparks.update(dt); this.effects.fire.update(dt);
     this.flashLight.intensity = Math.max(0, this.flashLight.intensity - dt * 1500);
   }
@@ -274,6 +283,53 @@ export class Race {
     if (car.isPlayer) this.trauma = 0;
   }
 
+  // Estrella flotando en el vuelo del salto: hay que coger la rampa a fondo y por el centro
+  createStar(taken) {
+    const c = this.circuit, N = c.N;
+    const ramp = c.elev.find((e) => e.kind === 'ramp');
+    if (!ramp) return null;
+    const top = (ramp.i1 - 1 + N) % N;
+    const s = c.samples[(top + 2) % N];
+    const pos = new THREE.Vector3(s.p.x, c.samples[top].p.y + 1.6, s.p.z);
+    const shape = new THREE.Shape();
+    for (let k = 0; k < 10; k++) {
+      const a = (k / 10) * Math.PI * 2 + Math.PI / 2, r = k % 2 ? 0.42 : 1.0;
+      if (k) shape.lineTo(Math.cos(a) * r, Math.sin(a) * r); else shape.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: 0.2, bevelEnabled: true, bevelThickness: 0.12, bevelSize: 0.1, bevelSegments: 1 });
+    geo.center();
+    const mat = new THREE.MeshStandardMaterial(taken
+      ? { color: '#cfd8dc', emissive: '#78909c', emissiveIntensity: 0.4, transparent: true, opacity: 0.35, depthWrite: false, flatShading: true }
+      : { color: '#ffd23f', emissive: '#ff9f1a', emissiveIntensity: 0.9, metalness: 0.5, roughness: 0.3, flatShading: true });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(pos); mesh.castShadow = !taken;
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTexture(), transparent: true, opacity: taken ? 0.15 : 0.7, depthWrite: false, blending: THREE.AdditiveBlending }));
+    halo.scale.setScalar(5); halo.position.copy(pos);
+    this.scene.add(mesh, halo);
+    return { mesh, halo, pos, taken, got: false };
+  }
+
+  updateStar(dt) {
+    const st = this.star;
+    if (st.got) {
+      st.mesh.scale.multiplyScalar(1 + dt * 4); st.mesh.position.y += dt * 6;
+      st.halo.material.opacity = Math.max(0, st.halo.material.opacity - dt * 1.5);
+      if (st.mesh.scale.x > 4) { st.mesh.visible = st.halo.visible = false; }
+      return;
+    }
+    st.mesh.rotation.y += dt * 2.4;
+    st.mesh.position.y = st.pos.y + Math.sin(this.clock * 2.5) * 0.2;
+    st.halo.position.y = st.mesh.position.y;
+    if (this.player.currPos.distanceTo(st.mesh.position) > 2.4) return;
+    st.got = true;
+    if (st.taken) { this.hud.message('⭐ Esta estrella ya era tuya', 1.6); return; }
+    this.sfx.play('star');
+    this.burst(st.mesh.position, [1, 0.85, 0.3], 60);
+    this.flash(st.mesh.position);
+    const paid = this.onStar?.();
+    this.hud.message(paid ? `⭐ ¡Estrella encontrada! +${paid} 🪙` : '⭐ ¡Estrella encontrada!', 2.6, 'go');
+  }
+
   updatePlaces() {
     const list = [...this.cars].sort((a, b) => {
       const A = this.state(a), Bs = this.state(b);
@@ -303,7 +359,7 @@ export class Race {
   results() {
     return this.order.map((car) => {
       const st = this.state(car);
-      return { name: car.name, color: car.color, player: car.isPlayer, place: st.place, finished: st.finished, time: st.finishTime, best: st.bestLap, laps: st.laps };
+      return { name: car.name, color: car.color, def: car.def.id, player: car.isPlayer, place: st.place, finished: st.finished, time: st.finishTime, best: st.bestLap, laps: st.laps };
     });
   }
 
@@ -344,6 +400,11 @@ export class Race {
       E.smoke.emit(top.x + rnd(0.2), top.y, top.z + rnd(0.2), car.velocity.x * 0.2 + rnd(0.5), 1.5 + Math.random(), car.velocity.z * 0.2 + rnd(0.5),
         { life: 1 + Math.random() * 0.6, size: 0.4, size1: 2.2, alpha: dark ? 0.55 : 0.35, color: dark ? [0.15, 0.15, 0.16] : [0.55, 0.55, 0.57], drag: 1.5 });
       if (car.health < 18 && Math.random() < 0.3) E.fire.emit(top.x, top.y, top.z, rnd(0.5), 2, rnd(0.5), { life: 0.3, size: 0.5, size1: 0.1, alpha: 0.9, color: [1, 0.5, 0.15], drag: 2 });
+    }
+    // chispas eléctricas si un pulso le ha dejado sin motor
+    if (car.fx.zap > 0 && near && Math.random() < 0.7) {
+      E.sparks.emit(car.currPos.x + rnd(0.8), car.currPos.y + 0.4 + Math.random() * 0.6, car.currPos.z + rnd(0.8), rnd(3), 2 + Math.random() * 3, rnd(3),
+        { life: 0.25, size: 0.35, size1: 0.05, alpha: 1, color: [0.45, 0.85, 1], grav: 8 });
     }
     // llamas del turbo
     if (car.fx.boost > 0 && near) {
@@ -425,7 +486,9 @@ export class Race {
       lap: Math.min(this.laps, Math.max(1, st.laps + 1)), laps: this.laps, practice: this.practice,
       lapTime: this.started ? (st.finished ? st.lastLap : this.time - st.lapStart) : 0,
       best: this.best.lap || 0,
+      lastLap: st.lastLap || 0,
       item: this.player.item,
+      ammo: this.player.ammo || 0,
       health: this.player.health,
       bomb: this.items.bombs.get(this.player)?.t,
       cars: this.cars, player: this.player,
@@ -445,6 +508,7 @@ export class Race {
       cam.lookAt(p); cam.fov = 50; cam.updateProjectionMatrix();
       return;
     }
+    if (this.camMode === 'bumper' && this.phase !== 'countdown') return this.bumperCamera(dt);
     const tmp = new THREE.Vector3().copy(car.forward).setY(0);
     if (tmp.lengthSq() < 0.01) tmp.copy(this.camDir);
     tmp.normalize();
@@ -454,8 +518,9 @@ export class Race {
     this.camDir.lerp(tmp, 1 - Math.exp(-dt * 4.5)).normalize();
 
     const intro = this.phase === 'countdown' ? THREE.MathUtils.smoothstep(this.countdown, 0, 3.2) : 0;
-    const wantDist0 = T.camDist + intro * 9;
-    const height = T.camHeight + intro * 5;
+    const far = this.camMode === 'far';
+    const wantDist0 = T.camDist * (far ? 1.55 : 1) + intro * 9;
+    const height = T.camHeight * (far ? 1.5 : 1) + intro * 5;
     let want = wantDist0;
     const from = p.clone(); from.y += 1.6;
     const target = p.clone().addScaledVector(this.camDir, -want); target.y = p.y + height;
@@ -486,6 +551,26 @@ export class Race {
     cam.lookAt(look);
     cam.rotateZ(sh * 0.06 * noise(t * 21 + 11));
     const fov = 60 + Math.min(Math.max(car.fwdSpeed, 0), 45) * 0.32 + (car.fx.boost > 0 ? 8 : 0);
+    cam.fov += (fov - cam.fov) * (1 - Math.exp(-dt * 3));
+    cam.updateProjectionMatrix();
+  }
+
+  // Cámara en el parachoques: baja, pegada al coche, se inclina con él
+  bumperCamera(dt) {
+    const cam = this.camera, car = this.player, m = car.model;
+    const fw = new THREE.Vector3(0, 0, 1).applyQuaternion(m.quaternion);
+    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(m.quaternion);
+    cam.position.copy(m.position).addScaledVector(fw, 1.05).addScaledVector(up, 0.32 + car.def.wheelR * 0.5);
+    _qb.copy(m.quaternion).multiply(_qFlip);
+    cam.quaternion.slerp(_qb, 1 - Math.exp(-dt * 18));
+    cam.rotateX(-0.05);
+    // mantener la cámara normal al día para que el cambio de vuelta sea suave
+    if (fw.x * fw.x + fw.z * fw.z > 0.05) this.camDir.set(fw.x, 0, fw.z).normalize();
+    this.camY = m.position.y + this.baseTuning.camHeight; this.camDist = this.baseTuning.camDist;
+    this.trauma = Math.max(0, this.trauma - dt * 1.6);
+    const sh = this.trauma * this.trauma;
+    if (sh > 0) { cam.rotateX(sh * 0.05 * noise(this.clock * 27)); cam.rotateY(sh * 0.05 * noise(this.clock * 31 + 3)); }
+    const fov = 72 + Math.min(Math.max(car.fwdSpeed, 0), 45) * 0.35 + (car.fx.boost > 0 ? 8 : 0);
     cam.fov += (fov - cam.fov) * (1 - Math.exp(-dt * 3));
     cam.updateProjectionMatrix();
   }
@@ -536,6 +621,7 @@ function loadBest(id) { try { return JSON.parse(localStorage.getItem('reback.bes
 function saveBest(id, b) { try { localStorage.setItem('reback.best.' + id, JSON.stringify(b)); } catch { /* nada */ } }
 export function getBest(id) { return loadBest(id); }
 
+const _qb = new THREE.Quaternion(), _qFlip = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
 function rnd(a) { return (Math.random() * 2 - 1) * a; }
 function noise(x) { return Math.sin(x) * 0.6 + Math.sin(x * 2.3 + 1.7) * 0.3 + Math.sin(x * 5.1 + 0.3) * 0.1; }
 function vibrate(ms) { try { navigator.vibrate?.(ms); } catch { /* nada */ } }

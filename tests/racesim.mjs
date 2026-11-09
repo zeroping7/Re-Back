@@ -13,7 +13,10 @@ const sfx = { play() {}, update() {}, hit() {}, stopEngine() {} };
 const hud = { message: (m) => { if (process.env.V) console.log('  [msg]', m); }, setupMinimap() {}, update() {} };
 const controls = { read: () => ({ steer: 0, throttle: 0, brake: 0 }), consumeFire: () => false };
 let done = null;
-const race = new Race({ renderer: null, envMap: null, sfx, controls, hud, trackDef: trackById(trackId), carDef: carById(carId), laps, rivals, difficulty: 0.94, baseTuning: tuning, onFinish: (r) => { done = r; } });
+const practice = !!process.env.STAR;
+let starAt = null;
+const race = new Race({ renderer: null, envMap: null, sfx, controls, hud, trackDef: trackById(trackId), carDef: carById(carId), laps, rivals, difficulty: +(process.env.DIFF || 0.94), baseTuning: tuning, onFinish: (r) => { done = r; },
+  practice, star: practice ? { taken: false } : null, onStar: () => { starAt = race.time; return 500; } });
 race.autoPlayer = true;
 // el jugador usa objetos automáticamente
 const used = {}; const origFire = race.items.fire.bind(race.items);
@@ -27,8 +30,16 @@ while (t < 240) {
   if (race.player.item && playerAI.shouldUse(race.player.item, race, st)) race.items.fire(race.player);
   race.update(FIXED);
   t += FIXED;
+  if (practice && race.star) { const d = race.player.currPos.distanceTo(race.star.pos); if (d < (globalThis.minStar ?? 1e9)) { globalThis.minStar = d; globalThis.minStarY = race.player.currPos.y - race.star.pos.y; } }
   if (process.env.TRACE && Math.abs(t % 5) < FIXED) for (const c of race.cars) { const s = race.state(c); if (!s.finished) console.log(`   t=${t.toFixed(0)} ${c.name} p=${c.currPos.x.toFixed(1)},${c.currPos.y.toFixed(1)},${c.currPos.z.toFixed(1)} idx=${s.idx} prog=${s.progress} v=${c.speed.toFixed(1)} up=${c.up.y.toFixed(2)} stun=${c.fx.stun.toFixed(1)}`); }
   if (race.phase === 'done' && race.order.every((c) => race.state(c).finished)) break;
+  if (practice && (starAt !== null || race.state(race.player).laps >= laps)) break;
+}
+if (practice) {
+  const s = race.star, P = race.player;
+  console.log('  dist mín a la estrella', globalThis.minStar?.toFixed(2), 'dy', globalThis.minStarY?.toFixed(2));
+  console.log(trackId, carId, 'STAR', starAt !== null ? `cogida en t=${starAt.toFixed(1)}` : 'NO cogida', s ? `pos=${s.pos.x.toFixed(1)},${s.pos.y.toFixed(1)},${s.pos.z.toFixed(1)}` : 'sin estrella');
+  process.exit(0);
 }
 const r = race.results();
 console.log(trackId, `len=${race.circuit.length.toFixed(0)} t=${t.toFixed(1)}`);

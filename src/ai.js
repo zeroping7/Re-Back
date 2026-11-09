@@ -102,12 +102,15 @@ export class AIDriver {
       for (let j = 0; j < Math.ceil(32 / this.c.spacing); j++) if (S[(state.idx + j) % N].radius < 30) return false;
       return true;
     }
-    if (item === 'rocket' || item === 'water') {
+    if (item === 'pulse') {
+      return race.cars.some((o) => o !== car && o.currPos.distanceToSquared(car.currPos) < 7 * 7);
+    }
+    if (item === 'rocket' || item === 'rockets3' || item === 'water' || item === 'ball') {
       for (const o of race.cars) {
         if (o === car) continue;
         const dx = o.currPos.x - car.currPos.x, dz = o.currPos.z - car.currPos.z;
         const d = Math.hypot(dx, dz);
-        if (d < (item === 'rocket' ? 40 : 18) && (dx * car.forward.x + dz * car.forward.z) / d > 0.7) return true;
+        if (d < (item === 'water' ? 18 : 40) && (dx * car.forward.x + dz * car.forward.z) / d > 0.7) return true;
       }
       return this.rand() < 0.002;
     }

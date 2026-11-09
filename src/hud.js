@@ -6,7 +6,7 @@ export class Hud {
   constructor() {
     this.el = (id) => document.getElementById(id);
     this.pos = this.el('h-pos'); this.posTot = this.el('h-postot');
-    this.lap = this.el('h-lap'); this.time = this.el('h-time'); this.best = this.el('h-best');
+    this.lap = this.el('h-lap'); this.time = this.el('h-time'); this.best = this.el('h-best'); this.lastLap = this.el('h-last');
     this.speed = this.el('speed');
     this.healthBar = document.querySelector('#h-health b');
     this.item = this.el('btn-item');
@@ -78,10 +78,11 @@ export class Hud {
       this.healthBar.style.background = hp > 60 ? '#7dff8a' : hp > 30 ? '#ffd166' : '#ff5252';
     }
     this.set('best', this.best, 'Récord ' + fmtTime(d.best));
-    const icon = d.bomb !== undefined ? `💣${Math.ceil(d.bomb)}` : d.item ? ITEMS[d.item].icon : '';
+    this.set('lastLap', this.lastLap, 'Última ' + fmtTime(d.lastLap));
+    const icon = d.bomb !== undefined ? `💣${Math.ceil(d.bomb)}` : d.item ? ITEMS[d.item].icon + (d.ammo > 1 ? `<small>×${d.ammo}</small>` : '') : '';
     if (this.last.item !== icon) {
       this.last.item = icon;
-      this.item.textContent = icon || '·';
+      this.item.innerHTML = icon || '·';
       this.item.classList.toggle('has', !!d.item);
       this.item.classList.toggle('bomb', d.bomb !== undefined);
     }

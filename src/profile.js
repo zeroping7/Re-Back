@@ -2,7 +2,7 @@ import { CARS, carById, UPGRADES, MAX_LEVEL } from './cars.js';
 
 // Partida guardada: dinero, coches comprados y sus mejoras
 const KEY = 'reback.profile.v1';
-const START = { money: 500, owned: { furgo: {}, pulga: {} }, selected: 'pulga', earned: 0 };
+const START = { money: 500, owned: { furgo: {}, pulga: {} }, selected: 'pulga', earned: 0, cups: {}, stars: {} };
 
 function load() {
   try {
@@ -13,6 +13,8 @@ function load() {
 }
 export const profile = load();
 if (!profile.owned[profile.selected]) profile.selected = Object.keys(profile.owned)[0];
+profile.cups ??= {}; // mejor puesto final en cada copa
+profile.stars ??= {}; // estrellas ocultas cogidas por circuito
 
 const listeners = new Set();
 export function onProfileChange(fn) { listeners.add(fn); }
@@ -78,6 +80,20 @@ export function raceReward(place, total, laps, diff) {
   const field = 0.7 + 0.1 * total;
   const diffMul = diff < 0.9 ? 0.7 : diff > 1 ? 1.5 : 1;
   return Math.round((base * field * diffMul * (0.6 + 0.4 * (laps / 3))) / 10) * 10;
+}
+
+// Guarda el mejor puesto conseguido en una copa
+export function setCupResult(id, place) {
+  if (!(profile.cups[id] <= place)) { profile.cups[id] = place; saveProfile(); }
+}
+
+// Estrella oculta: premio solo la primera vez
+export const STAR_PRIZE = 500;
+export function takeStar(trackId) {
+  if (profile.stars[trackId]) return false;
+  profile.stars[trackId] = true;
+  addMoney(STAR_PRIZE);
+  return true;
 }
 
 export function addMoney(n) { profile.money += n; profile.earned = (profile.earned || 0) + n; saveProfile(); }

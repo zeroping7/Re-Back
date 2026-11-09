@@ -8,6 +8,7 @@ const AREA = { x: 96, z: 70 };
 export default {
   id: 'jardin',
   name: 'El jardín',
+  short: 'Jardín',
   desc: 'Tierra, charcos, gnomos y un gran salto',
   color: '#7cb342',
   build,
@@ -76,7 +77,8 @@ function build(B) {
     ramps: [{ frac: 0.06, len: 10, h: 2.0 }],
     hillMaterial: dirtMat,
     rampMaterial: new THREE.MeshStandardMaterial({ map: pl.map, normalMap: pl.normalMap, roughness: 0.8 }),
-    barrier: { colors: ['#8d6e63', '#795548', '#a1887f', '#6d4c41'], thick: 0.8, round: true, roughness: 0.9 },
+    barrier: { colors: ['#8d6e63', '#795548', '#a1887f', '#6d4c41'], thick: 0.6, round: true, roughness: 0.9 },
+    chevrons: { bg: '#2e7d32', fg: '#ffffff' },
   });
 
   const { sampleNear, yawOf, spot } = circuit;
@@ -95,16 +97,7 @@ function build(B) {
   }
   // balón de playa, macetas y cajas de madera
   { const sb = circuit.samples[circuit.at(0.12)]; const p = sb.p.clone().addScaledVector(sb.n, 0.3 * W / 2); B.dynBall(1.6, p.x, p.y + 1.7, p.z, '#ff5252', { density: 0.02 }); }
-  for (let k = 0; k < 5; k++) {
-    const sb = circuit.samples[circuit.at(0.24)];
-    const p = sb.p.clone().addScaledVector(sb.t, k * 1.2).addScaledVector(sb.n, (-0.5 + k * 0.25) * W / 2);
-    B.dynCyl(0.8, 1.5, p.x, p.y + 0.8, p.z, '#c0643b', { density: 0.08 });
-  }
-  for (const [i, l, y] of [[0, -0.3, 1], [0, 0.25, 1], [0.3, 0, 3]]) {
-    const sb = circuit.samples[circuit.at(0.86)];
-    const p = sb.p.clone().addScaledVector(sb.t, i).addScaledVector(sb.n, l * W / 2);
-    B.dynBox(2, 2, 2, p.x, y, p.z, '#a1887f', { rot: [0, i, 0], density: 0.06 });
-  }
+
   trackRibbon(B, circuit, dirtMat, 0.8);
   startArch(B, circuit, { color: '#43a047', text: 'GRAN PREMIO JARDÍN' });
 
@@ -142,10 +135,10 @@ function build(B) {
       scene.add(m);
     }
   };
-  for (let k = 0; k < 75; k++) {
+  for (let k = 0; k < 55; k++) {
     const x = (rnd() * 2 - 1) * (AREA.x - 6), z = (rnd() * 2 - 1) * (AREA.z - 6);
-    if (rnd() < 0.45) tree(x, z, 0.7 + rnd() * 0.6);
-    else if (!occupied(x, z, 2)) ball(1 + rnd() * 1.6, x, 0.4, z, rockM, { detail: 0 });
+    if (rnd() < 0.65) tree(x, z, 0.7 + rnd() * 0.6);
+    else if (!occupied(x, z, 6)) ball(1 + rnd() * 1.6, x, 0.4, z, rockM, { detail: 0 });
   }
   // flores (instanciadas)
   {

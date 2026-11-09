@@ -1,7 +1,12 @@
 import * as THREE from 'three';
+import RAPIER from '@dimforge/rapier3d-compat';
+import { PROP_GROUPS } from './tracks/common.js';
 
 export const ITEMS = {
   rocket: { icon: '🚀', name: 'Cohete' },
+  rockets3: { icon: '🚀', name: 'Cohetes ×3', ammo: 3, base: 'rocket' },
+  pulse: { icon: '🔌', name: 'Pulso eléctrico' },
+  ball: { icon: '⚫', name: 'Bola de acero' },
   water: { icon: '💧', name: 'Bola de agua' },
   turbo: { icon: '⚡', name: 'Turbo' },
   oil: { icon: '🛢️', name: 'Aceite' },
@@ -20,13 +25,25 @@ export class Items {
     this.projectiles = [];
     this.slicks = [];
     this.bombs = new Map(); // coche -> { t, mesh, cool }
+    this.pulses = [];       // auras eléctricas activas
+    this.balls = [];        // bolas de acero rodando
     this.time = 0;
 
     // geometrías y materiales compartidos
-    this.boxGeo = new THREE.BoxGeometry(1.1, 1.1, 1.1);
-    this.boxMat = new THREE.MeshStandardMaterial({ map: questionTexture(), emissive: '#ffb300', emissiveIntensity: 0.35, roughness: 0.3, metalness: 0.2, transparent: true, opacity: 0.92 });
-    this.ringGeo = new THREE.TorusGeometry(0.95, 0.06, 6, 20);
-    this.ringMat = new THREE.MeshBasicMaterial({ color: '#fff1a8' });
+    // caja de energía: cubo translúcido con un rayo, núcleo brillante, anillo y halo en el suelo
+    const boltTex = boltTexture();
+    this.boxGeo = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+    this.boxMat = new THREE.MeshStandardMaterial({ map: boltTex, emissive: '#ff9d00', emissiveMap: boltTex, emissiveIntensity: 0.9, roughness: 0.2, metalness: 0.1, transparent: true, opacity: 0.78, depthWrite: false });
+    this.coreGeo = new THREE.IcosahedronGeometry(0.32, 0);
+    this.coreMat = new THREE.MeshBasicMaterial({ color: '#fff6c2' });
+    this.ringGeo = new THREE.TorusGeometry(1.0, 0.05, 6, 24);
+    this.ringMat = new THREE.MeshBasicMaterial({ color: '#ffd23f' });
+    this.haloGeo = new THREE.CircleGeometry(1.5, 24).rotateX(-Math.PI / 2);
+    this.haloMat = new THREE.MeshBasicMaterial({ map: haloTexture(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
+    this.pulseGeo = new THREE.IcosahedronGeometry(3.2, 2);
+    this.pulseMat = new THREE.MeshBasicMaterial({ color: '#59c8ff', transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, wireframe: true });
+    this.steelGeo = new THREE.IcosahedronGeometry(0.9, 2);
+    this.steelMat = new THREE.MeshStandardMaterial({ color: '#cfd6dc', metalness: 1, roughness: 0.15 });
     this.rocketMesh = makeRocket();
     this.waterGeo = new THREE.IcosahedronGeometry(0.5, 1);
     this.waterMat = new THREE.MeshPhysicalMaterial({ color: '#4fc3f7', roughness: 0.05, transmission: 0.3, transparent: true, opacity: 0.85, emissive: '#0b5c8a', emissiveIntensity: 0.3 });
@@ -43,30 +60,42 @@ export class Items {
       for (const lane of [-0.45, 0, 0.45]) {
         const g = new THREE.Group();
         const m = new THREE.Mesh(this.boxGeo, this.boxMat);
-        m.castShadow = true;
+        const core = new THREE.Mesh(this.coreGeo, this.coreMat);
         const ring = new THREE.Mesh(this.ringGeo, this.ringMat);
-        g.add(m, ring);
+        const halo = new THREE.Mesh(this.haloGeo, this.haloMat);
+        halo.position.y = -0.94;
+        g.add(core, m, ring, halo);
         g.position.copy(s.p).addScaledVector(s.n, lane * c.width / 2);
         g.position.y = s.p.y + 1.0;
         this.scene.add(g);
-        this.pickups.push({ g, m, ring, base: g.position.clone(), respawn: 0 });
+        this.pickups.push({ g, m, ring, core, halo, base: g.position.clone(), respawn: 0 });
       }
     }
   }
 
   randomItem(car) {
     const r = this.race.positionRatio(car); // 0 = primero, 1 = último
-    const w = { rocket: 0.6 + 2.2 * r, water: 1.4, turbo: 0.8 + 2 * r, oil: 1.6 - r, bomb: 0.9, repair: 0.2 + 3 * (1 - car.health / 100) };
+    const w = {
+      rocket: 0.5 + 1.6 * r, rockets3: 0.1 + 1.4 * r, water: 1.2, turbo: 0.7 + 1.8 * r, oil: 1.4 - r, bomb: 0.8,
+      pulse: 0.5 + 0.8 * r, ball: 0.8, repair: 0.2 + 3 * (1 - car.health / 100),
+    };
     let sum = 0; for (const k in w) sum += w[k];
     let x = Math.random() * sum;
     for (const k in w) { x -= w[k]; if (x <= 0) return k; }
     return 'turbo';
   }
 
+  give(car, item) {
+    car.item = item;
+    car.ammo = ITEMS[item].ammo || 1;
+  }
+
   fire(car) {
-    const item = car.item;
-    if (!item) return;
-    car.item = null;
+    const it = car.item;
+    if (!it) return;
+    car.ammo = (car.ammo || 1) - 1;
+    if (car.ammo <= 0) car.item = null;
+    const item = ITEMS[it].base || it;
     const R = this.race, f = car.forward, p = car.currPos;
     if (item === 'turbo') {
       car.fx.boost = 2.2;
@@ -104,6 +133,23 @@ export class Items {
     } else if (item === 'bomb') {
       this.attachBomb(car, 4.5);
       R.sound('fuse', p);
+    } else if (item === 'pulse') {
+      const mesh = new THREE.Mesh(this.pulseGeo, this.pulseMat);
+      mesh.position.y = 0.4;
+      car.model.add(mesh);
+      this.pulses.push({ car, mesh, t: 3 });
+      R.sound('zap', p);
+    } else if (item === 'ball') {
+      const dir = new THREE.Vector3(f.x, 0, f.z).normalize();
+      const pos = p.clone().addScaledVector(dir, 2.4); pos.y += 0.9;
+      const body = R.world.createRigidBody(RAPIER.RigidBodyDesc.dynamic().setTranslation(pos.x, pos.y, pos.z)
+        .setLinvel(dir.x * (car.speed + 14), 0, dir.z * (car.speed + 14)).setCcdEnabled(true).setLinearDamping(0.05));
+      R.world.createCollider(RAPIER.ColliderDesc.ball(0.9).setDensity(6).setRestitution(0.4).setFriction(0.6).setCollisionGroups(PROP_GROUPS), body);
+      const mesh = new THREE.Mesh(this.steelGeo, this.steelMat);
+      mesh.castShadow = true;
+      this.scene.add(mesh);
+      this.balls.push({ body, mesh, t: 12 });
+      R.sound('ballshot', p);
     }
   }
 
@@ -117,6 +163,7 @@ export class Items {
   update(dt) {
     const R = this.race;
     this.time += dt;
+    this.updateExtras(dt);
     // cajas
     for (const pk of this.pickups) {
       if (pk.respawn > 0) {
@@ -126,13 +173,15 @@ export class Items {
         continue;
       }
       pk.g.scale.setScalar(Math.min(1, pk.g.scale.x + dt * 3));
-      pk.m.rotation.set(this.time * 1.3, this.time * 1.7, 0);
-      pk.ring.rotation.y = this.time * 2.5;
+      pk.m.rotation.set(this.time * 0.9, this.time * 1.3, 0);
+      pk.core.rotation.set(-this.time * 2, this.time * 3, 0);
+      pk.ring.rotation.set(Math.PI / 2 + Math.sin(this.time * 2) * 0.3, 0, this.time * 2.5);
+      pk.halo.scale.setScalar(0.85 + Math.sin(this.time * 4 + pk.base.x) * 0.15);
       pk.g.position.y = pk.base.y + Math.sin(this.time * 3 + pk.base.x) * 0.15;
       for (const car of R.cars) {
         if (car.item || this.bombs.has(car)) continue;
         if (car.currPos.distanceToSquared(pk.g.position) < 2.6 * 2.6) {
-          car.item = this.randomItem(car);
+          this.give(car, this.randomItem(car));
           pk.respawn = 4;
           pk.g.visible = false;
           R.burst(pk.g.position, [1, 0.85, 0.3], 14);
@@ -194,6 +243,45 @@ export class Items {
             break;
           }
         }
+      }
+    }
+  }
+
+  updateExtras(dt) {
+    const R = this.race;
+    // auras de pulso eléctrico
+    for (let i = this.pulses.length - 1; i >= 0; i--) {
+      const pu = this.pulses[i];
+      pu.t -= dt;
+      pu.mesh.rotation.set(this.time * 3, this.time * 2, 0);
+      pu.mesh.scale.setScalar(0.9 + Math.sin(this.time * 25) * 0.08);
+      for (const o of R.cars) {
+        if (o === pu.car) continue;
+        if (o.currPos.distanceToSquared(pu.car.currPos) < 6.5 * 6.5) {
+          if (o.fx.zap < 0.2) R.sound('zap', o.currPos);
+          o.fx.zap = Math.max(o.fx.zap, 1.5);
+        }
+      }
+      if (Math.random() < 0.6) {
+        const a = Math.random() * Math.PI * 2, r = 2.5 + Math.random();
+        const c = pu.car.currPos;
+        R.effects.sparks.emit(c.x + Math.cos(a) * r, c.y + 0.5 + Math.random() * 1.5, c.z + Math.sin(a) * r, 0, 0, 0,
+          { life: 0.15, size: 0.5, size1: 0.1, alpha: 1, color: [0.4, 0.8, 1] });
+      }
+      if (pu.t <= 0) { pu.car.model.remove(pu.mesh); this.pulses.splice(i, 1); }
+    }
+    // bolas de acero
+    for (let i = this.balls.length - 1; i >= 0; i--) {
+      const b = this.balls[i];
+      b.t -= dt;
+      const p = b.body.translation(), r = b.body.rotation();
+      b.mesh.position.set(p.x, p.y, p.z);
+      b.mesh.quaternion.set(r.x, r.y, r.z, r.w);
+      if (b.t < 1) b.mesh.scale.setScalar(Math.max(0.01, b.t));
+      if (b.t <= 0 || p.y < -5) {
+        this.scene.remove(b.mesh);
+        R.world.removeRigidBody(b.body);
+        this.balls.splice(i, 1);
       }
     }
   }
@@ -308,6 +396,7 @@ export class Items {
 
   dispose() {
     for (const b of this.bombs.values()) b.mesh.parent?.remove(b.mesh);
+    for (const pu of this.pulses) pu.car.model.remove(pu.mesh);
   }
 }
 
@@ -342,16 +431,32 @@ function makeBomb() {
   return g;
 }
 
-function questionTexture() {
+// Icono de rayo para las cajas de energía (dibujado por código)
+function boltTexture() {
   const c = document.createElement('canvas');
   c.width = c.height = 128;
   const g = c.getContext('2d');
-  const grd = g.createLinearGradient(0, 0, 128, 128);
-  grd.addColorStop(0, '#ffcc33'); grd.addColorStop(1, '#ff7b00');
+  const grd = g.createRadialGradient(64, 64, 10, 64, 64, 90);
+  grd.addColorStop(0, '#fff3b0'); grd.addColorStop(0.5, '#ffb300'); grd.addColorStop(1, '#e65100');
   g.fillStyle = grd; g.fillRect(0, 0, 128, 128);
-  g.strokeStyle = '#fff6'; g.lineWidth = 8; g.strokeRect(6, 6, 116, 116);
-  g.fillStyle = '#fff'; g.font = 'bold 84px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.fillText('?', 64, 70);
+  g.strokeStyle = '#fff8'; g.lineWidth = 6; g.strokeRect(5, 5, 118, 118);
+  g.fillStyle = '#ffffff';
+  g.beginPath();
+  g.moveTo(74, 12); g.lineTo(34, 72); g.lineTo(60, 72); g.lineTo(50, 116); g.lineTo(94, 52); g.lineTo(67, 52); g.closePath();
+  g.fill();
+  g.strokeStyle = '#7a3500'; g.lineWidth = 3; g.stroke();
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+export function haloTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grd.addColorStop(0, '#ffd23fcc'); grd.addColorStop(0.55, '#ff9d0055'); grd.addColorStop(1, '#ff9d0000');
+  g.fillStyle = grd; g.fillRect(0, 0, 128, 128);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;

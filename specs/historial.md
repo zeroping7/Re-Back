@@ -15,7 +15,7 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 9 | ¿Se puede jugar en el navegador? | Sí; Pages pasa a publicarse con GitHub Actions |
 | 10 | Arreglar el deslizado de tarjetas; objetos para interactuar; cuestas; zonas de derrape controlables; más velocidad y menos agarre | Tarjetas deslizables, objetos sueltos, cuestas, zonas de derrape, turbos, vel. 29 y agarre 3,0/2,6 |
 | 11 | Quitar escalones en cuestas y rampas; turbos lejos de curvas; físicas lo más parecidas a Re-Volt; deformación y salud; circuitos más largos; mejores texturas | Superficies continuas sin aristas internas, turbos automáticos en rectas, motor eléctrico y suspensión blanda, abolladuras y salud, circuitos ~1,7× más largos, texturas con relieve |
-| 12 | Actuar como experto UI/UX y ambientación para parecerse lo máximo a Re-Volt; quitar objetos con los que se choca; implementar SDD con todo lo hablado | Specs creadas (esta carpeta). Plan: decorado despejado, flechas en curvas, nuevas armas, copas, estrellas ocultas, fichas de coche, cámaras, taller 3D en menús, carga con consejos, ambiente sonoro |
+| 12 | Actuar como experto UI/UX y ambientación para parecerse lo máximo a Re-Volt; quitar objetos con los que se choca; implementar SDD con todo lo hablado | Specs creadas (esta carpeta) y CLAUDE.md. Hecho: decorado despejado, flechas en curvas, cajas de energía, 3 armas nuevas (cohetes ×3, pulso, bola de acero), copas Bronce/Plata/Oro con podio 3D, estrella oculta por circuito, ficha de coche (clase, motor, tracción, peso), rivales por clase, 3 cámaras, acelerar solo, taller 3D en los menús, tipografía arcade, carga con consejos, ambiente sonoro por circuito, motores de rivales y sonido nitro |
 
 ## Preferencias del usuario
 

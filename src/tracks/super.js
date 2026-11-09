@@ -8,6 +8,7 @@ const ROOM = { x: 84, z: 48, h: 40 };
 export default {
   id: 'super',
   name: 'Supermercado',
+  short: 'Súper',
   desc: 'Pasillos, cajas-rampa y naranjas por el suelo',
   color: '#2bb673',
   build,
@@ -58,7 +59,8 @@ function build(B) {
     hillMaterial: floorMat,
     rampMaterial: new THREE.MeshStandardMaterial({ map: card.map, normalMap: card.normalMap, roughness: 0.85 }),
     groundUV,
-    barrier: { colors: ['#ffd400', '#222222'], height: 0.9, roughness: 0.35 },
+    barrier: { colors: ['#ffd400', '#222222'], roughness: 0.35 },
+    chevrons: { bg: '#ffd400', fg: '#1a1a1a' },
   });
 
   const { samples, sampleNear, yawOf, spot } = circuit;
@@ -86,18 +88,7 @@ function build(B) {
       B.dynCyl(0.7, 1.8, p.x, s.p.y + 0.9 + row * 1.85, p.z, canMat, { density: 0.06 });
     }
   }
-  // cajas de cartón y rollos de papel
-  for (const [i, l] of [[0, -0.4], [0, 0.1], [2.4, -0.15]]) {
-    const sb = samples[circuit.at(0.55)];
-    const p = sb.p.clone().addScaledVector(sb.t, i).addScaledVector(sb.n, l * W / 2);
-    B.dynBox(2, 2, 2, p.x, p.y + 1.1, p.z, '#c8a165', { rot: [0, i * 0.3, 0], density: 0.05 });
-  }
-  { const sb = samples[circuit.at(0.55)]; const p = sb.p.clone().addScaledVector(sb.t, 0.2).addScaledVector(sb.n, -0.15 * W / 2); B.dynBox(2, 2, 2, p.x, p.y + 3.2, p.z, '#b88d52', { density: 0.05 }); }
-  for (let k = 0; k < 6; k++) {
-    const sb = samples[circuit.at(0.18)];
-    const p = sb.p.clone().addScaledVector(sb.t, (k % 3) * 1.4).addScaledVector(sb.n, (-0.4 + Math.floor(k / 3) * 0.3) * W / 2);
-    B.dynCyl(0.6, 1.2, p.x, p.y + 0.65, p.z, '#ffffff', { density: 0.03 });
-  }
+
   startArch(B, circuit, { color: '#2bb673', text: 'SÚPER CARRERA' });
 
   // ---------- Estantería central ----------
@@ -164,7 +155,7 @@ function build(B) {
     scene.add(g);
     box(5.2, 6, 8.4, x, 3, z, '#000', { rot: [0, ry, 0] }).visible = false;
   };
-  for (const [x, z, ry] of [[78, 40, 0.6], [-78, -40, -0.3], [62, 6, 1.2], [-58, 6, 0.4]]) { const p = spot(x, z, 5); if (p) cart(p[0], p[1], ry); }
+  for (const [x, z, ry] of [[78, 40, 0.6], [-78, -40, -0.3]]) { const p = spot(x, z, 5); if (p) cart(p[0], p[1], ry); }
   {
     const canMat = new THREE.MeshStandardMaterial({ map: canTexture(), roughness: 0.3, metalness: 0.6 });
     const [bx, bz] = spot(-14, 9, 5) || [-14, 9];

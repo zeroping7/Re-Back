@@ -7,7 +7,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - **APK (última versión):** https://zeroping7.github.io/Re-Back/re-back.apk
   (alternativa: https://github.com/zeroping7/Re-Back/releases/latest)
 
-## Estado: fases 1-5 hechas ✅ — pendiente de probar en el móvil y pulir
+## Estado: fases 1-5 hechas ✅ — ahora puliendo para parecerse lo máximo a Re-Volt (ver `specs/`)
 
 ### Fase 1 — Conducción ✅
 - Coche con controlador de vehículo por rayos de Rapier: suspensión real, 4x4 con reparto trasero,
@@ -92,9 +92,26 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Texturas con relieve (mapas de normales): parqué, baldosas, césped, tierra con piedras y roderas, barro,
   suelo encerado, suelo fregado, agua con ondas animadas, cartón y tablones.
 
+### Ambientación y modos estilo Re-Volt (v1.0.14+) — con Spec Driven Development
+- **Specs** en `specs/` (fuente de verdad, objetivo: parecerse lo máximo a Re-Volt con contenido original) y `CLAUDE.md`.
+- **Decorado despejado**: menos objetos con los que chocar; bordes bajos con muro invisible; **carteles de flechas** en curvas cerradas.
+- **Cajas de energía** brillantes con rayo; armas nuevas: 🚀×3 cohetes, 🔌 pulso eléctrico, ⚫ bola de acero (munición en el botón).
+- **Campeonato**: Copas Bronce, Plata y Oro (3 carreras, puntos 10·6·4·3·2·1, clasificación entre carreras,
+  **podio 3D** con confeti y premio final). Plata y Oro se abren quedando entre los 3 primeros de la anterior.
+- **Estrella oculta** en el salto de cada circuito (Contrarreloj): 500 🪙 la primera vez; ⭐/☆ en la tarjeta del circuito.
+- **Coches con ficha**: clase (Novato → Pro), motor eléctrico o nitro (suena distinto), tracción y peso propios.
+  Los rivales usan coches de la clase de la dificultad/copa.
+- **3 cámaras** (Normal, Lejos, Parachoques; botón 🎥 o tecla C) y opción **acelerar solo**.
+- **Menús en un taller 3D**: el coche gira en una peana sobre un banco de trabajo gigante con herramientas, lámpara y cartel;
+  tipografía arcade (Russo One), botones con brillo y entrada animada.
+- **Pantalla de carga** con modo, circuito, descripción y consejo (y shaders compilados antes de empezar).
+- **Sonido**: ambiente por circuito (reloj en el salón, neveras y megafonía en el súper, viento y pájaros en el jardín)
+  y motores de los 2 rivales más cercanos con panorama.
+- Marcador con tiempo de la **última vuelta**.
+
 ## Pendiente / ideas
 - Probar en el móvil: rendimiento (Opciones → Calidad si va lento) y sentido del modo inclinación.
-- Multijugador online (opcional, futuro).
+- Contrarreloj contra fantasma de tu mejor vuelta (REF-17), editor de circuitos, multijugador (opcional).
 - Más circuitos y coches; logros.
 
 ## Notas técnicas
@@ -104,5 +121,4 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Grupos de colisión (`tracks/common.js`): los rayos de las ruedas ignoran bordes y coches; la cámara ignora coches.
 - Las mallas estáticas del circuito se fusionan por material (`mergeStatic`) para reducir llamadas de dibujo.
 - Depuración: `?test=1&track=super&rivals=3&auto=1&cam=top` (auto = el jugador conduce solo).
-- Pruebas: `node tests/racesim.mjs <circuito> <rivales> <vueltas>` (carrera completa sin gráficos),
-  `tests/race.mjs` y `tests/menu.mjs` (capturas en Chrome headless), `tests/curv.mjs` (radios de curva).
+- Pruebas: ver `specs/10-plataforma.md` (`racesim`, `ui.mjs`, `star.mjs`, `spots.mjs`…).

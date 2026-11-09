@@ -10,9 +10,9 @@ coche en uso, copas y estrellas.
 | ECO-03 | Precios de coches de 1.500 a 10.000 (ver [03-coches.md](03-coches.md)) | ✅ |
 | ECO-04 | Mejora: `(150 + precio·0,1) · (nivel+1)`, redondeado a 50 | ✅ |
 | ECO-05 | Vender: 60 % de lo gastado (coche + mejoras); siempre queda al menos un coche | ✅ |
-| ECO-06 | **Copas**: premio final al 1º 100 %, 2º 50 %, 3º 25 % (Bronce 1.500, Plata 3.000, Oro 6.000) además del premio de cada carrera | 🚧 |
-| ECO-07 | Copas encadenadas: Plata se abre quedando entre los 3 primeros en Bronce; Oro, en Plata | 🚧 |
-| ECO-08 | **Estrella oculta**: 500 🪙 la primera vez que se coge en cada circuito | 🚧 |
+| ECO-06 | **Copas**: premio final al 1º 100 %, 2º 50 %, 3º 25 % (Bronce 1.500, Plata 3.000, Oro 6.000) además del premio de cada carrera | ✅ |
+| ECO-07 | Copas encadenadas: Plata se abre quedando entre los 3 primeros en Bronce; Oro, en Plata | ✅ |
+| ECO-08 | **Estrella oculta**: 500 🪙 la primera vez que se coge en cada circuito | ✅ |
 
 ## Copas
 
@@ -22,4 +22,5 @@ coche en uso, copas y estrellas.
 | Plata | Normal | 3 | 3 | súper → jardín → salón | 3.000 |
 | Oro | Difícil | 3 | 5 | jardín → salón → súper | 6.000 |
 
-Puntos por carrera: 10 · 6 · 4 · 3 · 2 · 1.
+Puntos por carrera: 10 · 6 · 4 · 3 · 2 · 1. Desempate: más victorias y luego mejor puesto en la última carrera.
+Abandonar una copa (pausa o resultados) pierde los puntos; se puede reiniciar la carrera en curso.

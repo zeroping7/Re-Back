@@ -37,12 +37,12 @@ Inicio (toca para empezar)
 |---|---|---|
 | UX-01 | Menú principal, preparar carrera, garaje, opciones, pausa, resultados | ✅ |
 | UX-02 | Listas de tarjetas deslizables con el dedo | ✅ |
-| UX-03 | **Taller 3D** detrás de los menús con cámara que se mueve despacio | 🚧 |
-| UX-04 | **Pantalla de carga** con nombre del circuito, descripción y un consejo | 🚧 |
-| UX-05 | Tipografía arcade, animación de entrada de los menús | 🚧 |
-| UX-06 | **Campeonato**: selección de copa con candados/trofeos, clasificación entre carreras y podio | 🚧 |
-| UX-07 | Opción **acelerar solo** (gas automático; el freno sigue funcionando) | 🚧 |
-| UX-08 | Botón de **cámara** en carrera: Normal → Lejos → Paragolpes | 🚧 |
+| UX-03 | **Taller 3D** detrás de los menús con cámara que se mueve despacio y vistas por pantalla (general en el menú, cerca del coche al elegir, podio) | ✅ |
+| UX-04 | **Pantalla de carga** con modo, nombre del circuito, descripción, barra animada y un consejo; compila los shaders antes de empezar | ✅ |
+| UX-05 | Tipografía arcade (Russo One), botones en cursiva con brillo, animación de entrada de los menús | ✅ |
+| UX-06 | **Campeonato**: selección de copa con candados/trofeos, clasificación entre carreras (dos columnas: carrera y copa) y **podio 3D** con los 3 primeros y confeti | ✅ |
+| UX-07 | Opción **acelerar solo** (gas automático; el freno sigue funcionando) | ✅ |
+| UX-08 | Botón de **cámara** en carrera: Normal → Lejos → Parachoques (también en Opciones; se guarda) | ✅ |
 | UX-09 | Monedas visibles en los menús y premio animado en resultados | ✅ |
 
 ## Marcador en carrera
@@ -50,10 +50,10 @@ Inicio (toca para empezar)
 | ID | Requisito | Estado |
 |---|---|---|
 | HUD-01 | Arriba izquierda: posición grande, vuelta, tiempo actual, mejor vuelta, salud 🔧, minimapa | ✅ |
-| HUD-02 | Tiempo de la **última vuelta** | 🚧 |
-| HUD-03 | Caja del arma sobre los pedales con icono y **munición**; se toca para disparar | 🚧 |
+| HUD-02 | Tiempo de la **última vuelta** | ✅ |
+| HUD-03 | Caja del arma sobre los pedales con icono y **munición**; se toca para disparar | ✅ |
 | HUD-04 | Velocímetro abajo en el centro | ✅ |
-| HUD-05 | Mensajes centrales: 3-2-1-¡YA!, última vuelta, sentido contrario, récord, estrella encontrada | ✅ (estrella 🚧) |
+| HUD-05 | Mensajes centrales: 3-2-1-¡YA!, última vuelta, sentido contrario, récord, estrella encontrada | ✅ |
 
 ## Controles
 
@@ -61,4 +61,4 @@ Inicio (toca para empezar)
 |---|---|---|
 | CTL-01 | Botones ◀ ▶ ▲ ▼ grandes con vibración | ✅ |
 | CTL-02 | Inclinación del móvil (calibra al activar) | ✅ (sentido sin verificar en móvil) |
-| CTL-03 | Teclado: flechas/WASD, E/Intro arma, R recolocar, P/Esc pausa, C cámara | ✅ (C 🚧) |
+| CTL-03 | Teclado: flechas/WASD, E/Intro arma, R recolocar, P/Esc pausa, C cámara | ✅ |

@@ -13,7 +13,7 @@ function wheelsFor(def) {
   ];
 }
 const CONN_Y = -0.02;
-const MASS = 8;
+const MASS = 8; // masa de referencia: la potencia y el freno se escalan con la masa de cada coche
 
 const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q = new THREE.Quaternion(), _qi = new THREE.Quaternion();
 const UP = new THREE.Vector3(0, 1, 0);
@@ -21,11 +21,13 @@ const UP = new THREE.Vector3(0, 1, 0);
 export class Car {
   constructor(scene, world, RAPIER, def, tuning, { color = def.color, index = 0, name = def.name } = {}) {
     this.world = world; this.RAPIER = RAPIER; this.t = tuning; this.def = def;
+    this.mass = def.mass ?? MASS;
+    this.massK = this.mass / MASS;
     this.index = index; this.name = name; this.color = color;
     const WHEELS = (this.W = wheelsFor(def));
     this.R = def.wheelR;
     // efectos de objetos (segundos restantes)
-    this.fx = { boost: 0, oil: 0, stun: 0, wet: 0, slide: 0 };
+    this.fx = { boost: 0, oil: 0, stun: 0, wet: 0, slide: 0, zap: 0 };
     this.item = null;
     this.health = 100;
     this.pullDir = Math.random() < 0.5 ? -1 : 1;
@@ -55,7 +57,7 @@ export class Car {
     const col = RAPIER.ColliderDesc.roundCuboid(0.62, 0.13, 0.92, 0.1)
       .setTranslation(0, 0.12, 0)
       .setFriction(0.1).setRestitution(0.35).setCollisionGroups(CAR_GROUPS)
-      .setMassProperties(MASS, { x: 0, y: -0.58, z: 0 }, { x: 4.2, y: 5.0, z: 3.0 }, { x: 0, y: 0, z: 0, w: 1 });
+      .setMassProperties(this.mass, { x: 0, y: -0.58, z: 0 }, { x: 4.2 * this.massK, y: 5.0 * this.massK, z: 3.0 * this.massK }, { x: 0, y: 0, z: 0, w: 1 });
     this.collider = world.createCollider(col, body);
     this.body = body;
 
@@ -84,7 +86,7 @@ export class Car {
       v.setWheelSuspensionStiffness(i, t.suspStiff);
       v.setWheelSuspensionCompression(i, t.suspComp);
       v.setWheelSuspensionRelaxation(i, t.suspRelax);
-      v.setWheelMaxSuspensionForce(i, 4000);
+      v.setWheelMaxSuspensionForce(i, 4000 * this.massK);
       v.setWheelFrictionSlip(i, front ? t.gripFront : t.gripRear);
       v.setWheelSideFrictionStiffness(i, front ? t.sideFront : t.sideRear);
     }
@@ -135,7 +137,8 @@ export class Car {
     const fx = this.fx;
     for (const k in fx) fx[k] = Math.max(0, fx[k] - dt);
     const stunned = fx.stun > 0;
-    const thr = stunned ? 0 : input.throttle, brk = stunned ? 0 : input.brake;
+    const zapped = fx.zap > 0;
+    const thr = stunned || zapped ? 0 : input.throttle, brk = stunned ? 0 : input.brake;
     const boost = fx.boost > 0;
     const rb = (this.rubber ?? 1) * (0.72 + 0.28 * this.health / 100);
     const maxSpeed = t.maxSpeed * rb * (boost ? 1.35 : 1) * (fx.wet > 0 ? 0.7 : 1);
@@ -171,8 +174,8 @@ export class Car {
     const rear = t.rearBias / 100;
     for (let i = 0; i < 4; i++) {
       const front = this.W[i].front;
-      veh.setWheelEngineForce(i, (engine * (front ? 1 - rear : rear)) / 2);
-      veh.setWheelBrake(i, front ? brakeF : brakeR);
+      veh.setWheelEngineForce(i, ((engine * (front ? 1 - rear : rear)) / 2) * this.massK);
+      veh.setWheelBrake(i, (front ? brakeF : brakeR) * this.massK);
       veh.setWheelSideFrictionStiffness(i, front ? t.sideFront : t.sideRear);
       // aceite: casi sin agarre · zona de derrape: agarre reducido pero controlable
       const oil = fx.oil > 0 ? 0.22 : fx.slide > 0 ? (front ? 0.72 : 0.5) : 1;
@@ -208,7 +211,7 @@ export class Car {
     this.contacts = contacts;
 
     // --- Ayudas arcade ---
-    const m = MASS;
+    const m = this.mass;
     if (this.drifting) {
       // limitar el giro sobre sí mismo para que el derrape sea controlable
       const yr = b.angvel().y, lim = 2.6;
@@ -226,7 +229,7 @@ export class Car {
       b.applyTorqueImpulse({ x: _v.x, y: _v.y, z: _v.z }, true);
     } else {
       // control en el aire: cabeceo con gas/freno, giro con dirección
-      const ac = t.airControl * dt;
+      const ac = t.airControl * dt * this.massK;
       const right = _v.set(-1, 0, 0).applyQuaternion(_q);
       const pitch = (input.throttle - input.brake) * ac * 0.6;
       const yaw = input.steer * ac * 0.5;

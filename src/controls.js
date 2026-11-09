@@ -9,7 +9,8 @@ export class Controls {
     this.tilt = 0; this.tiltZero = null;
     this.steerSmooth = 0;
     this.override = null; // para pruebas automáticas
-    this.onReset = null;
+    this.onReset = null; this.onCamera = null;
+    this.autoGas = false; // acelerar solo (el freno sigue funcionando)
 
     const bind = (id, k) => {
       const el = document.getElementById(id);
@@ -29,6 +30,7 @@ export class Controls {
     addEventListener('keydown', (e) => {
       this.keys.add(e.code);
       if (e.code === 'KeyR' && this.onReset) this.onReset();
+      if (e.code === 'KeyC' && !e.repeat && this.onCamera) this.onCamera();
       if ((e.code === 'KeyE' || e.code === 'Enter' || e.code === 'ShiftLeft') && !e.repeat) this.firePending = true;
       if ((e.code === 'Escape' || e.code === 'KeyP') && this.onPause) this.onPause();
     });
@@ -97,7 +99,7 @@ export class Controls {
       this.steerSmooth += Math.max(-rate * dt, Math.min(rate * dt, target - this.steerSmooth));
       steer = this.steerSmooth;
     }
-    return { steer, throttle: gas ? 1 : 0, brake: brake ? 1 : 0 };
+    return { steer, throttle: gas || (this.autoGas && !brake) ? 1 : 0, brake: brake ? 1 : 0 };
   }
 }
 

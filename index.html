@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#1b1d2a" />
+  <meta name="theme-color" content="#101533" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>Re-Back</title>
   <link rel="icon" href="./icon.png" />
@@ -18,6 +18,7 @@
       <div id="h-posbox"><span id="h-pos">1º</span><span id="h-postot">/4</span></div>
       <div id="h-lap">VUELTA 1/3</div>
       <div id="h-time">0:00.00</div>
+      <div id="h-last">Última --:--.--</div>
       <div id="h-best">Récord --:--.--</div>
       <div id="h-health"><span>🔧</span><i><b></b></i></div>
       <canvas id="h-map" width="150" height="110"></canvas>
@@ -25,6 +26,7 @@
     <div id="h-msg"></div>
     <div id="topbar">
       <button id="btn-reset" class="icon" title="Recolocar coche">↺</button>
+      <button id="btn-cam" class="icon" title="Cámara (C)">🎥</button>
       <button id="btn-mode" class="icon" title="Botones / inclinación">🎮</button>
       <button id="btn-tune" class="icon" title="Ajustes de conducción">⚙</button>
       <button id="btn-pause" class="icon pause" title="Pausa">II</button>
@@ -60,12 +62,13 @@
   <!-- ===== Menú principal ===== -->
   <div id="m-main" class="menu hidden">
     <div class="menu-col">
-      <h1>RE-BACK</h1>
+      <h1 class="logo">RE-BACK</h1>
       <p class="sub">Carreras de coches teledirigidos</p>
-      <button class="big-btn" data-go="race">🏁 Carrera</button>
-      <button class="big-btn alt" data-go="garage">🔧 Garaje</button>
-      <button class="big-btn alt" data-go="practice">⏱ Contrarreloj</button>
-      <button class="big-btn alt" data-go="settings">⚙ Opciones</button>
+      <button class="big-btn" data-go="race"><span>🏁</span>Carrera rápida</button>
+      <button class="big-btn gold" data-go="cups"><span>🏆</span>Campeonato</button>
+      <button class="big-btn alt" data-go="practice"><span>⏱</span>Contrarreloj</button>
+      <button class="big-btn alt" data-go="garage"><span>🔧</span>Garaje</button>
+      <button class="big-btn alt" data-go="settings"><span>⚙</span>Opciones</button>
     </div>
   </div>
 
@@ -89,6 +92,33 @@
     </div>
   </div>
 
+  <!-- ===== Campeonato ===== -->
+  <div id="m-cups" class="menu hidden">
+    <div class="menu-wide">
+      <div class="menu-head">
+        <button class="icon back" data-go="main">←</button>
+        <h2>Campeonato</h2>
+      </div>
+      <h3>Copa</h3>
+      <div id="cups" class="cards"></div>
+      <h3>Coche</h3>
+      <div id="cup-cars" class="cards"></div>
+      <button id="btn-cup-go" class="big-btn">¡Empezar copa!</button>
+    </div>
+  </div>
+
+  <!-- ===== Podio final ===== -->
+  <div id="m-podium" class="menu hidden">
+    <div class="menu-col">
+      <h2 id="pod-title">Copa Bronce</h2>
+      <p id="pod-sub" class="sub"></p>
+      <table id="pod-table" class="table"></table>
+      <p id="pod-reward" class="reward"></p>
+      <p id="pod-unlock" class="unlock"></p>
+      <button class="big-btn" id="btn-pod-menu">Menú</button>
+    </div>
+  </div>
+
   <!-- ===== Garaje ===== -->
   <div id="m-garage" class="menu hidden">
     <div class="menu-wide">
@@ -99,6 +129,7 @@
       <div id="g-cars" class="cards"></div>
       <div id="g-detail">
         <div class="g-title"><b id="g-name"></b><span id="g-desc"></span></div>
+        <div id="g-spec"></div>
         <div id="g-stats"></div>
         <div id="g-actions"></div>
         <div id="g-ups"></div>
@@ -116,6 +147,8 @@
       <div class="opt"><span>Sonido</span><div class="seg" id="opt-sound"></div></div>
       <div class="opt"><span>Música</span><div class="seg" id="opt-music"></div></div>
       <div class="opt"><span>Dirección</span><div class="seg" id="opt-steer"></div></div>
+      <div class="opt"><span>Acelerar solo</span><div class="seg" id="opt-autogas"></div></div>
+      <div class="opt"><span>Cámara</span><div class="seg" id="opt-cam"></div></div>
       <div class="opt"><span>Calidad</span><div class="seg" id="opt-quality"></div></div>
       <button class="big-btn alt" id="btn-tune2">Ajustes de conducción</button>
     </div>
@@ -134,26 +167,41 @@
 
   <!-- ===== Resultados ===== -->
   <div id="m-results" class="menu dim hidden">
-    <div class="menu-col">
+    <div class="menu-col res-col">
+      <small id="res-kind" class="kind"></small>
       <h2 id="res-title">Resultados</h2>
-      <table id="res-table"></table>
-      <p id="res-reward"></p>
-      <p id="res-best"></p>
-      <div class="row">
-        <button class="big-btn" id="btn-again">↻ Otra vez</button>
-        <button class="big-btn alt" id="btn-menu">Menú</button>
+      <div class="res-grid">
+        <div>
+          <table id="res-table" class="table"></table>
+          <p id="res-reward" class="reward"></p>
+        </div>
+        <div id="res-cup" class="hidden">
+          <h3>Clasificación de la copa</h3>
+          <table id="cup-table" class="table"></table>
+        </div>
       </div>
+      <p id="res-best"></p>
+      <div class="row" id="res-btns"></div>
     </div>
   </div>
 
   <div id="money" class="hidden">🪙 <span id="money-n">0</span></div>
 
   <div id="start" class="overlay">
-    <h1>RE-BACK</h1>
+    <h1 class="logo">RE-BACK</h1>
+    <p>Carreras de coches teledirigidos</p>
     <button id="btn-start">Toca para empezar</button>
-    <p class="hint">Teclado: flechas/WASD · E objeto · R recolocar · P pausa</p>
+    <p class="hint">Teclado: flechas/WASD · E objeto · R recolocar · C cámara · P pausa</p>
   </div>
-  <div id="loading" class="overlay"><p>Cargando…</p></div>
+  <div id="loading" class="overlay">
+    <div class="ld-box">
+      <small id="ld-kind" class="kind"></small>
+      <h2 id="ld-name">Cargando…</h2>
+      <p id="ld-desc"></p>
+      <div class="ld-bar"><i></i></div>
+      <p id="ld-tip"></p>
+    </div>
+  </div>
   <div id="rotate" class="overlay"><p>📱↻ Gira el móvil en horizontal</p></div>
 
   <script type="module" src="./src/main.js"></script>
