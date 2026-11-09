@@ -337,6 +337,14 @@ export class Race {
         E.smoke.emit(w.point.x, w.point.y + 0.2, w.point.z, rnd(1.5), 2 + Math.random() * 2, rnd(1.5), { life: 0.4, size: 0.25, size1: 0.4, alpha: 0.7, color: [0.5, 0.78, 1], grav: 20 });
       }
     }
+    // humo (y algo de fuego) si el coche está muy tocado
+    if (near && car.health < 55 && Math.random() < (55 - car.health) / 80) {
+      const top = car.currPos.clone().addScaledVector(car.forward, -0.3); top.y += 0.5;
+      const dark = car.health < 30;
+      E.smoke.emit(top.x + rnd(0.2), top.y, top.z + rnd(0.2), car.velocity.x * 0.2 + rnd(0.5), 1.5 + Math.random(), car.velocity.z * 0.2 + rnd(0.5),
+        { life: 1 + Math.random() * 0.6, size: 0.4, size1: 2.2, alpha: dark ? 0.55 : 0.35, color: dark ? [0.15, 0.15, 0.16] : [0.55, 0.55, 0.57], drag: 1.5 });
+      if (car.health < 18 && Math.random() < 0.3) E.fire.emit(top.x, top.y, top.z, rnd(0.5), 2, rnd(0.5), { life: 0.3, size: 0.5, size1: 0.1, alpha: 0.9, color: [1, 0.5, 0.15], drag: 2 });
+    }
     // llamas del turbo
     if (car.fx.boost > 0 && near) {
       const back = car.currPos.clone().addScaledVector(car.forward, -1.2); back.y += 0.15;
@@ -418,6 +426,7 @@ export class Race {
       lapTime: this.started ? (st.finished ? st.lastLap : this.time - st.lapStart) : 0,
       best: this.best.lap || 0,
       item: this.player.item,
+      health: this.player.health,
       bomb: this.items.bombs.get(this.player)?.t,
       cars: this.cars, player: this.player,
     });

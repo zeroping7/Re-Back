@@ -128,30 +128,52 @@ export function buildCircuit(B, def) {
   }
   samples.forEach((s, i) => { s.i = i; s.h = 0; });
 
-  // Cuestas: elevación suave (coseno) a lo largo de la pista
-  const hillRanges = [];
-  for (const hl of def.hills || []) {
-    let c = 0, bd = Infinity;
-    samples.forEach((s, i) => { const d = (s.p.x - hl.at[0]) ** 2 + (s.p.z - hl.at[1]) ** 2; if (d < bd) { bd = d; c = i; } });
-    const half = Math.round(hl.len / 2 / 1.6);
-    for (let k = -half; k <= half; k++) {
-      const s = samples[(c + k + N) % N];
-      const u = k / half;
-      const h = hl.h * (hl.double ? Math.pow(Math.sin(Math.PI * (u + 1)), 2) : 0.5 * (1 + Math.cos(Math.PI * u)));
-      s.h = Math.max(s.h, h);
-    }
-    hillRanges.push([c - half - 1, c + half + 1, hl]);
-  }
-  for (const s of samples) s.p.y = s.h;
-
   // curvatura (radio) y velocidad recomendada para la IA
   for (let i = 0; i < N; i++) {
     const a = samples[(i - 2 + N) % N].t, b = samples[(i + 2) % N].t;
     const ang = Math.acos(THREE.MathUtils.clamp(a.dot(b), -1, 1));
     const cross = a.x * b.z - a.z * b.x;
     samples[i].radius = (1.6 * 4) / Math.max(ang, 1e-4);
-    samples[i].turn = Math.sign(cross); // +1 / -1 según el lado de la curva
+    samples[i].turn = Math.sign(cross);
   }
+  const at = (f) => Math.round(f * N) % N;
+  // radio mínimo alrededor de un índice
+  const minRadius = (i, back, fwd) => { let r = Infinity; for (let k = -back; k <= fwd; k++) r = Math.min(r, samples[(i + k + N) % N].radius); return r; };
+  // índice del tramo más recto entre dos fracciones de la vuelta
+  function straightest(f0, f1, back = 4, fwd = 10, avoid = []) {
+    let best = at(f0), br = -1;
+    const n = Math.round(((f1 - f0 + 1) % 1 || 1) * N);
+    for (let k = 0; k < n; k++) {
+      const i = (at(f0) + k) % N;
+      if (avoid.some(([a, b]) => cyclicIn(i, a - 6, b + 6, N))) continue;
+      const r = minRadius(i, back, fwd);
+      if (r > br) { br = r; best = i; }
+    }
+    return best;
+  }
+
+  // ---------- Elevación: cuestas (coseno) y rampas (salto) ----------
+  const elev = [];
+  for (const hl of def.hills || []) {
+    const c = hl.frac !== undefined ? at(hl.frac) : nearestIdx(samples, hl.at);
+    const half = Math.round(hl.len / 2 / 1.6);
+    for (let k = -half; k <= half; k++) {
+      const s = samples[(c + k + N) % N], u = k / half;
+      const h = hl.h * (hl.double ? Math.pow(Math.sin(Math.PI * (u + 1)), 2) : 0.5 * (1 + Math.cos(Math.PI * u)));
+      s.h = Math.max(s.h, h);
+    }
+    elev.push({ i0: c - half - 1, i1: c + half + 1, kind: 'hill', def: hl });
+  }
+  for (const rp of def.ramps || []) {
+    const c = rp.idx ?? (rp.frac !== undefined ? straightest(rp.frac - 0.06, rp.frac + 0.06, 2, Math.round(rp.len / 1.6) + 4, elev.map((e) => [e.i0, e.i1])) : nearestIdx(samples, rp.at));
+    const n = Math.max(3, Math.round(rp.len / 1.6));
+    for (let k = 0; k <= n; k++) {
+      const s = samples[(c + k) % N], u = k / n;
+      s.h = Math.max(s.h, rp.h * Math.pow(u, 1.5));
+    }
+    elev.push({ i0: c - 1, i1: c + n + 1, kind: 'ramp', def: rp });
+  }
+  for (const s of samples) s.p.y = s.h;
 
   // ---------- Bordes ----------
   const st = def.barrier;
@@ -164,56 +186,86 @@ export function buildCircuit(B, def) {
       const pa = a.p.clone().addScaledVector(a.n, side * (width / 2 + blockT / 2));
       const pb = b.p.clone().addScaledVector(b.n, side * (width / 2 + blockT / 2));
       const mid = pa.clone().add(pb).multiplyScalar(0.5);
-      const dir = pb.clone().sub(pa);
+      const dir = pb.clone().sub(pa).setY(0);
       const len = dir.length();
       if (len < 0.2) continue;
-      segs.push({ mid, yaw: Math.atan2(dir.x, dir.z), len: len + 0.12, h: (a.h + b.h) / 2 });
+      segs.push({ mid, yaw: Math.atan2(dir.x, dir.z), len: len + 0.12, h: Math.max(a.h, b.h) });
     }
   }
   const geo = st.round ? new THREE.CylinderGeometry(blockT / 2, blockT / 2, 1, 8).rotateX(Math.PI / 2) : new THREE.BoxGeometry(blockT, blockH, 1);
   const blockMesh = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ roughness: st.roughness ?? 0.45, flatShading: true }), segs.length);
   blockMesh.castShadow = true; blockMesh.receiveShadow = true;
   const m4 = new THREE.Matrix4(), col = new THREE.Color(), q = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0);
-  segs.forEach((s, i) => {
-    q.setFromAxisAngle(Y, s.yaw);
+  segs.forEach((sg, i) => {
+    q.setFromAxisAngle(Y, sg.yaw);
     const y = st.round ? blockT / 2 : blockH / 2;
-    m4.compose(new THREE.Vector3(s.mid.x, y + s.h, s.mid.z), q, new THREE.Vector3(1, 1, s.len - 0.08));
+    m4.compose(new THREE.Vector3(sg.mid.x, y + sg.h, sg.mid.z), q, new THREE.Vector3(1, 1, sg.len - 0.08));
     blockMesh.setMatrixAt(i, m4);
     blockMesh.setColorAt(i, col.set(st.colors[i % st.colors.length]));
-    B.collider(RAPIER.ColliderDesc.cuboid(blockT / 2, 1.1, s.len / 2), { x: s.mid.x, y: 1.1 + s.h, z: s.mid.z }, q,
-      { friction: 0.1, restitution: 0.35, groups: BARRIER_GROUPS });
+    B.collider(RAPIER.ColliderDesc.cuboid(blockT / 2, 1.1, sg.len / 2), { x: sg.mid.x, y: 1.1 + sg.h, z: sg.mid.z }, q,
+      { friction: 0.05, restitution: 0.5, groups: BARRIER_GROUPS });
   });
   scene.add(blockMesh);
 
-  // superficie de las cuestas (visual + colisión de malla) con faldones laterales
-  for (const [i0, i1, hl] of hillRanges) {
+  // ---------- Superficies elevadas (malla visible + colisión triangular sin aristas internas) ----------
+  for (const e of elev) {
     const hw = width / 2 + blockT + 0.25;
-    const pos = [], idx = [], phys = [];
-    let n = 0;
-    for (let i = i0; i <= i1; i++) {
-      const sm = samples[(i + N) % N];
-      const l = sm.p.clone().addScaledVector(sm.n, hw), r = sm.p.clone().addScaledVector(sm.n, -hw);
-      // superficie (0,1), faldón izq (2), faldón dcho (3)
-      pos.push(l.x, sm.h, l.z, r.x, sm.h, r.z, l.x, 0, l.z, r.x, 0, r.z);
-      phys.push(l.x * B.S, sm.h * B.S, l.z * B.S, r.x * B.S, sm.h * B.S, r.z * B.S);
-      if (i < i1) {
-        const a = n * 4, b = a + 4;
+    const sub = 3; // subdivisiones entre muestras para que sea suave
+    const rows = [];
+    for (let i = e.i0; i < e.i1; i++) {
+      const a = samples[(i + N) % N], b = samples[(i + 1 + N) % N];
+      for (let k = 0; k < sub; k++) {
+        const u = k / sub;
+        const p = a.p.clone().lerp(b.p, u);
+        const n = a.n.clone().lerp(b.n, u).normalize();
+        // la rampa cae en vertical al final: no interpolar la caída
+        const h = e.kind === 'ramp' && b.h < a.h * 0.5 ? a.h : a.h + (b.h - a.h) * (e.kind === 'hill' ? (1 - Math.cos(Math.PI * u)) / 2 : u);
+        rows.push({ p, n, h });
+      }
+    }
+    const last = samples[(e.i1 + N) % N];
+    rows.push({ p: last.p.clone(), n: last.n.clone(), h: last.h });
+    const pos = [], uv = [], idx = [], phys = [], tri = [];
+    let along = 0;
+    rows.forEach((r, k) => {
+      const l = r.p.clone().addScaledVector(r.n, hw), rr = r.p.clone().addScaledVector(r.n, -hw);
+      if (k) along += r.p.distanceTo(rows[k - 1].p);
+      const gl = def.groundUV ? def.groundUV(l.x, l.z) : [0, along / (hw * 2)];
+      const gr = def.groundUV ? def.groundUV(rr.x, rr.z) : [1, along / (hw * 2)];
+      // superficie (0,1) y faldones (2,3)
+      pos.push(l.x, r.h, l.z, rr.x, r.h, rr.z, l.x, 0, l.z, rr.x, 0, rr.z);
+      uv.push(...gl, ...gr, ...gl, ...gr);
+      phys.push(l.x * B.S, r.h * B.S, l.z * B.S, rr.x * B.S, r.h * B.S, rr.z * B.S);
+      if (k < rows.length - 1) {
+        const a = k * 4, b = a + 4;
         idx.push(a, b, a + 1, a + 1, b, b + 1);
         idx.push(a + 2, b + 2, a, a, b + 2, b);
         idx.push(a + 1, b + 1, a + 3, a + 3, b + 1, b + 3);
+        const c = k * 2, d = c + 2;
+        tri.push(c, d, c + 1, c + 1, d, d + 1);
       }
-      n++;
+    });
+    // cara trasera de la rampa (caída)
+    if (e.kind === 'ramp') {
+      const n = rows.length;
+      const top = rows.findIndex((r, k) => k > 0 && r.h < rows[k - 1].h * 0.5);
+      if (top > 0) {
+        const a = (top - 1) * 4;
+        idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+      }
+      void n;
     }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    geo.setIndex(idx);
-    geo.computeVertexNormals();
-    const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: hl.color || def.hillColor || '#c8a165', roughness: 0.8, side: THREE.DoubleSide }));
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    g.setIndex(idx);
+    g.computeVertexNormals();
+    const material = e.def.material || (e.kind === 'ramp' ? def.rampMaterial : def.hillMaterial) ||
+      new THREE.MeshStandardMaterial({ color: e.def.color || def.hillColor || '#c8a165', roughness: 0.8 });
+    const mesh = new THREE.Mesh(g, material);
     mesh.receiveShadow = true; mesh.castShadow = true;
     scene.add(mesh);
-    const tri = [];
-    for (let k = 0; k < n - 1; k++) { const a = k * 2, b = a + 2; tri.push(a, b, a + 1, a + 1, b, b + 1); }
-    const desc = RAPIER.ColliderDesc.trimesh(new Float32Array(phys), new Uint32Array(tri)).setFriction(0.9);
+    const desc = RAPIER.ColliderDesc.trimesh(new Float32Array(phys), new Uint32Array(tri), RAPIER.TriMeshFlags.FIX_INTERNAL_EDGES).setFriction(0.9);
     B.world.createCollider(desc, B.fixed);
   }
 
@@ -226,7 +278,7 @@ export function buildCircuit(B, def) {
   line.receiveShadow = true;
   scene.add(line);
 
-  const C = { curve, samples, N, length, width, spacing: 1.6 };
+  const C = { curve, samples, N, length, width, spacing: 1.6, elev, at, minRadius, straightest };
   function sampleNear(x, z) {
     let best = 0, bd = Infinity;
     for (const s of samples) { const d = (s.p.x - x) ** 2 + (s.p.z - z) ** 2; if (d < bd) { bd = d; best = s.i; } }
@@ -275,6 +327,36 @@ export function buildCircuit(B, def) {
   return Object.assign(C, { sampleNear, nearestFrom, yawOf, gridSlot, clearance, spot });
 }
 
+function nearestIdx(samples, [x, z]) {
+  let k = 0, bd = Infinity;
+  samples.forEach((s, i) => { const d = (s.p.x - x) ** 2 + (s.p.z - z) ** 2; if (d < bd) { bd = d; k = i; } });
+  return k;
+}
+function cyclicIn(i, a, b, N) {
+  const n = ((b - a) % N + N) % N;
+  return ((i - a) % N + N) % N <= n;
+}
+
+// Placas de turbo en las rectas más largas (lejos de curvas, rampas y salida)
+export function autoBoosts(B, circuit, count = 2, used = []) {
+  const N = circuit.N, zones = [];
+  const avoid = [...circuit.elev.map((e) => [e.i0, e.i1]), [N - 8, 8], ...used];
+  const tex = chevronTexture();
+  for (let n = 0; n < count; n++) {
+    let best = -1, br = 0;
+    for (let i = 0; i < N; i++) {
+      if (avoid.some(([a, b]) => cyclicIn(i, a - 10, b + 4, N))) continue;
+      const r = circuit.minRadius(i, 6, 14);
+      if (r > br) { br = r; best = i; }
+    }
+    if (best < 0 || br < 26) break;
+    const s = circuit.samples[best];
+    zones.push(trackPatch(B, circuit, [s.p.x, s.p.z], 5, 'boost', { map: tex, emissive: '#ffffff', opacity: 0.95 }));
+    avoid.push([best - Math.round(N / 5), best + Math.round(N / 5)]);
+  }
+  return zones;
+}
+
 function inRange(i, from, to, N) {
   return from <= to ? i >= from && i <= to : i >= from || i <= to;
 }
@@ -321,7 +403,7 @@ export function trackRibbon(B, circuit, material, extra = 1, y = 0.02) {
   for (let i = 0; i <= N; i++) {
     const s = S[i % N];
     const l = s.p.clone().addScaledVector(s.n, hw), r = s.p.clone().addScaledVector(s.n, -hw);
-    pos.push(l.x, y, l.z, r.x, y, r.z);
+    pos.push(l.x, y + s.h, l.z, r.x, y + s.h, r.z);
     uv.push(0, v, 1, v);
     v += 1.6 / (hw * 2);
     if (i < N) { const a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
@@ -331,7 +413,8 @@ export function trackRibbon(B, circuit, material, extra = 1, y = 0.02) {
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   g.setIndex(idx);
   g.computeVertexNormals();
-  const m = new THREE.Mesh(g, material);
+  const m = new THREE.Mesh(g, material.clone());
+  m.material.polygonOffset = true; m.material.polygonOffsetFactor = -1;
   m.receiveShadow = true;
   B.scene.add(m);
   return m;
@@ -352,7 +435,7 @@ export function room(B, { x, z, h, floor, wall, ceil = '#f4f1ea', baseboard = '#
     if (baseboard) { const bb = B.box(len, 1.4, 0.4, wx, 0.7, wz, baseboard, { rot: [0, ry, 0], solid: false, shadow: false }); bb.translateZ(0.2); }
     const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry);
     const off = new THREE.Vector3(0, 0, -1).applyQuaternion(q);
-    B.collider(RAPIER.ColliderDesc.cuboid(len / 2, h / 2, 1), { x: wx + off.x, y: h / 2, z: wz + off.z }, q, { friction: 0.2, restitution: 0.3, groups: BARRIER_GROUPS });
+    B.collider(RAPIER.ColliderDesc.cuboid(len / 2, h / 2, 1), { x: wx + off.x, y: h / 2, z: wz + off.z }, q, { friction: 0.05, restitution: 0.5, groups: BARRIER_GROUPS });
   }
   const c = new THREE.Mesh(new THREE.PlaneGeometry(x * 2, z * 2), mat(ceil, { flatShading: false }));
   c.rotation.x = Math.PI / 2; c.position.y = h;
@@ -407,7 +490,7 @@ export function scaleTrack(T, S) {
 }
 
 // Parche sobre la pista (zona de derrape, turbo…). Devuelve la zona para la carrera.
-export function trackPatch(B, circuit, at, len, effect, { color = '#ffffff', map = null, opacity = 0.85, emissive = null, inset = 0.4 } = {}) {
+export function trackPatch(B, circuit, at, len, effect, { color = '#ffffff', map = null, normalMap = null, opacity = 0.85, emissive = null, inset = 0.4, roughness } = {}) {
   const S = circuit.samples, N = S.length;
   const c = circuit.sampleNear(at[0], at[1]).i;
   const half = Math.max(1, Math.round(len / 2 / 1.6));
@@ -425,7 +508,7 @@ export function trackPatch(B, circuit, at, len, effect, { color = '#ffffff', map
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   g.setIndex(idx); g.computeVertexNormals();
   const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
-    color, map, transparent: true, opacity, roughness: effect === 'slide' ? 0.05 : 0.4, metalness: effect === 'slide' ? 0.4 : 0,
+    color, map, normalMap, transparent: true, opacity, roughness: roughness ?? (effect === 'slide' ? 0.05 : 0.4), metalness: effect === 'slide' ? 0.3 : 0,
     emissive: emissive || '#000000', emissiveMap: emissive ? map : null, emissiveIntensity: emissive ? 0.9 : 0,
     polygonOffset: true, polygonOffsetFactor: -3,
   }));

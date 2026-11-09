@@ -196,3 +196,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; touch-action
 .menu button { touch-action: manipulation; }
 .cards { touch-action: pan-x pan-y; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
 .cards .card { touch-action: pan-x pan-y; scroll-snap-align: start; }
+
+#h-health { display: flex; align-items: center; gap: 4px; margin-top: 3px; font-size: 11px; }
+#h-health i { display: block; width: 90px; height: 7px; border-radius: 4px; background: #0007; overflow: hidden; }
+#h-health b { display: block; height: 100%; width: 100%; background: #7dff8a; transition: width .3s, background .3s; }

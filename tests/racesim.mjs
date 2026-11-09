@@ -1,5 +1,5 @@
 // Carrera completa sin gráficos (Node): IA contra IA (jugador en automático). Mide vueltas, vuelcos, objetos.
-const fakeCtx = new Proxy({}, { get: (t, k) => (k in t ? t[k] : () => ({ addColorStop() {} })), set: (t, k, v) => ((t[k] = v), true) });
+const fakeCtx = new Proxy({ getImageData: (x, y, w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }), createImageData: (w, h) => ({ data: new Uint8ClampedArray(w * h * 4) }) }, { get: (t, k) => (k in t ? t[k] : () => ({ addColorStop() {} })), set: (t, k, v) => ((t[k] = v), true) });
 globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => fakeCtx }), getElementById: () => null };
 globalThis.localStorage = { getItem: () => null, setItem() {} };
 const RAPIER = (await import('@dimforge/rapier3d-compat')).default; await RAPIER.init();
@@ -19,7 +19,7 @@ race.autoPlayer = true;
 const used = {}; const origFire = race.items.fire.bind(race.items);
 race.items.fire = (car) => { used[car.item] = (used[car.item] || 0) + 1; origFire(car); };
 const respawns = new Map(); const origResp = race.respawn.bind(race);
-race.respawn = (car) => { respawns.set(car.name, (respawns.get(car.name) || 0) + 1); origResp(car); };
+race.respawn = (car) => { respawns.set(car.name, (respawns.get(car.name) || 0) + 1); const st = race.state(car); if (process.env.WHY) console.log(`   resp ${car.name} up=${car.up.y.toFixed(2)} upT=${car.upsideTime.toFixed(1)} off=${(st.offT||0).toFixed(1)} noProg=${(st.noProgT||0).toFixed(1)} y=${car.currPos.y.toFixed(1)} idx=${st.idx} frac=${(st.idx/race.circuit.N).toFixed(2)} lat=${(()=>{const sc=race.circuit.samples[st.idx];return Math.abs((car.currPos.x-sc.p.x)*sc.n.x+(car.currPos.z-sc.p.z)*sc.n.z).toFixed(1)})()} pos=${car.currPos.x.toFixed(0)},${car.currPos.z.toFixed(0)} spd=${car.speed.toFixed(0)}`); origResp(car); };
 let t = 0;
 const playerAI = race.playerAI;
 while (t < 240) {
@@ -32,5 +32,5 @@ while (t < 240) {
 }
 const r = race.results();
 console.log(trackId, `len=${race.circuit.length.toFixed(0)} t=${t.toFixed(1)}`);
-for (const x of r) console.log(`  ${x.place}. ${x.name.padEnd(6)} fin=${x.finished} time=${x.time.toFixed(1)} best=${x.best.toFixed(2)} laps=${x.laps} resp=${respawns.get(x.name) || 0}`);
+for (const x of r) { const car = race.cars.find((c) => c.name === x.name); console.log(`  ${x.place}. ${x.name.padEnd(6)} fin=${x.finished} time=${x.time.toFixed(1)} best=${x.best.toFixed(2)} laps=${x.laps} resp=${respawns.get(x.name) || 0} hp=${car.health.toFixed(0)}`); }
 console.log('  items used:', JSON.stringify(used));

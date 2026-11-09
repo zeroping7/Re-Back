@@ -27,6 +27,8 @@ export class Car {
     // efectos de objetos (segundos restantes)
     this.fx = { boost: 0, oil: 0, stun: 0, wet: 0, slide: 0 };
     this.item = null;
+    this.health = 100;
+    this.pullDir = Math.random() < 0.5 ? -1 : 1;
     this.steer = 0;
     this.spin = [0, 0, 0, 0];
     this.lastW = [0, 0, 0, 0];
@@ -52,7 +54,7 @@ export class Car {
     );
     const col = RAPIER.ColliderDesc.roundCuboid(0.62, 0.13, 0.92, 0.1)
       .setTranslation(0, 0.12, 0)
-      .setFriction(0.15).setRestitution(0.2).setCollisionGroups(CAR_GROUPS)
+      .setFriction(0.1).setRestitution(0.35).setCollisionGroups(CAR_GROUPS)
       .setMassProperties(MASS, { x: 0, y: -0.58, z: 0 }, { x: 4.2, y: 5.0, z: 3.0 }, { x: 0, y: 0, z: 0, w: 1 });
     this.collider = world.createCollider(col, body);
     this.body = body;
@@ -120,7 +122,8 @@ export class Car {
     const speed = this.velocity.length();
 
     // --- Dirección (más suave a alta velocidad) ---
-    const target = input.steer * t.steerMax / (1 + Math.abs(fwd) * t.steerFalloff);
+    const pull = (1 - this.health / 100) * 0.12 * this.pullDir;
+    const target = THREE.MathUtils.clamp(input.steer + (Math.abs(fwd) > 3 ? pull : 0), -1, 1) * t.steerMax / (1 + Math.abs(fwd) * t.steerFalloff);
     const ds = t.steerSpeed * dt * (Math.sign(target - this.steer) !== Math.sign(this.steer) ? 1.6 : 1);
     this.steer += THREE.MathUtils.clamp(target - this.steer, -ds, ds);
     veh.setWheelSteering(0, this.steer);
@@ -134,12 +137,13 @@ export class Car {
     const stunned = fx.stun > 0;
     const thr = stunned ? 0 : input.throttle, brk = stunned ? 0 : input.brake;
     const boost = fx.boost > 0;
-    const rb = this.rubber ?? 1;
+    const rb = (this.rubber ?? 1) * (0.72 + 0.28 * this.health / 100);
     const maxSpeed = t.maxSpeed * rb * (boost ? 1.35 : 1) * (fx.wet > 0 ? 0.7 : 1);
-    const power = t.engine * rb * (boost ? 1.8 : 1);
+    const power = t.engine * rb * (0.85 + 0.15 * this.health / 100) * (boost ? 1.8 : 1);
     if (thr > 0) {
-      const lim = THREE.MathUtils.clamp((maxSpeed - fwd) / (maxSpeed * 0.25), 0, 1);
-      engine = power * thr * lim;
+      // motor eléctrico de RC (como Re-Volt): mucho par al arrancar que cae con la velocidad
+      const k = Math.max(0, fwd) / maxSpeed;
+      engine = power * thr * 1.25 * Math.max(0, 1 - Math.pow(k, 1.6));
       if (fwd < -1) { brakeF = brakeR = t.brake / 4; engine *= 0.3; }
     }
     if (brk > 0) {
@@ -218,7 +222,7 @@ export class Car {
       const down = t.downforce * speed * speed / 10 * m * dt;
       b.applyImpulse({ x: -this.up.x * down, y: -this.up.y * down, z: -this.up.z * down }, true);
       // estabilizador anti-vuelco suave
-      _v.crossVectors(this.up, UP).multiplyScalar(6 * m * dt * (contacts / 4));
+      _v.crossVectors(this.up, UP).multiplyScalar(7 * m * dt * (contacts / 4));
       b.applyTorqueImpulse({ x: _v.x, y: _v.y, z: _v.z }, true);
     } else {
       // control en el aire: cabeceo con gas/freno, giro con dirección
@@ -236,6 +240,12 @@ export class Car {
       b.applyTorqueImpulse({ x: _v.x, y: _v.y, z: _v.z }, true);
     }
 
+    // enderezarse solo si se queda apoyado de lado a poca velocidad (como Re-Volt)
+    if (this.up.y < 0.85 && this.up.y > -0.2 && speed < 4) {
+      _v.crossVectors(this.up, UP).multiplyScalar(22 * m * dt);
+      b.applyTorqueImpulse({ x: _v.x, y: _v.y, z: _v.z }, true);
+      if (contacts < 2) b.applyImpulse({ x: 0, y: 3 * m * dt, z: 0 }, true);
+    }
     // --- Antena con muelle ---
     const acc = _v2.copy(this.velocity).sub(this.lastVel).divideScalar(dt).applyQuaternion(_qi);
     const an = this.antenna;
@@ -259,7 +269,9 @@ export class Car {
     if (this.contacts === 0) this.airTime += dt;
     else {
       if (this.airTime > 0.25) {
-        this.events.push({ type: 'land', strength: Math.min(1, this.airTime * 1.2 + Math.abs(this.velocity.y) / 30), pos: this.currPos.clone() });
+        const ls = Math.min(1, this.airTime * 1.2 + Math.abs(this.velocity.y) / 30);
+        this.events.push({ type: 'land', strength: ls, pos: this.currPos.clone() });
+        if (ls > 0.85) this.damage((ls - 0.85) * 20, new THREE.Vector3(0, -0.15, 0), 0.3);
       }
       this.airTime = 0;
     }
@@ -267,12 +279,44 @@ export class Car {
     if (horiz > 5) {
       const dir = new THREE.Vector3(-dv.x, 0, -dv.z).normalize();
       const pos = this.currPos.clone().addScaledVector(dir, 1.0); pos.y += 0.2;
-      this.events.push({ type: 'hit', strength: Math.min(1, horiz / 25), pos, dir: dir.negate() });
+      // punto exacto del golpe en coordenadas del coche (para abollar la carrocería)
+      let local = null;
+      const w = this.world;
+      w.contactPairsWith(this.collider, (other) => {
+        if (local) return;
+        w.contactPair(this.collider, other, (man, flipped) => {
+          if (local || man.numContacts() === 0) return;
+          const lp = flipped ? man.localContactPoint2(0) : man.localContactPoint1(0);
+          if (lp) local = new THREE.Vector3(lp.x, lp.y + 0.12, lp.z);
+        });
+      });
+      if (!local) local = dir.clone().applyQuaternion(_qi.copy(this.currQuat).invert()).multiplyScalar(0.9);
+      const strength = Math.min(1, horiz / 25);
+      this.events.push({ type: 'hit', strength, pos, dir: dir.negate(), local });
+      this.damage(Math.max(0, strength - 0.22) * 22, local, strength);
     }
     this.lastVel.copy(this.velocity);
 
     // ¿volcado?
     if (this.up.y < 0.5 && this.speed < 3) this.upsideTime += dt; else this.upsideTime = 0;
+  }
+
+  // Daño: baja la salud, abolla la carrocería y la ensucia
+  damage(amount, local, strength = 0.5) {
+    if (amount <= 0) return;
+    this.health = Math.max(0, this.health - amount);
+    const u = this.model.userData;
+    if (local) u.deform(local, Math.min(0.32, 0.08 + strength * 0.24));
+    u.wear(this.health / 100);
+    u.antennaBase.z = (1 - this.health / 100) * 0.7 * this.pullDir;
+  }
+
+  repair(amount) {
+    this.health = Math.min(100, this.health + amount);
+    const u = this.model.userData;
+    u.restore(amount / 100);
+    u.wear(this.health / 100);
+    u.antennaBase.z = (1 - this.health / 100) * 0.7 * this.pullDir;
   }
 
   render(alpha) {
@@ -289,7 +333,7 @@ export class Car {
     }
     const u = this.model.userData;
     u.updateSuspension(this.hubY);
-    u.antenna.rotation.set(u.antennaBase.x + this.antenna.pitch, 0, this.antenna.roll);
+    u.antenna.rotation.set(u.antennaBase.x + this.antenna.pitch, 0, u.antennaBase.z + this.antenna.roll);
     const brakeGlow = this.braking || this.drifting ? 3.2 : this.reversing ? 1.5 : 0.6;
     u.tailMat.emissiveIntensity += (brakeGlow - u.tailMat.emissiveIntensity) * 0.3;
     u.revMat.emissiveIntensity = this.reversing ? 2.5 : 0;

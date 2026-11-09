@@ -1,9 +1,10 @@
 import * as THREE from 'three';
-import { parquetTexture, rugTexture, wallpaperTexture, bookCoverTexture, canTexture } from '../textures.js';
-import { buildCircuit, mat, BARRIER_GROUPS, trackPatch, chevronTexture } from './common.js';
+import { rugTexture, wallpaperTexture, bookCoverTexture, canTexture, groundTex } from '../textures.js';
+import { buildCircuit, mat, BARRIER_GROUPS, trackPatch, autoBoosts } from './common.js';
 
 // Circuito 1: "El salón". Escala de juguete: 1 unidad ≈ 22 cm.
-const ROOM = { x: 48, z: 34, h: 30 };
+const ROOM = { x: 64, z: 46, h: 34 };
+const FLOOR_REPEAT = [30, 21.5];
 
 export default {
   id: 'salon',
@@ -17,7 +18,10 @@ function build(B) {
   const { scene, RAPIER, box, cyl, collider } = B;
 
   // ---------- Suelo y paredes ----------
-  const floorMat = new THREE.MeshStandardMaterial({ map: parquetTexture([22, 15.5]), roughness: 0.38, metalness: 0.0 });
+  const pq = groundTex('parquet', FLOOR_REPEAT);
+  const floorMat = new THREE.MeshStandardMaterial({ map: pq.map, normalMap: pq.normalMap, normalScale: new THREE.Vector2(0.8, 0.8), roughness: 0.32, metalness: 0.0 });
+  // UV del suelo para que las cuestas lleven exactamente el mismo parqué
+  const groundUV = (x, z) => [(x + ROOM.x) / (ROOM.x * 2), (ROOM.z - z) / (ROOM.z * 2)];
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.x * 2, ROOM.z * 2), floorMat);
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
@@ -39,7 +43,7 @@ function build(B) {
     // colisión de pared
     const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry);
     const off = new THREE.Vector3(0, 0, -1).applyQuaternion(q);
-    collider(RAPIER.ColliderDesc.cuboid(len / 2, ROOM.h / 2, 1), { x: x + off.x, y: ROOM.h / 2, z: z + off.z }, q, { friction: 0.2, restitution: 0.3, groups: BARRIER_GROUPS });
+    collider(RAPIER.ColliderDesc.cuboid(len / 2, ROOM.h / 2, 1), { x: x + off.x, y: ROOM.h / 2, z: z + off.z }, q, { friction: 0.05, restitution: 0.5, groups: BARRIER_GROUPS });
   }
   // techo (solo visual, cierra la habitación)
   const ceil = new THREE.Mesh(new THREE.PlaneGeometry(ROOM.x * 2, ROOM.z * 2), mat('#f4f1ea', { flatShading: false }));
@@ -63,8 +67,8 @@ function build(B) {
   box(4, 22, 0.6, 12, 13, -ROOM.z + 0.8, '#d6824a', { solid: false });
 
   // Puerta (pared derecha)
-  box(0.3, 20, 10, ROOM.x - 0.2, 10, 14, '#9a6a43', { solid: false });
-  cyl(0.35, 0.35, 0.8, ROOM.x - 0.7, 10, 10.5, '#d4af37', { rot: [0, 0, Math.PI / 2], solid: false });
+  box(0.3, 20, 10, ROOM.x - 0.2, 10, 20, '#9a6a43', { solid: false });
+  cyl(0.35, 0.35, 0.8, ROOM.x - 0.7, 10, 16.5, '#d4af37', { rot: [0, 0, Math.PI / 2], solid: false });
   // Cuadros
   box(10, 7, 0.3, -ROOM.x + 0.2, 14, -10, '#3b3b3b', { rot: [0, Math.PI / 2, 0], solid: false });
   box(9, 6, 0.32, -ROOM.x + 0.25, 14, -10, '#e9a23b', { rot: [0, Math.PI / 2, 0], solid: false });
@@ -73,18 +77,25 @@ function build(B) {
 
 
   // ---------- Trazado ----------
+  const bookTex = bookCoverTexture('FÍSICA', '#1f4e8c');
+  bookTex.wrapS = bookTex.wrapT = THREE.RepeatWrapping;
   const circuit = buildCircuit(B, {
     points: [
-      [-24, 27], [-4, 27.5], [14, 27], [27, 24], [33, 14], [25, 5], [29, -5], [38, -8], [41, -18], [33, -26],
-      [20, -27], [6, -26], [-5, -19], [-6, -9], [-13, -2], [-22, -7], [-29, -19], [-39, -17], [-41, -4], [-36, 8], [-40, 18], [-35, 26],
+      [-40, 38], [-15, 39], [10, 38], [30, 36], [46, 30], [56, 19], [47, 7], [52, -4], [58, -18], [50, -32], [36, -38], [20, -38],
+      [6, -36], [-6, -30], [-10, -18], [0, -8], [14, -14], [26, -6], [22, 8], [8, 14], [-8, 8], [-18, -4], [-30, -14], [-44, -26],
+      [-56, -20], [-58, -4], [-50, 8], [-56, 22], [-52, 34],
     ],
-    start: [-16, 27.2],
+    start: [-30, 38.5],
     width: 7,
     limits: [ROOM.x - 1, ROOM.z - 1],
-    hills: [{ at: [-41, -4], len: 30, h: 1.6 }, { at: [27, 0], len: 20, h: 1.1 }],
-    hillColor: '#b07a4a',
+    hills: [{ frac: 0.82, len: 30, h: 1.6 }, { frac: 0.22, len: 22, h: 1.2 }, { frac: 0.5, len: 40, h: 1.0, double: true }],
+    ramps: [{ frac: 0.07, len: 9, h: 1.8 }],
+    hillMaterial: floorMat,
+    rampMaterial: new THREE.MeshStandardMaterial({ map: bookTex, roughness: 0.55 }),
+    groundUV,
     barrier: { colors: ['#e63946', '#f1c40f', '#2a9df4', '#2ecc71', '#ff8c1a', '#9b59b6'] },
   });
+
   const W = circuit.width;
   const { samples, sampleNear, yawOf, spot } = circuit;
   const s0 = samples[0];
@@ -94,13 +105,17 @@ function build(B) {
   const onTrack = (x, z, along = 0, lat = 0) => { const s = circuit.sampleNear(x, z); return s.p.clone().addScaledVector(s.t, along).addScaledVector(s.n, lat * circuit.width / 2); };
   const zones = [];
   // suelo recién encerado (derrapa) y flechas de turbo
-  zones.push(trackPatch(B, circuit, [-17, -4], 16, 'slide', { color: '#fff4cc', opacity: 0.45 }));
-  zones.push(trackPatch(B, circuit, [-9, 27.4], 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
-  zones.push(trackPatch(B, circuit, [27, -26.5], 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
+  const wax = groundTex('wax', [1, 3]);
+  const curvy = (f0, f1) => { let best = circuit.at(f0), br = Infinity; for (let f = f0; f < f1; f += 0.005) { const i = circuit.at(f); const r = circuit.minRadius(i, 3, 3); if (r < br) { br = r; best = i; } } return samples[best].p; };
+  for (const [f0, f1] of [[0.6, 0.72], [0.9, 0.98]]) {
+    const p = curvy(f0, f1);
+    zones.push(trackPatch(B, circuit, [p.x, p.z], 18, 'slide', { map: wax.map, color: '#fffaf0', opacity: 0.55 }));
+  }
+  zones.push(...autoBoosts(B, circuit, 2, zones.map((z) => [z.from, z.to])));
   // bolos para derribar
   {
-    const c = onTrack(41, -14);
-    const s = circuit.sampleNear(41, -14);
+    const s = samples[circuit.at(0.27)];
+    const c = s.p.clone();
     const pinM = mat('#fafafa', { flatShading: false, roughness: 0.3 });
     let k = 0;
     for (let row = 0; row < 3; row++) for (let j = 0; j <= row; j++) {
@@ -110,14 +125,15 @@ function build(B) {
   }
   // bloques de juguete sueltos y un balón
   for (const [i, l] of [[0, -0.5], [1.5, 0.1], [3, 0.55], [4.5, -0.2]]) {
-    const p = onTrack(-37, 9, i, l);
+    const sb = samples[circuit.at(0.93)];
+    const p = sb.p.clone().addScaledVector(sb.t, i).addScaledVector(sb.n, l * W / 2);
     B.dynBox(1.4, 1.4, 1.4, p.x, p.y + 0.8, p.z, ['#e63946', '#2a9df4', '#f1c40f', '#2ecc71'][Math.round(i / 1.5)], { rot: [0, i, 0], density: 0.1 });
   }
-  { const p = onTrack(-6, -13, 0, 0.3); B.dynBall(1.3, p.x, p.y + 1.4, p.z, '#ff7043', { density: 0.03 }); }
+  { const sb = samples[circuit.at(0.6)]; const p = sb.p.clone().addScaledVector(sb.n, 0.3 * W / 2); B.dynBall(1.3, p.x, p.y + 1.4, p.z, '#ff7043', { density: 0.03 }); }
 
   // Alfombra (visual)
   const rug = new THREE.Mesh(new THREE.PlaneGeometry(30, 22), new THREE.MeshStandardMaterial({ map: rugTexture(), roughness: 1 }));
-  rug.rotation.x = -Math.PI / 2; rug.position.set(10, 0.03, 12);
+  rug.rotation.x = -Math.PI / 2; rug.position.set(12, 0.03, 24);
   rug.receiveShadow = true;
   scene.add(rug);
 
@@ -129,23 +145,9 @@ function build(B) {
     cyl(1.15, 1.3, 0.3, c.x, 5.35, c.z, mat('#c9ccd1', { metalness: 0.8, roughness: 0.3 }), { seg: 16, solid: false });
   }
 
-  // ---------- Rampa: libro gigante ----------
-  {
-    const s = sampleNear(4, 27.5);
-    const L = 7.5, H = 1.7, T = 0.6, BW = W - 0.2;
-    const a = Math.asin(H / L);
-    const yaw = yawOf(s.t);
-    const c = s.p.clone().addScaledVector(s.t, (L / 2) * Math.cos(a));
-    const cover = bookCoverTexture('FÍSICA', '#1f4e8c');
-    const bookMat = [mat('#f4ecd8'), mat('#f4ecd8'), new THREE.MeshStandardMaterial({ map: cover, roughness: 0.6 }), mat('#1f4e8c'), mat('#1f4e8c'), mat('#f4ecd8')];
-    box(BW, T, L, c.x, H / 2 - (T / 2) * Math.cos(a), c.z, bookMat, { rot: [-a, yaw, 0], phys: { friction: 0.8 } });
-    const back = s.p.clone().addScaledVector(s.t, L * Math.cos(a) - 0.9);
-    box(BW - 1, H - 0.4, 1.2, back.x, (H - 0.4) / 2, back.z, '#c0392b', { rot: [0, yaw, 0] });
-  }
-
   // ---------- Mesa de centro: túnel ----------
   {
-    const s = sampleNear(13, -27);
+    const s = samples[circuit.straightest(0.36, 0.44, 4, 4, circuit.elev.map((e) => [e.i0, e.i1]))];
     const yaw = yawOf(s.t);
     const top = 3.8, Lt = 9, Wt = W + 4.2;
     const fwd = s.t, side = s.n, c = s.p;
@@ -163,7 +165,7 @@ function build(B) {
 
   // ---------- Sofá con gato dormido ----------
   {
-    const [sx, sz] = spot(8, 13, 13) || [8, 13];
+    const [sx, sz] = spot(12, 26, 13) || [12, 26];
     const fab = '#3f7f8c', fabDark = '#346a75';
     box(22, 2.2, 8, sx, 1.6, sz, fab);
     box(22, 6.5, 2.2, sx, 3.8, sz + 4.2, fabDark);
@@ -193,7 +195,7 @@ function build(B) {
 
   // ---------- Tren de juguete dando vueltas sobre la alfombra ----------
   {
-    const [cx, cz] = spot(14, -4, 9) || [14, -4];
+    const [cx, cz] = spot(32, -20, 9) || [32, -20];
     const R = 6.5;
     const rail = new THREE.Mesh(new THREE.TorusGeometry(R, 0.18, 4, 48), mat('#7a5a3a'));
     rail.rotation.x = Math.PI / 2; rail.position.set(cx, 0.12, cz); scene.add(rail);
@@ -227,7 +229,7 @@ function build(B) {
 
   // ---------- Mueble TV con dibujos animados ----------
   {
-    const [tx, tz] = spot(26, -31.8, 7) || [26, -31.8];
+    const [tx, tz] = spot(-30, -ROOM.z + 2.2, 7) || [-30, -ROOM.z + 2.2];
     box(16, 4.5, 4.4, tx, 2.25, tz, '#f2f2f2');
     box(15, 0.2, 4, tx, 4.6, tz, '#dcdcdc', { solid: false });
     box(15, 8.5, 0.6, tx, 9.6, tz - 0.8, '#111111', { solid: false });
@@ -241,7 +243,7 @@ function build(B) {
 
   // ---------- Estantería (pared izquierda) ----------
   {
-    const x = -46, z0 = 10;
+    const x = -ROOM.x + 2, z0 = 10;
     box(4, 22, 16, x, 11, z0, '#f5f5f5');
     const r = mulberry(11);
     const colors = ['#c0392b', '#2980b9', '#27ae60', '#8e44ad', '#f39c12', '#16a085', '#d35400'];
@@ -259,7 +261,7 @@ function build(B) {
 
   // ---------- Planta en maceta ----------
   {
-    const [px, pz] = spot(-43, -29, 3.5) || [-43, -29];
+    const [px, pz] = spot(-ROOM.x + 4, -ROOM.z + 4, 3.5) || [-ROOM.x + 4, -ROOM.z + 4];
     cyl(3, 2.2, 5, px, 2.5, pz, '#c0643b', { seg: 10 });
     cyl(2.8, 2.8, 0.3, px, 4.9, pz, '#4a3020', { seg: 10, solid: false });
     const leaf = mat('#3f8f3f'), leaf2 = mat('#2f7a35');
@@ -275,7 +277,7 @@ function build(B) {
   }
 
   // ---------- Lámpara de pie con globos ----------
-  const [lx, lz] = spot(43, 29, 3) || [43, 29];
+  const [lx, lz] = spot(ROOM.x - 4, ROOM.z - 4, 3) || [ROOM.x - 4, ROOM.z - 4];
   const lampPos = new THREE.Vector3(lx, 0, lz);
   {
     cyl(2, 2.4, 0.5, lx, 0.25, lz, '#333333', { seg: 12 });
@@ -299,7 +301,7 @@ function build(B) {
 
   // ---------- Robot de juguete que saluda ----------
   {
-    const [rx, rz] = spot(-22, 10, 2.5) || [-22, 10];
+    const [rx, rz] = spot(-34, 24, 2.5) || [-34, 24];
     const g = new THREE.Group();
     const metal = mat('#b0bec5', { metalness: 0.6, roughness: 0.35 });
     const red = mat('#e53935');

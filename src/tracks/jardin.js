@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { grassTexture, dirtTexture } from '../textures.js';
-import { buildCircuit, startArch, trackRibbon, mat, BARRIER_GROUPS, trackPatch, chevronTexture } from './common.js';
+import { groundTex } from '../textures.js';
+import { buildCircuit, startArch, trackRibbon, mat, BARRIER_GROUPS, trackPatch, autoBoosts } from './common.js';
 
 // Circuito 3: "El jardín". Al aire libre: camino de tierra, charco, rampa-tabla y árboles.
-const AREA = { x: 72, z: 52 };
+const AREA = { x: 96, z: 70 };
 
 export default {
   id: 'jardin',
@@ -18,7 +18,8 @@ function build(B) {
   const rnd = mulberry(31);
 
   // ---------- Suelo y cielo ----------
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(420, 420), new THREE.MeshStandardMaterial({ map: grassTexture([70, 70]), roughness: 0.95 }));
+  const gr = groundTex('grass', [110, 110]);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(560, 560), new THREE.MeshStandardMaterial({ map: gr.map, normalMap: gr.normalMap, roughness: 0.95 }));
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
   scene.add(ground);
   collider(RAPIER.ColliderDesc.cuboid(AREA.x + 10, 1, AREA.z + 10), { x: 0, y: -1, z: 0 }, null, { friction: 0.9 });
@@ -53,7 +54,7 @@ function build(B) {
     }
     box(len, 0.8, 0.5, x, 9, z, '#a77b46', { rot: [0, ry, 0], solid: false, shadow: false });
     box(len, 0.8, 0.5, x, 3, z, '#a77b46', { rot: [0, ry, 0], solid: false, shadow: false });
-    collider(RAPIER.ColliderDesc.cuboid(len / 2, 10, 1), { x, y: 10, z }, q, { friction: 0.2, restitution: 0.3, groups: BARRIER_GROUPS });
+    collider(RAPIER.ColliderDesc.cuboid(len / 2, 10, 1), { x, y: 10, z }, q, { friction: 0.05, restitution: 0.5, groups: BARRIER_GROUPS });
   }
   // casa al fondo (fachada)
   box(90, 40, 4, -10, 20, -AREA.z - 6, '#f0d9b5', { solid: false });
@@ -62,58 +63,65 @@ function build(B) {
   box(12, 18, 0.5, 26, 9, -AREA.z - 3.8, '#6d4c41', { solid: false, shadow: false });
 
   // ---------- Trazado ----------
+  const dirt = groundTex('dirt', [1, 1]);
+  const dirtMat = new THREE.MeshStandardMaterial({ map: dirt.map, normalMap: dirt.normalMap, roughness: 1 });
+  const pl = groundTex('plank', [1, 1]);
   const circuit = buildCircuit(B, {
-    points: [[-40, 38], [-20, 40], [0, 34], [14, 40], [30, 36], [44, 40], [58, 30], [60, 14], [48, 6], [40, -6], [52, -18], [54, -32], [40, -40], [24, -34], [14, -22], [0, -18], [-10, -28], [-24, -38], [-42, -36], [-56, -24], [-58, -8], [-47, 0], [-40, 9], [-48, 19], [-56, 30]],
-    start: [-34, 39],
+    points: [[-60, 52], [-36, 58], [-10, 50], [10, 58], [34, 52], [56, 60], [78, 50], [84, 32], [72, 20], [80, 4], [66, -8], [52, 2], [38, -8], [46, -24], [64, -30],
+      [76, -44], [60, -58], [36, -52], [14, -58], [-6, -44], [0, -28], [-16, -18], [-34, -26], [-42, -44], [-62, -54], [-80, -42], [-84, -20], [-70, -6], [-56, 6], [-68, 20], [-82, 34], [-76, 48]],
+    start: [-50, 55],
     width: 7,
     limits: [AREA.x - 2, AREA.z - 2],
-    hills: [{ at: [40, -6], len: 32, h: 2.2, double: true }, { at: [16, -25], len: 22, h: 1.8 }, { at: [0, 34], len: 22, h: 1.3 }],
-    hillColor: '#7a5a3a',
+    hills: [{ frac: 0.33, len: 44, h: 1.4, double: true }, { frac: 0.58, len: 24, h: 1.8 }, { frac: 0.16, len: 24, h: 1.4 }, { frac: 0.8, len: 26, h: 1.6 }],
+    ramps: [{ frac: 0.06, len: 10, h: 2.0 }],
+    hillMaterial: dirtMat,
+    rampMaterial: new THREE.MeshStandardMaterial({ map: pl.map, normalMap: pl.normalMap, roughness: 0.8 }),
     barrier: { colors: ['#8d6e63', '#795548', '#a1887f', '#6d4c41'], thick: 0.8, round: true, roughness: 0.9 },
   });
+
   const { sampleNear, yawOf, spot } = circuit;
+  const W = circuit.width;
   const anim = [];
 
   // punto relativo a la pista: avance y desplazamiento lateral (fracción del ancho)
   const onTrack = (x, z, along = 0, lat = 0) => { const s = circuit.sampleNear(x, z); return s.p.clone().addScaledVector(s.t, along).addScaledVector(s.n, lat * circuit.width / 2); };
   const extraZones = [];
   // barro (derrapa) y turbos
-  extraZones.push(Object.assign(trackPatch(B, circuit, [-58, -8], 20, 'slide', { color: '#4e3420', opacity: 0.92 }), { particles: [0.35, 0.24, 0.12] }));
-  extraZones.push(Object.assign(trackPatch(B, circuit, [54, -32], 16, 'slide', { color: '#4e3420', opacity: 0.92 }), { particles: [0.35, 0.24, 0.12] }));
-  extraZones.push(trackPatch(B, circuit, [-48, 19], 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
-  extraZones.push(trackPatch(B, circuit, [30, 36], 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
+  const mud = groundTex('mud', [1, 3]);
+  const curvy = (f0, f1) => { let best = circuit.at(f0), br = Infinity; for (let f = f0; f < f1; f += 0.005) { const i = circuit.at(f); const r = circuit.minRadius(i, 3, 3); if (r < br) { br = r; best = i; } } return circuit.samples[best].p; };
+  for (const [f0, f1] of [[0.68, 0.76], [0.46, 0.53], [0.9, 0.97]]) {
+    const p = curvy(f0, f1);
+    extraZones.push(Object.assign(trackPatch(B, circuit, [p.x, p.z], 20, 'slide', { map: mud.map, normalMap: mud.normalMap, color: '#ffffff', opacity: 0.97, roughness: 0.3 }), { particles: [0.3, 0.2, 0.1] }));
+  }
   // balón de playa, macetas y cajas de madera
-  { const p = onTrack(14, 40, 0, 0.3); B.dynBall(1.6, p.x, p.y + 1.7, p.z, '#ff5252', { density: 0.02 }); }
+  { const sb = circuit.samples[circuit.at(0.12)]; const p = sb.p.clone().addScaledVector(sb.n, 0.3 * W / 2); B.dynBall(1.6, p.x, p.y + 1.7, p.z, '#ff5252', { density: 0.02 }); }
   for (let k = 0; k < 5; k++) {
-    const p = onTrack(58, 24, k * 1.2, -0.5 + k * 0.25);
+    const sb = circuit.samples[circuit.at(0.24)];
+    const p = sb.p.clone().addScaledVector(sb.t, k * 1.2).addScaledVector(sb.n, (-0.5 + k * 0.25) * W / 2);
     B.dynCyl(0.8, 1.5, p.x, p.y + 0.8, p.z, '#c0643b', { density: 0.08 });
   }
   for (const [i, l, y] of [[0, -0.3, 1], [0, 0.25, 1], [0.3, 0, 3]]) {
-    const p = onTrack(-47, 0, i, l);
+    const sb = circuit.samples[circuit.at(0.86)];
+    const p = sb.p.clone().addScaledVector(sb.t, i).addScaledVector(sb.n, l * W / 2);
     B.dynBox(2, 2, 2, p.x, y, p.z, '#a1887f', { rot: [0, i, 0], density: 0.06 });
   }
-  const W = circuit.width;
-  trackRibbon(B, circuit, new THREE.MeshStandardMaterial({ map: dirtTexture([1, 1]), roughness: 1 }), 0.8);
+  trackRibbon(B, circuit, dirtMat, 0.8);
   startArch(B, circuit, { color: '#43a047', text: 'GRAN PREMIO JARDÍN' });
 
-  // ---------- Rampa: tabla sobre un ladrillo ----------
-  {
-    const s = sampleNear(-26, 39.5);
-    const L = 9, H = 2.2, T = 0.5, Wd = W - 1.5, a = Math.asin(H / L), yaw = yawOf(s.t);
-    const c = s.p.clone().addScaledVector(s.t, (L / 2) * Math.cos(a));
-    box(Wd, T, L, c.x, H / 2 - (T / 2) * Math.cos(a), c.z, '#b98a52', { rot: [-a, yaw, 0], phys: { friction: 0.8 } });
-    const back = s.p.clone().addScaledVector(s.t, L * Math.cos(a) - 1.2);
-    box(Wd - 1, H - 0.4, 1.8, back.x, (H - 0.4) / 2, back.z, '#b5532f', { rot: [0, yaw, 0] });
-  }
-
+  // agua con ondas animadas (charco y estanque)
+  const wt = groundTex('water', [2, 2]);
+  const waterMat = new THREE.MeshStandardMaterial({ color: '#7fb5d9', map: wt.map, normalMap: wt.normalMap, normalScale: new THREE.Vector2(0.6, 0.6), roughness: 0.04, metalness: 0.35, transparent: true, opacity: 0.88 });
+  anim.push((t) => { wt.normalMap.offset.set(t * 0.03, t * 0.02); wt.map.offset.set(-t * 0.01, 0); });
   // ---------- Charco (frena y salpica) ----------
   const zones = extraZones;
   {
-    const s = sampleNear(-20, -36);
+    let pi = circuit.straightest(0.4, 0.46, 3, 3, circuit.elev.map((e) => [e.i0, e.i1]));
+    const s = circuit.samples[pi];
     const p = s.p.clone().addScaledVector(s.n, 1);
-    const puddle = new THREE.Mesh(new THREE.CircleGeometry(1, 20).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#5d8fb3', roughness: 0.05, metalness: 0.4, transparent: true, opacity: 0.85 }));
+    const puddle = new THREE.Mesh(new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2), waterMat);
     puddle.scale.set(4.5, 1, 3.2); puddle.rotation.y = yawOf(s.t);
-    puddle.position.set(p.x, 0.04, p.z);
+    puddle.position.set(p.x, s.p.y + 0.06, p.z);
+    puddle.userData.dynamic = true;
     scene.add(puddle);
     zones.push({ pos: p, r: 4.2, effect: 'wet' });
   }
@@ -134,7 +142,7 @@ function build(B) {
       scene.add(m);
     }
   };
-  for (let k = 0; k < 40; k++) {
+  for (let k = 0; k < 75; k++) {
     const x = (rnd() * 2 - 1) * (AREA.x - 6), z = (rnd() * 2 - 1) * (AREA.z - 6);
     if (rnd() < 0.45) tree(x, z, 0.7 + rnd() * 0.6);
     else if (!occupied(x, z, 2)) ball(1 + rnd() * 1.6, x, 0.4, z, rockM, { detail: 0 });
@@ -180,8 +188,8 @@ function build(B) {
   // estanque
   const [px, pz] = spot(22, 12, 11) || [22, 12];
   {
-    const pond = new THREE.Mesh(new THREE.CircleGeometry(9, 24).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: '#2f78a8', roughness: 0.05, metalness: 0.5 }));
-    pond.position.set(px, 0.05, pz); scene.add(pond);
+    const pond = new THREE.Mesh(new THREE.CircleGeometry(9, 32).rotateX(-Math.PI / 2), waterMat);
+    pond.position.set(px, 0.05, pz); pond.userData.dynamic = true; scene.add(pond);
     for (let k = 0; k < 14; k++) {
       const a = (k / 14) * Math.PI * 2;
       ball(1.2, px + Math.cos(a) * 9.5, 0.3, pz + Math.sin(a) * 9.5, rockM, { detail: 0 });

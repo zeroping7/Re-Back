@@ -333,10 +333,11 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
   // fusionar piezas fijas por material (menos llamadas de dibujo)
   const dynamic = new Set([antenna, ...wheels]);
   for (const p of susp) { dynamic.add(p.lower); dynamic.add(p.upper); dynamic.add(p.hub); dynamic.add(p.shock); dynamic.add(p.shaft); }
-  mergeStatic(g, dynamic);
+  const shell = mergeStatic(g, dynamic);
+  const dmg = makeDamage(shell, paint);
   const detail = susp.flatMap((p) => [p.lower, p.upper, p.hub, p.shock, p.shaft]);
 
-  g.userData = { detail, wheels, antenna, antennaBase: new THREE.Vector3(-0.1, 0, 0), tailMat, revMat, updateSuspension };
+  g.userData = { ...dmg, detail, wheels, antenna, antennaBase: new THREE.Vector3(-0.1, 0, 0), tailMat, revMat, updateSuspension };
   return g;
 }
 
@@ -510,13 +511,82 @@ function mergeStatic(g, dynamic) {
     victims.push(o);
   });
   for (const o of victims) o.parent.remove(o);
+  const out = [];
   for (const [m, e] of byMat) {
     const merged = mergeGeometries(e.geos);
     if (!merged) continue;
     const mesh = new THREE.Mesh(merged, m);
     mesh.castShadow = e.shadow; mesh.receiveShadow = true;
     g.add(mesh);
+    out.push(mesh);
   }
+  return out;
+}
+
+// Abolladuras y desgaste de la carrocería
+function makeDamage(shell, paint) {
+  const orig = shell.map((m) => m.geometry.attributes.position.array.slice());
+  const origN = shell.map((m) => m.geometry.attributes.normal.array.slice());
+  const base = { rough: paint.roughness, coat: paint.clearcoat };
+  const dirt = new THREE.Color('#5a4a3a');
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), n = new THREE.Vector3();
+  const R = 0.65, MAXD = 0.32;
+
+  function deform(p, amt) {
+    const inward = new THREE.Vector3(-p.x, 0.12 - p.y, -p.z * 0.6).normalize();
+    shell.forEach((mesh, mi) => {
+      const pa = mesh.geometry.attributes.position, arr = pa.array, o = orig[mi];
+      const touched = new Set();
+      for (let i = 0; i < pa.count; i++) {
+        const x = arr[i * 3], y = arr[i * 3 + 1], z = arr[i * 3 + 2];
+        const d = Math.hypot(x - p.x, y - p.y, z - p.z);
+        if (d > R) continue;
+        const f = (1 - d / R) ** 2 * amt;
+        // ruido determinista por vértice para que se arrugue
+        const nz = Math.sin(o[i * 3] * 37.1 + o[i * 3 + 2] * 21.7) * 0.6;
+        let nx = x + inward.x * f * (1 + nz), ny = y + inward.y * f * (1 + nz) * 0.6, nzv = z + inward.z * f * (1 + nz);
+        const dx = nx - o[i * 3], dy = ny - o[i * 3 + 1], dz = nzv - o[i * 3 + 2];
+        const len = Math.hypot(dx, dy, dz);
+        if (len > MAXD) { const k = MAXD / len; nx = o[i * 3] + dx * k; ny = o[i * 3 + 1] + dy * k; nzv = o[i * 3 + 2] + dz * k; }
+        arr[i * 3] = nx; arr[i * 3 + 1] = ny; arr[i * 3 + 2] = nzv;
+        touched.add((i / 3) | 0);
+      }
+      if (!touched.size) return;
+      pa.needsUpdate = true;
+      // normales de los triángulos tocados: mezcla con la normal de la cara para que se vea la abolladura
+      const na = mesh.geometry.attributes.normal, nn = na.array;
+      for (const t of touched) {
+        a.fromArray(arr, t * 9); b.fromArray(arr, t * 9 + 3); c.fromArray(arr, t * 9 + 6);
+        n.subVectors(c, b).cross(b.clone().sub(a)).normalize().negate();
+        for (let k = 0; k < 3; k++) {
+          const j = t * 9 + k * 3;
+          const v = new THREE.Vector3(nn[j], nn[j + 1], nn[j + 2]).lerp(n, 0.65).normalize();
+          nn[j] = v.x; nn[j + 1] = v.y; nn[j + 2] = v.z;
+        }
+      }
+      na.needsUpdate = true;
+      mesh.geometry.computeBoundingSphere();
+    });
+  }
+
+  function restore(frac) {
+    shell.forEach((mesh, mi) => {
+      const pa = mesh.geometry.attributes.position.array, na = mesh.geometry.attributes.normal.array;
+      const o = orig[mi], on = origN[mi];
+      for (let i = 0; i < pa.length; i++) { pa[i] += (o[i] - pa[i]) * frac; na[i] += (on[i] - na[i]) * frac; }
+      mesh.geometry.attributes.position.needsUpdate = true;
+      mesh.geometry.attributes.normal.needsUpdate = true;
+    });
+  }
+
+  function wear(h) {
+    const w = 1 - h;
+    paint.color.set('#ffffff').lerp(dirt, w * 0.7);
+    paint.roughness = base.rough + w * 0.5;
+    paint.clearcoat = base.coat * (0.15 + 0.85 * h);
+  }
+
+  return { deform, restore, wear };
 }
 
 function flipWinding(geo) {

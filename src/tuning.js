@@ -1,5 +1,5 @@
 // Parámetros de conducción ajustables en vivo (se guardan en localStorage).
-const KEY = 'reback.tuning.v3';
+const KEY = 'reback.tuning.v4';
 
 export const TUNING_DEFS = [
   { key: 'engine',      label: 'Potencia',              min: 40,  max: 400, step: 5,    def: 145 },
@@ -14,13 +14,13 @@ export const TUNING_DEFS = [
   { key: 'sideFront',   label: 'Rigidez lateral del.',  min: 0.2, max: 2,   step: 0.05, def: 1.0 },
   { key: 'sideRear',    label: 'Rigidez lateral tras.', min: 0.2, max: 2,   step: 0.05, def: 0.9 },
   { key: 'driftRear',   label: 'Agarre trasero al derrapar', min: 0.05,max: 1, step: 0.05, def: 0.45 },
-  { key: 'suspStiff',   label: 'Suspensión dureza',     min: 5,   max: 120, step: 1,    def: 42 },
-  { key: 'suspComp',    label: 'Amortig. compresión',   min: 0.5, max: 12,  step: 0.1,  def: 3.2 },
-  { key: 'suspRelax',   label: 'Amortig. extensión',    min: 0.5, max: 12,  step: 0.1,  def: 4.2 },
-  { key: 'suspRest',    label: 'Recorrido suspensión',  min: 0.1, max: 0.7, step: 0.01, def: 0.32 },
-  { key: 'downforce',   label: 'Carga aerodinámica',    min: 0,   max: 0.4, step: 0.01, def: 0.1 },
-  { key: 'airControl',  label: 'Control en el aire',    min: 0,   max: 30,  step: 1,    def: 10 },
-  { key: 'gravity',     label: 'Gravedad',              min: 9,   max: 50,  step: 1,    def: 28 },
+  { key: 'suspStiff',   label: 'Suspensión dureza',     min: 5,   max: 120, step: 1,    def: 30 },
+  { key: 'suspComp',    label: 'Amortig. compresión',   min: 0.5, max: 12,  step: 0.1,  def: 2.2 },
+  { key: 'suspRelax',   label: 'Amortig. extensión',    min: 0.5, max: 12,  step: 0.1,  def: 2.8 },
+  { key: 'suspRest',    label: 'Recorrido suspensión',  min: 0.1, max: 0.7, step: 0.01, def: 0.36 },
+  { key: 'downforce',   label: 'Carga aerodinámica',    min: 0,   max: 0.4, step: 0.01, def: 0.06 },
+  { key: 'airControl',  label: 'Control en el aire',    min: 0,   max: 30,  step: 1,    def: 14 },
+  { key: 'gravity',     label: 'Gravedad',              min: 9,   max: 50,  step: 1,    def: 22 },
   { key: 'camDist',     label: 'Cámara distancia',      min: 3,   max: 12,  step: 0.1,  def: 6.2 },
   { key: 'camHeight',   label: 'Cámara altura',         min: 1,   max: 6,   step: 0.1,  def: 2.5 },
 ];

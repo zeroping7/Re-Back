@@ -8,6 +8,7 @@ export class Hud {
     this.pos = this.el('h-pos'); this.posTot = this.el('h-postot');
     this.lap = this.el('h-lap'); this.time = this.el('h-time'); this.best = this.el('h-best');
     this.speed = this.el('speed');
+    this.healthBar = document.querySelector('#h-health b');
     this.item = this.el('btn-item');
     this.msg = this.el('h-msg');
     this.map = this.el('h-map');
@@ -70,6 +71,12 @@ export class Hud {
       this.set('lap', this.lap, `VUELTA ${d.lap}/${d.laps}`);
     }
     this.set('time', this.time, fmtTime(d.lapTime));
+    const hp = Math.round(d.health);
+    if (this.last.hp !== hp) {
+      this.last.hp = hp;
+      this.healthBar.style.width = hp + '%';
+      this.healthBar.style.background = hp > 60 ? '#7dff8a' : hp > 30 ? '#ffd166' : '#ff5252';
+    }
     this.set('best', this.best, 'Récord ' + fmtTime(d.best));
     const icon = d.bomb !== undefined ? `💣${Math.ceil(d.bomb)}` : d.item ? ITEMS[d.item].icon : '';
     if (this.last.item !== icon) {

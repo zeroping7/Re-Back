@@ -120,6 +120,7 @@ export class AIDriver {
       }
       return this.rand() < 0.003;
     }
+    if (item === 'repair') return car.health < 70;
     return true; // bomba: enseguida
   }
 }

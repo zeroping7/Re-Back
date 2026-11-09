@@ -6,6 +6,7 @@ export const ITEMS = {
   turbo: { icon: '⚡', name: 'Turbo' },
   oil: { icon: '🛢️', name: 'Aceite' },
   bomb: { icon: '💣', name: 'Bomba' },
+  repair: { icon: '🔧', name: 'Reparación' },
 };
 
 const UP = new THREE.Vector3(0, 1, 0);
@@ -55,7 +56,7 @@ export class Items {
 
   randomItem(car) {
     const r = this.race.positionRatio(car); // 0 = primero, 1 = último
-    const w = { rocket: 0.6 + 2.2 * r, water: 1.4, turbo: 0.8 + 2 * r, oil: 1.6 - r, bomb: 0.9 };
+    const w = { rocket: 0.6 + 2.2 * r, water: 1.4, turbo: 0.8 + 2 * r, oil: 1.6 - r, bomb: 0.9, repair: 0.2 + 3 * (1 - car.health / 100) };
     let sum = 0; for (const k in w) sum += w[k];
     let x = Math.random() * sum;
     for (const k in w) { x -= w[k]; if (x <= 0) return k; }
@@ -70,6 +71,10 @@ export class Items {
     if (item === 'turbo') {
       car.fx.boost = 2.2;
       R.sound('turbo', p);
+    } else if (item === 'repair') {
+      car.repair(55);
+      R.burst(p, [0.5, 1, 0.6], 24);
+      R.sound('pickup', p);
     } else if (item === 'rocket') {
       const mesh = this.rocketMesh.clone();
       this.scene.add(mesh);
@@ -280,6 +285,8 @@ export class Items {
       car.body.applyImpulse({ x: dir.x * m * 6 * k, y: m * (9 + 6 * k), z: dir.z * m * 6 * k }, true);
       car.body.applyTorqueImpulse({ x: (Math.random() - 0.5) * 18 * k, y: (Math.random() - 0.5) * 30 * k, z: (Math.random() - 0.5) * 18 * k }, true);
       car.fx.stun = Math.max(car.fx.stun, 0.9 + 0.6 * k);
+      const local = pos.clone().sub(car.currPos).applyQuaternion(car.currQuat.clone().invert()).clampLength(0, 0.9);
+      car.damage(20 * k * power, local, k);
     }
     // fuego, humo y chispas
     for (let k = 0; k < 36; k++) {

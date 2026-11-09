@@ -79,6 +79,19 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Coches algo más rápidos (vel. máx. 29, potencia 145) y con menos agarre (3,0 / 2,6). Ajustes guardados reiniciados (v3).
 - Recolocación con rayo hacia abajo (no aparece dentro de rampas).
 
+### Físicas tipo Re-Volt, daños y circuitos largos (v1.0.13+)
+- Rampas y cuestas sin escalones: superficies de malla continua con colisión `trimesh` + `FIX_INTERNAL_EDGES`,
+  subdivididas y con el mismo suelo que el circuito (parqué/baldosas/tierra). Las rampas ocupan todo el ancho.
+- Turbos colocados solos en las rectas más largas (`autoBoosts`), lejos de curvas, rampas y salida.
+- Físicas más Re-Volt: motor eléctrico (mucho par al salir), suspensión blanda y saltarina, gravedad 22,
+  rebotes contra muros, se endereza solo si queda apoyado de lado. Ajustes guardados reiniciados (v4).
+- Daños: cada golpe fuerte abolla la carrocería justo donde choca (punto de contacto de Rapier), baja la salud,
+  el coche corre menos y tira hacia un lado, la pintura se ensucia, la antena se dobla, echa humo (y fuego si está fatal).
+  Barra 🔧 en el marcador. Nuevo objeto 🔧 Reparación (más probable cuanto más roto vas).
+- Circuitos mucho más largos y con más curvas (salón 927 u, súper 882 u, jardín 1328 u; vueltas de 40-60 s).
+- Texturas con relieve (mapas de normales): parqué, baldosas, césped, tierra con piedras y roderas, barro,
+  suelo encerado, suelo fregado, agua con ondas animadas, cartón y tablones.
+
 ## Pendiente / ideas
 - Probar en el móvil: rendimiento (Opciones → Calidad si va lento) y sentido del modo inclinación.
 - Multijugador online (opcional, futuro).

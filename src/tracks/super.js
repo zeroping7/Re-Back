@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { tileTexture, labelTexture, canTexture } from '../textures.js';
-import { buildCircuit, startArch, room, mat, trackPatch, chevronTexture } from './common.js';
+import { labelTexture, canTexture, groundTex } from '../textures.js';
+import { buildCircuit, startArch, room, mat, trackPatch, autoBoosts } from './common.js';
 
 // Circuito 2: "El supermercado". Pasillos, estanterías gigantes y carritos.
-const ROOM = { x: 64, z: 36, h: 34 };
+const ROOM = { x: 84, z: 48, h: 40 };
 
 export default {
   id: 'super',
@@ -19,9 +19,12 @@ function build(B) {
   const { scene, box, cyl, ball } = B;
   const rnd = mulberry(77);
 
+  const tl = groundTex('tile', [42, 24]);
+  const floorMat = new THREE.MeshStandardMaterial({ map: tl.map, normalMap: tl.normalMap, roughness: 0.18, metalness: 0.05 });
+  const groundUV = (x, z) => [(x + ROOM.x) / (ROOM.x * 2), (ROOM.z - z) / (ROOM.z * 2)];
   room(B, {
     ...ROOM,
-    floor: new THREE.MeshStandardMaterial({ map: tileTexture([32, 18]), roughness: 0.22, metalness: 0.05 }),
+    floor: floorMat,
     wall: new THREE.MeshStandardMaterial({ color: '#e8efe9', roughness: 0.9 }),
     ceil: '#d9dde0',
     baseboard: '#2e7d32',
@@ -35,36 +38,48 @@ function build(B) {
     m.position.set(x, y, z); m.rotation.y = ry;
     scene.add(m);
   };
-  sign('OFERTAS', '¡2x1 en pilas!', '#e53935', -30, 16, -ROOM.z + 0.3, 0);
-  sign('FRUTA', 'fresca cada día', '#43a047', 20, 16, -ROOM.z + 0.3, 0);
+  sign('OFERTAS', '¡2x1 en pilas!', '#e53935', -40, 18, -ROOM.z + 0.3, 0);
+  sign('FRUTA', 'fresca cada día', '#43a047', 30, 18, -ROOM.z + 0.3, 0);
   sign('CAJAS', 'gracias por su visita', '#1e88e5', 0, 16, ROOM.z - 0.3, Math.PI);
   // fluorescentes del techo
   const tube = new THREE.MeshStandardMaterial({ color: '#ffffff', emissive: '#f4fbff', emissiveIntensity: 1.4 });
-  for (let x = -48; x <= 48; x += 24) for (let z = -24; z <= 24; z += 16) box(12, 0.4, 1.4, x, ROOM.h - 0.5, z, tube, { solid: false, shadow: false });
+  for (let x = -72; x <= 72; x += 24) for (let z = -32; z <= 32; z += 16) box(12, 0.4, 1.4, x, ROOM.h - 0.5, z, tube, { solid: false, shadow: false });
 
   // ---------- Trazado ----------
+  const card = groundTex('cardboard', [1, 1]);
   const circuit = buildCircuit(B, {
-    points: [[-40, 21], [-26, 17], [-12, 23], [2, 16], [16, 22], [30, 17], [44, 23], [56, 13], [55, -1], [49, -12], [37, -21], [24, -14], [10, -22], [-4, -14], [-18, -22], [-32, -14], [-46, -22], [-57, -12], [-57, 3], [-51, 15]],
-    start: [-33, 19],
+    points: [[-60, 28], [-44, 22], [-28, 30], [-12, 22], [4, 30], [20, 22], [36, 30], [52, 22], [66, 28], [77, 18], [70, 6], [77, -6], [70, -20], [58, -28],
+      [44, -22], [30, -32], [14, -22], [-2, -32], [-18, -22], [-34, -32], [-50, -24], [-64, -31], [-77, -20], [-70, -6], [-78, 8], [-74, 22]],
+    start: [-52, 25],
     width: 7,
     limits: [ROOM.x - 1, ROOM.z - 1],
-    hills: [{ at: [-4, -14], len: 30, h: 1.6 }, { at: [30, 17], len: 24, h: 1.0, double: true }],
-    hillColor: '#c8a165',
+    hills: [{ frac: 0.62, len: 30, h: 1.6 }, { frac: 0.2, len: 34, h: 0.9, double: true }, { frac: 0.82, len: 22, h: 1.3 }],
+    ramps: [{ frac: 0.42, len: 9, h: 1.8 }],
+    hillMaterial: floorMat,
+    rampMaterial: new THREE.MeshStandardMaterial({ map: card.map, normalMap: card.normalMap, roughness: 0.85 }),
+    groundUV,
     barrier: { colors: ['#ffd400', '#222222'], height: 0.9, roughness: 0.35 },
   });
+
   const { samples, sampleNear, yawOf, spot } = circuit;
+  const W = circuit.width;
   const anim = [];
 
   // punto relativo a la pista: avance y desplazamiento lateral (fracción del ancho)
   const onTrack = (x, z, along = 0, lat = 0) => { const s = circuit.sampleNear(x, z); return s.p.clone().addScaledVector(s.t, along).addScaledVector(s.n, lat * circuit.width / 2); };
   const zones = [];
   // suelo recién fregado (derrapa) y turbos
-  zones.push(Object.assign(trackPatch(B, circuit, [49, -12], 18, 'slide', { color: '#8fd8ff', opacity: 0.45 }), { particles: [0.6, 0.85, 1] }));
-  zones.push(trackPatch(B, circuit, [-51, -19], 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
-  zones.push(trackPatch(B, circuit, [-12, 23], 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
+  const wet = groundTex('wet', [1, 3]);
+  const curvy = (f0, f1) => { let best = circuit.at(f0), br = Infinity; for (let f = f0; f < f1; f += 0.005) { const i = circuit.at(f); const r = circuit.minRadius(i, 3, 3); if (r < br) { br = r; best = i; } } return samples[best].p; };
+  const wetAt = [];
+  for (const [f0, f1] of [[0.33, 0.4], [0.86, 0.95]]) {
+    const p = curvy(f0, f1); wetAt.push(p);
+    zones.push(Object.assign(trackPatch(B, circuit, [p.x, p.z], 18, 'slide', { map: wet.map, normalMap: wet.normalMap, color: '#d6f2ff', opacity: 0.6 }), { particles: [0.6, 0.85, 1] }));
+  }
+  zones.push(...autoBoosts(B, circuit, 2, zones.map((z) => [z.from, z.to])));
   // pirámide de latas en la pista
   {
-    const s = circuit.sampleNear(4, 17);
+    const s = samples[circuit.at(0.12)];
     const canMat = new THREE.MeshStandardMaterial({ map: canTexture(), roughness: 0.3, metalness: 0.6 });
     for (let row = 0; row < 3; row++) for (let k = 0; k < 4 - row; k++) {
       const p = s.p.clone().addScaledVector(s.n, (k - (3 - row) / 2) * 1.5 + 1.2);
@@ -73,15 +88,16 @@ function build(B) {
   }
   // cajas de cartón y rollos de papel
   for (const [i, l] of [[0, -0.4], [0, 0.1], [2.4, -0.15]]) {
-    const p = onTrack(16, 22, i, l);
+    const sb = samples[circuit.at(0.55)];
+    const p = sb.p.clone().addScaledVector(sb.t, i).addScaledVector(sb.n, l * W / 2);
     B.dynBox(2, 2, 2, p.x, p.y + 1.1, p.z, '#c8a165', { rot: [0, i * 0.3, 0], density: 0.05 });
   }
-  { const p = onTrack(16, 22, 0.2, -0.15); B.dynBox(2, 2, 2, p.x, p.y + 3.2, p.z, '#b88d52', { density: 0.05 }); }
+  { const sb = samples[circuit.at(0.55)]; const p = sb.p.clone().addScaledVector(sb.t, 0.2).addScaledVector(sb.n, -0.15 * W / 2); B.dynBox(2, 2, 2, p.x, p.y + 3.2, p.z, '#b88d52', { density: 0.05 }); }
   for (let k = 0; k < 6; k++) {
-    const p = onTrack(44, 23, (k % 3) * 1.4, -0.4 + Math.floor(k / 3) * 0.3);
+    const sb = samples[circuit.at(0.18)];
+    const p = sb.p.clone().addScaledVector(sb.t, (k % 3) * 1.4).addScaledVector(sb.n, (-0.4 + Math.floor(k / 3) * 0.3) * W / 2);
     B.dynCyl(0.6, 1.2, p.x, p.y + 0.65, p.z, '#ffffff', { density: 0.03 });
   }
-  const W = circuit.width;
   startArch(B, circuit, { color: '#2bb673', text: 'SÚPER CARRERA' });
 
   // ---------- Estantería central ----------
@@ -101,9 +117,9 @@ function build(B) {
       }
     }
   };
-  shelf(-32, 30, 0);
+  shelf(-45, 43, 0);
   // cabeceras con ofertas
-  for (const x of [-34.5, 32.5]) {
+  for (const x of [-47.5, 45.5]) {
     box(3, 6, 8, x, 3, 0, '#e53935');
     for (let k = 0; k < 6; k++) box(1.2, 1.2, 1.2, x + (rnd() - 0.5), 6.6 + k * 0, -3 + k * 1.2, PRODUCT_COLORS[k], { solid: false });
   }
@@ -115,27 +131,15 @@ function build(B) {
     box(6.6, 11, 0.2, x, 7.5, -ROOM.z + 4.25, fridgeGlow, { solid: false, shadow: false });
   }
   // ---------- Cajas registradoras ----------
-  for (const x of [-40, -14, 12, 38]) {
+  for (const x of [-60, -30, 0, 30, 60]) {
     box(10, 3.6, 3.6, x, 1.8, ROOM.z - 3, '#37474f');
     box(10, 0.3, 3.8, x, 3.75, ROOM.z - 3, '#263238', { solid: false });
     box(1.6, 1.8, 1.4, x + 3, 4.8, ROOM.z - 3, '#111', { solid: false });
   }
 
-  // ---------- Rampa: caja de cartón aplastada ----------
-  {
-    const s = sampleNear(-57, -7);
-    const L = 8, H = 1.8, T = 0.4, Wd = W - 0.2, a = Math.asin(H / L), yaw = yawOf(s.t);
-    const c = s.p.clone().addScaledVector(s.t, (L / 2) * Math.cos(a));
-    box(Wd, T, L, c.x, H / 2 - (T / 2) * Math.cos(a), c.z, '#c8a165', { rot: [-a, yaw, 0], phys: { friction: 0.8 } });
-    const back = s.p.clone().addScaledVector(s.t, L * Math.cos(a) - 1.2);
-    box(Wd - 0.6, H - 0.3, 2, back.x, (H - 0.3) / 2, back.z, '#b88d52', { rot: [0, yaw, 0] });
-    // flecha pintada
-    box(1.6, 0.05, 3, c.x, H / 2 + 0.25, c.z, '#ffffff', { rot: [-a, yaw, 0], solid: false, shadow: false });
-  }
-
   // ---------- Túnel: tabla sobre dos cajas de cereales ----------
   {
-    const s = sampleNear(55.5, 4);
+    const s = samples[circuit.straightest(0.03, 0.1, 4, 4, circuit.elev.map((e) => [e.i0, e.i1]))];
     const yaw = yawOf(s.t), top = 4.2, Lt = 5, side = s.n;
     for (const sd of [1, -1]) {
       const p = s.p.clone().addScaledVector(side, sd * (W / 2 + 2.6));
@@ -160,7 +164,7 @@ function build(B) {
     scene.add(g);
     box(5.2, 6, 8.4, x, 3, z, '#000', { rot: [0, ry, 0] }).visible = false;
   };
-  for (const [x, z, ry] of [[58, 27, 0.6], [-59, -28, -0.3], [40, 3, 1.2], [-44, 4, 0.4]]) { const p = spot(x, z, 5); if (p) cart(p[0], p[1], ry); }
+  for (const [x, z, ry] of [[78, 40, 0.6], [-78, -40, -0.3], [62, 6, 1.2], [-58, 6, 0.4]]) { const p = spot(x, z, 5); if (p) cart(p[0], p[1], ry); }
   {
     const canMat = new THREE.MeshStandardMaterial({ map: canTexture(), roughness: 0.3, metalness: 0.6 });
     const [bx, bz] = spot(-14, 9, 5) || [-14, 9];
@@ -173,7 +177,7 @@ function build(B) {
   }
   // cartel de suelo mojado
   {
-    const s = sampleNear(-55, -4);
+    const s = circuit.sampleNear(wetAt[0].x, wetAt[0].z);
     const p = s.p.clone().addScaledVector(s.n, (W / 2 + 2.8));
     const g = new THREE.Group();
     for (const sd of [1, -1]) {
@@ -187,8 +191,8 @@ function build(B) {
   // ---------- Carteles de oferta giratorios colgados ----------
   {
     const starTex = labelTexture(['¡OFERTA!', '-50%'], '#e53935');
-    for (const [x, z] of [[-26, 19], [10, 19], [24, -17], [-18, -18]]) {
-      const s = sampleNear(x, z);
+    for (const [k0, f] of [[0, 0.15], [1, 0.35], [2, 0.66], [3, 0.78]].map(([k, f]) => [k, f])) {
+      const s = samples[circuit.at(f)]; const x = k0 * 10;
       const g = new THREE.Group();
       const sign = new THREE.Mesh(new THREE.CylinderGeometry(2.6, 2.6, 0.2, 12).rotateX(Math.PI / 2), [mat('#ffd600'), new THREE.MeshStandardMaterial({ map: starTex }), new THREE.MeshStandardMaterial({ map: starTex })]);
       sign.castShadow = false; g.add(sign);
@@ -204,7 +208,7 @@ function build(B) {
   // ---------- Cintas de las cajas con productos moviéndose ----------
   {
     const items = [];
-    for (const x of [-40, -14, 12, 38]) {
+    for (const x of [-60, -30, 0, 30, 60]) {
       for (let k = 0; k < 3; k++) {
         const it = new THREE.Mesh(new THREE.BoxGeometry(1, 0.9, 0.9), mat(PRODUCT_COLORS[(k * 3 + x) & 7 & 7]));
         it.castShadow = true; it.userData.dynamic = true;
