@@ -46,7 +46,9 @@ Si cambian los valores por defecto se sube la clave de guardado para que se apli
 | ID | Requisito | Estado |
 |---|---|---|
 | FIS-20 | Cuestas y rampas **sin escalones**: malla continua subdividida con colisión `trimesh` + `FIX_INTERNAL_EDGES`; ocupan todo el ancho | ✅ |
-| FIS-21 | Zonas de derrape (encerado, fregado, barro): agarre delantero ×0,72 y trasero ×0,5 mientras se pisa | ✅ |
+| FIS-21 | Zonas de derrape (encerado, fregado, barro, arena): agarre delantero ×0,88 y trasero ×0,74 y giro sobre sí mismo limitado (2 rad/s): resbala pero se controla | ✅ |
+| FIS-22 | Charco: frena con resistencia del agua (empuje contra la marcha), no con freno de ruedas (evita trompos) | ✅ |
+| FIS-23 | Parado, **freno + giro no arranca** el coche (solo frena); la marcha atrás se mete con el freno solo y, ya yendo hacia atrás, se puede girar. La IA puede salir de atascos igual que antes | ✅ |
 | FIS-22 | Placas de turbo: empujón de 0,8 s | ✅ |
 | FIS-23 | Charco: frena (velocidad máx. ×0,7) y salpica | ✅ |
 

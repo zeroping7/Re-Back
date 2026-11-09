@@ -424,9 +424,9 @@ export class Race {
     const c = this.circuit, N = c.N;
     const ramp = c.elev.find((e) => e.kind === 'ramp');
     if (!ramp) return null;
-    const top = (ramp.i1 - 1 + N) % N;
-    const s = c.samples[(top + 2) % N];
-    const pos = new THREE.Vector3(s.p.x, c.samples[top].p.y + 1.6, s.p.z);
+    const top = ramp.top;
+    const s = c.samples[(top + Math.max(1, (ramp.def.deck ?? 3) - 1)) % N];
+    const pos = new THREE.Vector3(s.p.x, c.samples[top].p.y + 3.2, s.p.z); // en el aire sobre la plataforma: hay que saltar
     const shape = new THREE.Shape();
     for (let k = 0; k < 10; k++) {
       const a = (k / 10) * Math.PI * 2 + Math.PI / 2, r = k % 2 ? 0.42 : 1.0;

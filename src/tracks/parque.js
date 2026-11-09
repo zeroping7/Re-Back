@@ -79,7 +79,7 @@ function build(B) {
   {
     const rp = circuit.elev.find((e) => e.kind === 'ramp');
     if (rp) {
-      const N = circuit.N, top = samples[(rp.i1 - 1 + N) % N];
+      const top = samples[rp.top];
       for (const sd of [1, -1]) {
         const p = top.p.clone().addScaledVector(top.n, sd * (W / 2 + 1.4));
         cyl(0.35, 0.35, 8, p.x, 4, p.z, '#1e88e5', { seg: 6, solid: false });

@@ -161,15 +161,27 @@ export class Car {
           this.braking = true;
         }
       } else if (thr === 0) {
-        const lim = THREE.MathUtils.clamp((12 + fwd) / 3, 0, 1);
-        engine = -t.engine * 0.55 * brk * lim;
-        this.reversing = true;
+        // parado: freno + giro solo frena (no arranca); la marcha atrás se mete con el freno solo
+        // y, ya yendo hacia atrás, se puede girar
+        if (input.human && Math.abs(input.steer) > 0.3 && fwd > -1.5) {
+          brakeF = brakeR = (t.brake / 4) * brk;
+          this.braking = true;
+        } else {
+          const lim = THREE.MathUtils.clamp((12 + fwd) / 3, 0, 1);
+          engine = -t.engine * 0.55 * brk * lim;
+          this.reversing = true;
+        }
       }
     }
     if (boost && thr === 0 && brk === 0) engine = power * THREE.MathUtils.clamp((maxSpeed - fwd) / (maxSpeed * 0.25), 0, 1);
     if (thr === 0 && brk === 0 && !boost) brakeF = brakeR = 0.04; // resistencia a rodar
     if (input.hold) { engine = 0; brakeF = brakeR = t.brake / 4; this.reversing = false; }
-    if (fx.wet > 0 && fwd > maxSpeed) brakeF = brakeR = 0.3;
+    // charco: frena suave con resistencia del agua (sin bloquear ruedas, que hacía trompos)
+    if (fx.wet > 0 && fwd > maxSpeed) {
+      const k = Math.min(fwd - maxSpeed, 6) * 1.2 * this.mass * dt;
+      b.applyImpulse({ x: -this.forward.x * k, y: 0, z: -this.forward.z * k }, true);
+      engine = 0;
+    }
     this.throttle = thr;
 
     const rear = t.rearBias / 100;
@@ -179,7 +191,7 @@ export class Car {
       veh.setWheelBrake(i, (front ? brakeF : brakeR) * this.massK);
       veh.setWheelSideFrictionStiffness(i, front ? t.sideFront : t.sideRear);
       // aceite: casi sin agarre · zona de derrape: agarre reducido pero controlable
-      const oil = fx.oil > 0 ? 0.22 : fx.slide > 0 ? (front ? 0.72 : 0.5) : 1;
+      const oil = fx.oil > 0 ? 0.22 : fx.slide > 0 ? (front ? 0.88 : 0.74) : 1;
       veh.setWheelFrictionSlip(i, (front ? t.gripFront : t.gripRear * (this.drifting ? t.driftRear : 1)) * oil);
     }
 
@@ -213,9 +225,9 @@ export class Car {
 
     // --- Ayudas arcade ---
     const m = this.mass;
-    if (this.drifting) {
-      // limitar el giro sobre sí mismo para que el derrape sea controlable
-      const yr = b.angvel().y, lim = 2.6;
+    if (this.drifting || fx.slide > 0 || fx.wet > 0) {
+      // limitar el giro sobre sí mismo para que el derrape (o el resbalón) sea controlable
+      const yr = b.angvel().y, lim = this.drifting && !fx.slide ? 2.6 : 2.0;
       if (Math.abs(yr) > lim) {
         const k = (Math.abs(yr) - lim) * Math.sign(yr) * 5.0 * 0.3;
         b.applyTorqueImpulse({ x: 0, y: -k, z: 0 }, true);

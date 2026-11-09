@@ -146,3 +146,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - **Batalla de la Estrella** ⭐ en el Cuarto de juegos: relojes de 60 s, robar tocando o disparando.
 - Pendiente para más adelante: **editor de circuitos** y **multijugador** (pantalla partida con dos mandos y luego online).
 - Pruebas nuevas: `tests/camera.mjs`, `tests/variants.mjs`, `tests/replay.mjs`, `tests/battleui.mjs`; `node tests/racesim.mjs arena 3` simula una batalla.
+
+### Arreglos (petición 16)
+- Barro, agua, arena, cera y fregado: resbalan menos y el coche no se va de trompo; el charco frena sin bloquear ruedas.
+- Rampas de salto con rampa de aterrizaje y plataforma (sirven al revés); estrella oculta sobre la plataforma.
+- Arena de batalla rehecha con pasillos libres para las rampas.
+- Parado, freno + giro ya no hace arrancar el coche (la marcha atrás se mete con el freno solo).

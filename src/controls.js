@@ -113,7 +113,7 @@ export class Controls {
       throttle = Math.max(throttle, p.gas);
       if (this.autoGas && p.brake > 0.1) throttle = Math.max(gas ? 1 : 0, p.gas);
     }
-    return { steer, throttle, brake: brk };
+    return { steer, throttle, brake: brk, human: true };
   }
 }
 

@@ -40,22 +40,35 @@ function build(B) {
     noLine: true,
   });
 
-  // caja de juguetes central con rampas a los dos lados
-  box(14, 3, 10, 0, 1.5, 0, '#ef6c00');
-  box(14.4, 0.6, 10.4, 0, 3.1, 0, '#ffb74d', { solid: false });
-  for (const sd of [1, -1]) {
-    const ang = 0.24, len = 13;
-    box(len, 1, 8, sd * (7 + len / 2 * Math.cos(ang) - 0.4), 1.5 - 0.5 - 0.15, 0, '#8d6e63', { rot: [0, 0, sd * ang] });
-  }
-  // bloques de construcción
+  // ---------- Obstáculos colocados con pasillos libres (UX-15) ----------
+  // Rampa "de mesa": subida, plataforma y bajada, en línea recta y con espacio libre delante y detrás
+  // para coger carrerilla y aterrizar. ry = orientación; a = distancia a lo largo del eje.
+  const slab = (cx, cz, ry, a0, a1, h0, h1, w, color) => {
+    const da = a1 - a0, dh = h1 - h0, L = Math.hypot(da, dh), ang = Math.atan2(dh, da), t = 0.8;
+    const ma = (a0 + a1) / 2 + Math.sin(ang) * t / 2, my = (h0 + h1) / 2 - Math.cos(ang) * t / 2;
+    const x = cx + Math.cos(ry) * ma, z = cz - Math.sin(ry) * ma;
+    box(L + 0.6, t, w, x, my, z, color, { rot: [0, ry, ang] });
+  };
+  const tableTop = (cx, cz, ry, { ramp, deck, h, w, rampCol = '#8d6e63', deckCol = '#ef6c00' }) => {
+    slab(cx, cz, ry, -deck / 2 - ramp, -deck / 2, 0, h, w, rampCol);
+    slab(cx, cz, ry, deck / 2, deck / 2 + ramp, h, 0, w, rampCol);
+    box(deck, h, w, cx, h / 2, cz, deckCol, { rot: [0, ry, 0] });
+    box(deck + 0.4, 0.3, w + 0.4, cx, h + 0.1, cz, '#ffb74d', { rot: [0, ry, 0], solid: false });
+  };
+  // caja de juguetes central: rampas este-oeste, pasillo libre |z| < 6 hasta las paredes
+  tableTop(0, 0, 0, { ramp: 11, deck: 10, h: 3, w: 9 });
+  // dos saltos pequeños en las rectas largas del recorrido (norte y sur), pasillo libre |x| < 22
+  tableTop(0, 25, 0, { ramp: 6, deck: 4, h: 1.4, w: 7, deckCol: '#1e88e5' });
+  tableTop(0, -25, 0, { ramp: 6, deck: 4, h: 1.4, w: 7, deckCol: '#43a047' });
+  // bloques de construcción: solo en las cuatro "islas" entre pasillos (|z| entre 10 y 17)
   const cols = ['#e53935', '#1e88e5', '#fdd835', '#43a047', '#8e24aa'];
-  const blocks = [[-22, -8], [22, 8], [-14, 15], [14, -15], [-30, 6], [30, -6]];
+  const blocks = [[-10, 13], [10, -13], [-30, 13], [30, -13], [30, 14], [-30, -14]];
   blocks.forEach(([x, z], k) => {
     box(4, 4, 4, x, 2, z, cols[k % cols.length], { rot: [0, k * 0.4, 0] });
     for (const [dx, dz] of [[-0.9, -0.9], [0.9, -0.9], [-0.9, 0.9], [0.9, 0.9]]) cyl(0.5, 0.5, 0.5, x + dx, 4.25, z + dz, cols[k % cols.length], { seg: 8, solid: false });
   });
   // pelotas para empujar
-  for (const [x, z, c] of [[-18, 0, '#ff5252'], [18, 0, '#40c4ff'], [-26, -16, '#ffd740']]) B.dynBall(1.4, x, 1.6, z, c, { density: 0.02 });
+  for (const [x, z, c] of [[-20, 12, '#ff5252'], [20, -12, '#40c4ff'], [10, 13, '#ffd740']]) B.dynBall(1.4, x, 1.6, z, c, { density: 0.02 });
   // estanterías con juguetes en las paredes (decorado)
   for (const x of [-30, 0, 30]) {
     box(14, 0.6, 3, x, 10, -ROOM.z + 1.5, '#8d6e63', { solid: false });
@@ -65,7 +78,7 @@ function build(B) {
   return {
     circuit,
     bounds: { x: ROOM.x - 1.5, z: ROOM.z - 1.5, h: ROOM.h - 1 },
-    itemSpots: [0.12, 0.37, 0.62, 0.87],
+    itemSpots: [0.2, 0.32, 0.68, 0.8],
     zones: [],
     dust: [0.85, 0.8, 0.7],
     lights: {
@@ -110,7 +123,7 @@ export function setupBattle(race) {
   race.battleState = {
     timers: new Map(race.cars.map((car) => [car, BATTLE_TIME])),
     holder: null, holdT: 0, lastHolder: null, lastT: 0,
-    pos: new THREE.Vector3(0, 2.4, 15 * race.S * (Math.random() < 0.5 ? 1 : -1)), // en la alfombra, a un lado de la caja de juguetes
+    pos: new THREE.Vector3(0, 2.4, 14 * race.S * (Math.random() < 0.5 ? 1 : -1)), // en la alfombra, entre la caja y un salto
     mesh, halo, light, over: false,
   };
 }

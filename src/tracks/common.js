@@ -175,14 +175,17 @@ export function buildCircuit(B, def) {
     }
     elev.push({ i0: c - half - 1, i1: c + half + 1, kind: 'hill', def: hl });
   }
+  // Rampas de salto con rampa de aterrizaje (CIR-24): subida cóncava (lanza), plataforma corta y bajada
+  // simétrica. Sin caras verticales: se puede recorrer en los dos sentidos (circuito al revés).
   for (const rp of def.ramps || []) {
-    const c = rp.idx ?? (rp.frac !== undefined ? straightest(rp.frac - 0.06, rp.frac + 0.06, 2, Math.round(rp.len / 1.6) + 4, elev.map((e) => [e.i0, e.i1])) : nearestIdx(samples, rp.at));
-    const n = Math.max(3, Math.round(rp.len / 1.6));
-    for (let k = 0; k <= n; k++) {
-      const s = samples[(c + k) % N], u = k / n;
+    const n = Math.max(3, Math.round(rp.len / 1.6)), d = rp.deck ?? 3, total = n * 2 + d;
+    const c = rp.idx ?? (rp.frac !== undefined ? straightest(rp.frac - 0.06, rp.frac + 0.06, 2, total + 4, elev.map((e) => [e.i0, e.i1])) : nearestIdx(samples, rp.at));
+    for (let k = 0; k <= total; k++) {
+      const s = samples[(c + k) % N];
+      const u = k <= n ? k / n : k >= n + d ? (total - k) / n : 1;
       s.h = Math.max(s.h, rp.h * Math.pow(u, 1.5));
     }
-    elev.push({ i0: c - 1, i1: c + n + 1, kind: 'ramp', def: rp });
+    elev.push({ i0: c - 1, i1: c + total + 1, top: (c + n) % N, kind: 'ramp', def: rp });
   }
   for (const s of samples) s.p.y = s.h;
 
@@ -232,8 +235,7 @@ export function buildCircuit(B, def) {
         const u = k / sub;
         const p = a.p.clone().lerp(b.p, u);
         const n = a.n.clone().lerp(b.n, u).normalize();
-        // la rampa cae en vertical al final: no interpolar la caída
-        const h = e.kind === 'ramp' && b.h < a.h * 0.5 ? a.h : a.h + (b.h - a.h) * (e.kind === 'hill' ? (1 - Math.cos(Math.PI * u)) / 2 : u);
+        const h = a.h + (b.h - a.h) * (e.kind === 'hill' ? (1 - Math.cos(Math.PI * u)) / 2 : u);
         rows.push({ p, n, h });
       }
     }
@@ -259,16 +261,6 @@ export function buildCircuit(B, def) {
         tri.push(c, d, c + 1, c + 1, d, d + 1);
       }
     });
-    // cara trasera de la rampa (caída)
-    if (e.kind === 'ramp') {
-      const n = rows.length;
-      const top = rows.findIndex((r, k) => k > 0 && r.h < rows[k - 1].h * 0.5);
-      if (top > 0) {
-        const a = (top - 1) * 4;
-        idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
-      }
-      void n;
-    }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));

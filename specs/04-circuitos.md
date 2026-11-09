@@ -35,6 +35,7 @@
 | CIR-21 | **El muelle**: tablones de madera sobre el agua al atardecer, cajas, barcas, cuerdas, gaviotas y charcos | ✅ |
 | CIR-22 | **Parque infantil**: arena (derrapa), suelo de caucho, tobogán-rampa, columpios, balancín y arenero | ✅ |
 | CIR-23 | **Pistas al revés y en espejo**: se generan solas desde cada circuito (mismo decorado; rampas y cuestas giradas para el nuevo sentido; espejo invierte mundo y físicas) | ✅ |
+| CIR-24 | **Rampa de salto con rampa de aterrizaje**: subida que lanza, plataforma corta y bajada simétrica, sin caras verticales; sirve en los dos sentidos. La estrella oculta queda en el aire sobre la plataforma | ✅ |
 
 ## Ideas futuras
 
