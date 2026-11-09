@@ -17,6 +17,8 @@ const MASS = 8; // masa de referencia: la potencia y el freno se escalan con la 
 
 const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q = new THREE.Quaternion(), _qi = new THREE.Quaternion();
 const UP = new THREE.Vector3(0, 1, 0);
+// DRI-04: ayudas del derrape (tope de giro, anti-trompo, empuje del gas y mando del volante)
+const DRIFT = { wMax: 1.16, yawGain: 6, align: 2.6, spin: 0.95, spinK: 6, latGrip: 0.15, thrust: 36, vmax: 0.85 };
 
 export class Car {
   constructor(scene, world, RAPIER, def, tuning, { color = def.color, index = 0, name = def.name } = {}) {
@@ -235,6 +237,28 @@ export class Car {
         b.applyTorqueImpulse({ x: 0, y: -k, z: 0 }, true);
       }
     }
+    if (this.driftMode && contacts > 1 && fwd > 0) {
+      // DRI-04: derrape arcade. El volante manda sobre el giro del coche, las ruedas agarran poco de lado
+      // (el coche se cruza) y el gas mantiene la velocidad; al soltar el volante se endereza solo.
+      const D = globalThis.__DP || DRIFT;
+      const k = THREE.MathUtils.clamp((speed - 3) / 4, 0, 1);
+      if (k > 0) {
+        const beta = Math.atan2(this.localVel.x, Math.max(1, fwd)), ab = Math.abs(beta), st = input.steer;
+        let want = st * D.wMax * (t.steerMax / 0.345) + beta * D.align * (1 - 0.75 * Math.abs(st));
+        if (ab > D.spin) want += Math.sign(beta) * (ab - D.spin) * D.spinK; // anti-trompo
+        const dw = (want - b.angvel().y) * Math.min(1, D.yawGain * dt) * k;
+        b.applyTorqueImpulse({ x: 0, y: dw * 5.0 * this.massK, z: 0 }, true);
+        // agarre lateral propio, suave
+        const lg = -this.localVel.x * D.latGrip * m * dt * k;
+        _v.set(1, 0, 0).applyQuaternion(_q);
+        b.applyImpulse({ x: _v.x * lg, y: 0, z: _v.z * lg }, true);
+        // el gas sostiene la velocidad aunque las ruedas patinen
+        const push = thr * D.thrust * (t.engine / 145) * Math.max(0.4, Math.min(1, ab / 0.25)) * Math.max(0, 1 - speed / (maxSpeed * D.vmax)) * m * dt * k;
+        if (push > 0) b.applyImpulse({ x: this.forward.x * push, y: 0, z: this.forward.z * push }, true);
+        // con tan poco agarre el freno se queda corto: ayuda para frenar de verdad
+        if (this.braking) { const bk = Math.min(speed, 14 * dt) * m; b.applyImpulse({ x: -this.velocity.x / speed * bk, y: 0, z: -this.velocity.z / speed * bk }, true); }
+      }
+    }
     if (contacts > 0 && !this.rail) {
       // carga aerodinámica
       const down = t.downforce * speed * speed / 10 * m * dt;
@@ -321,6 +345,7 @@ export class Car {
 
   // Daño: baja la salud, abolla la carrocería y la ensucia
   damage(amount, local, strength = 0.5) {
+    amount *= this.damageK ?? 1; // en Drift y Obstáculos los golpes estropean menos (no hay llave 🔧)
     if (amount <= 0) return;
     this.health = Math.max(0, this.health - amount);
     const u = this.model.userData;

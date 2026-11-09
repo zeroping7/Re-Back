@@ -5,8 +5,16 @@ import museo from './museo.js';
 import muelle from './muelle.js';
 import parque from './parque.js';
 
+import cocina from './cocina.js';
+import garaje from './garaje.js';
+import escritorio from './escritorio.js';
+import fregadero from './fregadero.js';
+
+// TRACKS = circuitos de Carrera (estrellas, coche secreto…). Los de Drift y Obstáculos llevan `disc` (DIS-02).
 export const TRACKS = [salon, superm, jardin, museo, muelle, parque];
-export const trackById = (id) => TRACKS.find((t) => t.id === id) || TRACKS[0];
+export const ALL_TRACKS = [...TRACKS, cocina, garaje, escritorio, fregadero];
+export const tracksFor = (disc) => ALL_TRACKS.filter((t) => (t.disc || 'race') === disc);
+export const trackById = (id) => ALL_TRACKS.find((t) => t.id === id) || TRACKS[0];
 
 // Variantes (CIR-23 / UX-13): mismo circuito al revés o en espejo. Clave: 'salon', 'salon:rev', 'salon:mirror'
 export const VARIANTS = [

@@ -1,5 +1,6 @@
 import { CARS, carById, UPGRADES, MAX_LEVEL } from './cars.js';
 import { TRACKS } from './tracks/index.js';
+import { DISCS, discUnlocked, carAllowed, carDiscs, MEDALS, MEDAL_REPEAT } from './disciplines.js';
 
 // Partida guardada: dinero, coches comprados y sus mejoras
 const KEY = 'reback.profile.v1';
@@ -16,6 +17,9 @@ export const profile = load();
 if (!profile.owned[profile.selected]) profile.selected = Object.keys(profile.owned)[0];
 profile.cups ??= {}; // mejor puesto final en cada copa
 profile.stars ??= {}; // estrellas ocultas cogidas por circuito
+profile.sel ??= { race: profile.selected }; // último coche usado en cada disciplina (DIS-03)
+profile.medals ??= {}; // mejor medalla por circuito en los modos en solitario (DEC-01)
+profile.granted ??= {}; // disciplinas cuyo coche básico ya se regaló (DIS-04)
 
 const listeners = new Set();
 export function onProfileChange(fn) { listeners.add(fn); }
@@ -44,18 +48,19 @@ function spentOn(id) {
 }
 export const sellValue = (id) => Math.round((spentOn(id) * 0.6) / 50) * 50;
 
-export function buyCar(id) {
+export function buyCar(id, disc) {
   const c = carById(id);
   if (c.secret || isOwned(id) || profile.money < c.price) return false;
   profile.money -= c.price;
   profile.owned[id] = {};
   profile.selected = id;
+  profile.sel[disc || carDiscs(c)[0]] = id;
   saveProfile();
   return true;
 }
 
 export function sellCar(id) {
-  if (!isOwned(id) || Object.keys(profile.owned).length <= 1) return false;
+  if (!isOwned(id) || Object.keys(profile.owned).length <= 1 || carById(id).starter) return false;
   profile.money += sellValue(id);
   delete profile.owned[id];
   if (profile.selected === id) profile.selected = Object.keys(profile.owned)[0];
@@ -72,7 +77,45 @@ export function buyUpgrade(id, upId) {
   return true;
 }
 
-export function selectCar(id) { if (isOwned(id)) { profile.selected = id; saveProfile(); } }
+export function selectCar(id, disc) {
+  if (!isOwned(id)) return;
+  profile.selected = id;
+  profile.sel[disc || carDiscs(carById(id))[0]] = id;
+  saveProfile();
+}
+
+// DIS-03: al entrar en una disciplina se usa su último coche (o el primero que valga)
+export function useDisc(disc) {
+  let id = profile.sel[disc];
+  if (!id || !isOwned(id) || !carAllowed(carById(id), disc)) id = CARS.find((c) => isOwned(c.id) && carAllowed(c, disc))?.id;
+  if (!id) return null;
+  if (profile.selected !== id || profile.sel[disc] !== id) { profile.sel[disc] = id; profile.selected = id; saveProfile(); }
+  return id;
+}
+
+// DIS-04: regala el coche básico de cada disciplina recién abierta. Devuelve las disciplinas nuevas.
+export function grantStarters() {
+  const out = [];
+  for (const d of DISCS) {
+    if (!d.starter || profile.granted[d.id] || !discUnlocked(d.id, profile.cups)) continue;
+    profile.granted[d.id] = true;
+    profile.owned[d.starter] ??= {};
+    out.push(d);
+  }
+  if (out.length) saveProfile();
+  return out;
+}
+
+// DEC-01: medalla en solitario. Paga cada medalla nueva; repetir sin mejorar da un premio pequeño.
+export function awardMedal(key, level) {
+  const prev = profile.medals[key] || 0;
+  let reward = 0;
+  for (let l = prev; l < level; l++) reward += MEDALS[l].prize;
+  if (!reward && level > 0) reward = MEDAL_REPEAT;
+  if (level > prev) profile.medals[key] = level;
+  if (reward) addMoney(reward); else saveProfile();
+  return { reward, isNew: level > prev };
+}
 
 // Premio por carrera: según puesto, nº de coches, vueltas y dificultad
 export function raceReward(place, total, laps, diff) {

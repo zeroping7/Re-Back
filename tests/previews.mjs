@@ -17,12 +17,13 @@ await page.setViewport({ width: 900, height: 420 });
 await page.goto(url + '?test&screen=m-main', { waitUntil: 'load' });
 await page.waitForFunction(() => window.__game, { timeout: 60000 });
 const cars = await page.evaluate(() => window.__game.carPreviews());
-for (const [id, d] of Object.entries(cars)) save('car-' + id, d);
+const onlyCars = process.env.CARS ? process.env.CARS.split(',') : null; // CARS=a,b: solo esos coches
+for (const [id, d] of Object.entries(cars)) if (!onlyCars || onlyCars.includes(id)) save('car-' + id, d);
 console.log('coches:', Object.keys(cars).join(', '));
 
 // circuitos: carrera con 5 rivales en la parrilla, foto aérea
 const VIEW = JSON.parse(process.env.VIEW || '{}');
-for (const id of (process.env.TRACKS || 'salon,super,jardin,museo,muelle,parque').split(',')) {
+for (const id of (process.env.TRACKS || 'salon,super,jardin,museo,muelle,parque,cocina,garaje,escritorio,fregadero').split(',')) {
   await page.setViewport({ width: 480, height: 270 });
   await page.goto(`${url}?test&track=${id}&rivals=5`, { waitUntil: 'load' });
   await page.waitForFunction(() => window.__game?.race, { timeout: 90000 });

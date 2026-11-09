@@ -46,5 +46,5 @@ if (practice) {
 if (battle) { console.log('  relojes:', [...race.battleState.timers].map(([c, v]) => `${c.name}=${v.toFixed(1)}`).join(' '), 'portador:', race.battleState.holder?.name); }
 const r = race.results();
 console.log(trackId, `len=${race.circuit.length.toFixed(0)} t=${t.toFixed(1)}`);
-for (const x of r) { const car = race.cars.find((c) => c.name === x.name); console.log(`  ${x.place}. ${x.name.padEnd(6)} fin=${x.finished} time=${x.time.toFixed(1)} best=${x.best.toFixed(2)} laps=${x.laps} resp=${respawns.get(x.name) || 0} hp=${car.health.toFixed(0)}`); }
+for (const x of r) { const car = race.cars.find((c) => c.name === x.name); console.log(`  ${x.place}. ${x.name.padEnd(6)} fin=${x.finished} time=${x.time.toFixed(1)} best=${x.best.toFixed(2)} laps=${x.laps} resp=${respawns.get(x.name) || 0} hp=${car.health.toFixed(0)} ${car.def.id}${race.disc === 'drift' ? ` pts=${Math.round(x.score)} (en directo ${Math.round(race.state(car).score)})` : ''}`); }
 console.log('  items used:', JSON.stringify(used));

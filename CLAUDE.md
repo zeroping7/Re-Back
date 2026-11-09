@@ -23,4 +23,7 @@ logotipos, música, sonidos, texturas ni modelos de Re-Volt, y no mencionarlo de
 - `npm run build`; servir `dist/` con `npx vite preview --port 4173` para las pruebas en Chrome headless.
 - Los circuitos se diseñan en unidades pequeñas y se amplían ×2 (ver `specs/02-fisicas.md`).
 - Si cambian los valores por defecto del panel ⚙ (`src/tuning.js`), sube la clave de guardado.
+- Disciplinas (Carrera / Drift / Obstáculos): `specs/11-disciplinas.md`, `src/disciplines.js`, obstáculos en `src/tracks/kit.js`.
+  Pruebas: `node tests/racesim.mjs cocina 3 2 patin`, `... escritorio 3 2 cabra`, `tests/overlap.mjs`, `tests/driftprobe.mjs`, `tests/disc.mjs`.
+  En el navegador, `?test&unlock` abre todas las disciplinas y `&fast=6` acelera la carrera.
 - Web: https://zeroping7.github.io/Re-Back/ · APK: https://zeroping7.github.io/Re-Back/re-back.apk

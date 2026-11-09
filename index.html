@@ -54,14 +54,23 @@
     <div class="menu-col">
       <h1 class="logo">RE-BACK</h1>
       <p class="sub">Carreras de coches teledirigidos</p>
-      <button class="big-btn" data-go="race"><span>🏁</span>Carrera rápida</button>
-      <button class="big-btn gold" data-go="cups"><span>🏆</span>Campeonato</button>
+      <button class="big-btn" data-go="disc"><span>🏁</span>Jugar</button>
       <div class="row2">
-        <button class="big-btn alt" data-go="practice"><span>⏱</span>Contrarreloj</button>
         <button class="big-btn alt" data-go="battle"><span>⭐</span>Batalla</button>
+        <button class="big-btn alt" data-go="garage"><span>🔧</span>Garaje</button>
       </div>
-      <button class="big-btn alt" data-go="garage"><span>🔧</span>Garaje</button>
       <button class="big-btn alt" data-go="settings"><span>⚙</span>Opciones</button>
+    </div>
+  </div>
+
+  <!-- ===== Disciplinas (DIS-01) ===== -->
+  <div id="m-disc" class="menu hidden">
+    <div class="menu-wide">
+      <div class="menu-head">
+        <button class="icon back" data-go="main">←</button>
+        <h2>Elige disciplina</h2>
+      </div>
+      <div id="discs"></div>
     </div>
   </div>
 
@@ -69,11 +78,12 @@
   <div id="m-setup" class="menu hidden">
     <div class="menu-wide">
       <div class="menu-head">
-        <button class="icon back" data-go="main">←</button>
+        <button class="icon back" data-go="back">←</button>
         <h2 id="setup-title">Carrera</h2>
       </div>
       <h3 class="no-battle">Circuito</h3>
       <div id="tracks" class="cards no-battle"></div>
+      <p id="setup-info" class="mode-info hidden"></p>
       <p class="battle-only battle-info">⭐ Coge la estrella y aguántala: quien la lleva gasta su reloj de 60 s. Róbala tocando al que la tiene. ¡Gana quien vacíe su reloj!</p>
       <div class="opt variant-opt no-battle"><span>Sentido</span><div class="seg" id="opt-variant"></div></div>
       <h3>Coche</h3>
@@ -91,8 +101,8 @@
   <div id="m-cups" class="menu hidden">
     <div class="menu-wide">
       <div class="menu-head">
-        <button class="icon back" data-go="main">←</button>
-        <h2>Campeonato</h2>
+        <button class="icon back" data-go="disc">←</button>
+        <h2 id="cups-title">Campeonato</h2>
       </div>
       <h3>Copa</h3>
       <div id="cups" class="cards"></div>
@@ -120,6 +130,7 @@
       <div class="menu-head">
         <button class="icon back" data-go="main">←</button>
         <h2>Garaje</h2>
+        <div class="seg" id="g-tabs"></div>
       </div>
       <div id="g-cars" class="cards"></div>
       <div id="g-detail">

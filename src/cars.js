@@ -15,21 +15,21 @@ export const CARS = [
     stats: { vel: 2, acel: 5, manejo: 4 },
   },
   {
-    id: 'flecha', price: 7500, name: 'Flecha', desc: 'Turismo bajo y rapidísimo', color: '#f5c518', style: 'touring', number: '1',
+    id: 'flecha', disc: ['race', 'drift'], price: 7500, name: 'Flecha', desc: 'Turismo bajo y rapidísimo', color: '#f5c518', style: 'touring', number: '1',
     clase: 'Semi-pro', motor: 'Eléctrico', mass: 8, rearBias: 70,
     wheelR: 0.32, wheelX: 0.62, wheelZf: 0.78, wheelZr: -0.76,
     mods: { engine: 1.06, maxSpeed: 1.12, grip: 1.1, steer: 0.95, susp: 1.35 },
     stats: { vel: 5, acel: 3, manejo: 3 },
   },
   {
-    id: 'tanque', price: 3000, name: 'Tanque', desc: 'Monster truck: salta y aguanta', color: '#2e9e44', style: 'truck', number: '9', pattern: 'flames',
+    id: 'tanque', disc: ['race', 'obst'], price: 3000, name: 'Tanque', desc: 'Monster truck: salta y aguanta', color: '#2e9e44', style: 'truck', number: '9', pattern: 'flames',
     clase: 'Avanzado', motor: 'Nitro', mass: 11, rearBias: 50,
     wheelR: 0.46, wheelX: 0.66, wheelZf: 0.74, wheelZr: -0.74,
     mods: { engine: 1.1, maxSpeed: 0.92, grip: 1.05, steer: 0.95, susp: 0.75 },
     stats: { vel: 2, acel: 4, manejo: 3 },
   },
   {
-    id: 'bolido', price: 5500, name: 'Bólido', desc: 'Punta alta, cola suelta', color: '#8e44ad', style: 'buggy', number: '5',
+    id: 'bolido', disc: ['race', 'drift'], price: 5500, name: 'Bólido', desc: 'Punta alta, cola suelta', color: '#8e44ad', style: 'buggy', number: '5',
     clase: 'Semi-pro', motor: 'Nitro', mass: 8,
     wheelR: 0.37, wheelX: 0.6, wheelZf: 0.76, wheelZr: -0.72,
     mods: { engine: 1.0, maxSpeed: 1.08, grip: 0.9, steer: 1.05, susp: 1 },
@@ -43,7 +43,7 @@ export const CARS = [
     stats: { vel: 5, acel: 3, manejo: 5 },
   },
   {
-    id: 'rally', price: 4000, name: 'Rally', desc: 'Compacto, ágil en tierra', color: '#0d47a1', style: 'rally', number: '4', pattern: 'rally', rimColor: '#ffffff',
+    id: 'rally', disc: ['race', 'obst'], price: 4000, name: 'Rally', desc: 'Compacto, ágil en tierra', color: '#0d47a1', style: 'rally', number: '4', pattern: 'rally', rimColor: '#ffffff',
     clase: 'Avanzado', motor: 'Nitro', mass: 8.5, rearBias: 60,
     wheelR: 0.35, wheelX: 0.6, wheelZf: 0.74, wheelZr: -0.72,
     mods: { engine: 1.1, maxSpeed: 1.0, grip: 1.0, steer: 1.1, susp: 0.9 },
@@ -65,7 +65,7 @@ export const CARS = [
   },
   // COC-04: coches nuevos
   {
-    id: 'morsa', price: 3500, name: 'Morsa', desc: 'Camión pesado: empuja a todos', color: '#6d4c41', style: 'truck', number: '12', pattern: 'stripes', rimColor: '#ffcc80',
+    id: 'morsa', disc: ['race', 'obst'], price: 3500, name: 'Morsa', desc: 'Camión pesado: empuja a todos', color: '#6d4c41', style: 'truck', number: '12', pattern: 'stripes', rimColor: '#ffcc80',
     clase: 'Avanzado', motor: 'Eléctrico', mass: 12.5, rearBias: 50,
     wheelR: 0.45, wheelX: 0.66, wheelZf: 0.76, wheelZr: -0.76,
     mods: { engine: 1.04, maxSpeed: 0.96, grip: 1.08, steer: 0.9, susp: 0.72 },
@@ -79,7 +79,7 @@ export const CARS = [
     stats: { vel: 4, acel: 4, manejo: 5 },
   },
   {
-    id: 'saeta', price: 12500, name: 'Saeta', desc: 'Turismo de nitro: el más rápido en recta', color: '#00b8d4', style: 'touring', number: '11', pattern: 'rally', rimColor: '#212121',
+    id: 'saeta', disc: ['race', 'drift'], price: 12500, name: 'Saeta', desc: 'Turismo de nitro: el más rápido en recta', color: '#00b8d4', style: 'touring', number: '11', pattern: 'rally', rimColor: '#212121',
     clase: 'Pro', motor: 'Nitro', mass: 8, rearBias: 80,
     wheelR: 0.33, wheelX: 0.62, wheelZf: 0.78, wheelZr: -0.76,
     mods: { engine: 1.1, maxSpeed: 1.16, grip: 1.12, steer: 1.0, susp: 1.35 },
@@ -93,6 +93,57 @@ export const CARS = [
     mods: { engine: 1.18, maxSpeed: 1.18, grip: 1.15, steer: 1.08, susp: 1.2 },
     stats: { vel: 5, acel: 5, manejo: 5 },
   },
+  // DCO-02: coches de Drift (turismos de tracción trasera con mucho giro)
+  {
+    id: 'patin', disc: ['drift'], starter: true, price: 1200, name: 'Patín', desc: 'Tu primer coche de drift: dócil y fácil de cruzar', color: '#ff5fa2', style: 'touring', number: '13', pattern: 'stripes', rimColor: '#ffffff',
+    clase: 'Drift', motor: 'Eléctrico', mass: 7.5, rearBias: 100,
+    wheelR: 0.32, wheelX: 0.62, wheelZf: 0.78, wheelZr: -0.76,
+    mods: { engine: 1.0, maxSpeed: 0.92, grip: 1.0, steer: 1.12, susp: 1.3 },
+    stats: { vel: 2, acel: 3, manejo: 3 },
+  },
+  {
+    id: 'humo', disc: ['drift'], price: 3500, name: 'Humo', desc: 'Cupé gris que deja la pista blanca', color: '#78909c', style: 'touring', number: '21', pattern: 'flames', rimColor: '#212121',
+    clase: 'Drift', motor: 'Nitro', mass: 8, rearBias: 100,
+    wheelR: 0.33, wheelX: 0.62, wheelZf: 0.78, wheelZr: -0.76,
+    mods: { engine: 1.14, maxSpeed: 0.98, grip: 1.0, steer: 1.2, susp: 1.3 },
+    stats: { vel: 3, acel: 4, manejo: 4 },
+  },
+  {
+    id: 'trompo', disc: ['drift'], price: 6000, name: 'Trompo', desc: 'Compacto nervioso: cambia de lado en un parpadeo', color: '#ff7043', style: 'rally', number: '33', pattern: 'rally', rimColor: '#ffd400',
+    clase: 'Drift', motor: 'Eléctrico', mass: 7.5, rearBias: 100,
+    wheelR: 0.34, wheelX: 0.6, wheelZf: 0.72, wheelZr: -0.7,
+    mods: { engine: 1.22, maxSpeed: 1.0, grip: 0.96, steer: 1.32, susp: 1.1 },
+    stats: { vel: 3, acel: 5, manejo: 5 },
+  },
+  {
+    id: 'katana', disc: ['drift'], price: 11000, name: 'Katana', desc: 'El rey del derrape: potencia de sobra y ángulo enorme', color: '#161a2b', style: 'touring', number: '99', pattern: 'flames', rimColor: '#ffd400',
+    clase: 'Drift', motor: 'Nitro', mass: 8, rearBias: 100,
+    wheelR: 0.33, wheelX: 0.63, wheelZf: 0.8, wheelZr: -0.77,
+    mods: { engine: 1.32, maxSpeed: 1.08, grip: 1.05, steer: 1.36, susp: 1.35 },
+    stats: { vel: 5, acel: 5, manejo: 5 },
+  },
+  // DCO-03: coches de Obstáculos (camiones lentos, ruedas grandes, mucha suspensión y agarre)
+  {
+    id: 'cabra', disc: ['obst'], starter: true, price: 1500, name: 'Cabra', desc: 'Tu primer trepador: sube por donde sea', color: '#c9a45c', style: 'truck', number: '14', pattern: 'stripes', rimColor: '#3e2723',
+    clase: 'Trepador', motor: 'Eléctrico', mass: 10, rearBias: 50,
+    wheelR: 0.48, wheelX: 0.67, wheelZf: 0.76, wheelZr: -0.76,
+    mods: { engine: 1.05, maxSpeed: 0.8, grip: 1.25, steer: 1.12, susp: 0.72, rest: 1.15 },
+    stats: { vel: 1, acel: 3, manejo: 4 },
+  },
+  {
+    id: 'oruga', disc: ['obst'], price: 4500, name: 'Oruga', desc: 'Pesado y pegado al suelo: nada lo mueve', color: '#7cb342', style: 'truck', number: '40', pattern: 'dots', rimColor: '#fdd835',
+    clase: 'Trepador', motor: 'Eléctrico', mass: 12.5, rearBias: 50,
+    wheelR: 0.51, wheelX: 0.68, wheelZf: 0.78, wheelZr: -0.78,
+    mods: { engine: 1.2, maxSpeed: 0.84, grip: 1.36, steer: 1.08, susp: 0.68, rest: 1.2 },
+    stats: { vel: 2, acel: 4, manejo: 4 },
+  },
+  {
+    id: 'yeti', disc: ['obst'], price: 9000, name: 'Yeti', desc: 'Monstruo blanco: salta, aterriza y sigue', color: '#e1f5fe', style: 'truck', number: '88', pattern: 'flames', rimColor: '#0288d1',
+    clase: 'Trepador', motor: 'Nitro', mass: 11, rearBias: 50,
+    wheelR: 0.54, wheelX: 0.69, wheelZf: 0.78, wheelZr: -0.78,
+    mods: { engine: 1.36, maxSpeed: 0.9, grip: 1.45, steer: 1.18, susp: 0.64, rest: 1.25 },
+    stats: { vel: 3, acel: 5, manejo: 5 },
+  },
 ];
 
 // ordenados de más barato a más caro
@@ -104,7 +155,7 @@ export const carById = (id) => CARS.find((c) => c.id === id) || CARS[0];
 export const CLASSES = ['Novato', 'Aficionado', 'Avanzado', 'Semi-pro', 'Pro'];
 export function rivalPool(diff) {
   const lo = diff < 0.9 ? 0 : diff < 1 ? 1 : 2, hi = lo === 2 ? 4 : lo + 1;
-  return CARS.filter((c) => { const k = CLASSES.indexOf(c.clase); return !c.secret && k >= lo && k <= hi; });
+  return CARS.filter((c) => { if (!(c.disc || ['race']).includes('race')) return false; const k = CLASSES.indexOf(c.clase); return !c.secret && k >= lo && k <= hi; });
 }
 // Texto de la tracción para la ficha
 export function tractionName(def, base = 90) {
@@ -133,6 +184,7 @@ export function carTuning(base, def, skill = 1, up = {}) {
     steerMax: base.steerMax * m.steer * (1 + 0.05 * L('direccion')),
     steerSpeed: base.steerSpeed * (1 + 0.05 * L('direccion')),
     suspStiff: base.suspStiff * m.susp,
+    suspRest: base.suspRest * (m.rest || 1),
     // tracción propia del modelo, relativa al ajuste base (90 % por defecto)
     rearBias: def.rearBias === undefined ? base.rearBias : Math.max(0, Math.min(100, base.rearBias + def.rearBias - 90)),
   };

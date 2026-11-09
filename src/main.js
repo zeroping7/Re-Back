@@ -3,14 +3,15 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import '@fontsource/russo-one/latin-400.css';
 import { Race, FIXED, fmtTime, getBest } from './race.js';
-import { TRACKS, trackById, trackFromKey, VARIANTS, variantUnlocked } from './tracks/index.js';
+import { TRACKS, trackById, trackFromKey, VARIANTS, variantUnlocked, tracksFor } from './tracks/index.js';
+import { DISCS, discById, discUnlocked, carAllowed, MODES, MEDALS, medalLevel, fmtPts } from './disciplines.js';
 import { ARENA } from './battle.js';
 import { CARS, carById, UPGRADES, MAX_LEVEL, carTuning, tractionName } from './cars.js';
 import {
   profile, isOwned, upgradesOf, upgradeCost, sellValue, buyCar, sellCar, buyUpgrade, selectCar, raceReward, addMoney,
-  onProfileChange, setCupResult, takeStar, STAR_PRIZE, checkSecret, starsGot,
+  onProfileChange, setCupResult, takeStar, STAR_PRIZE, checkSecret, starsGot, useDisc, grantStarters, awardMedal,
 } from './profile.js';
-import { CUPS, cupById, cupUnlocked, cupPrize, addPoints, standings, POINTS } from './cups.js';
+import { CUPS, cupById, cupUnlocked, cupPrize, addPoints, standings, POINTS, cupsFor } from './cups.js';
 import { Showroom } from './showroom.js';
 import { Controls } from './controls.js';
 import { PadInput } from './gamepad.js';
@@ -21,9 +22,10 @@ import { tuning } from './tuning.js';
 const params = new URLSearchParams(location.search);
 const $ = (id) => document.getElementById(id);
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const FAST = params.has('test') ? +(params.get('fast') || 1) : 1;
 
 const SKEY = 'reback.settings.v1';
-const settings = { track: 'salon', variant: 'normal', car: 'rayo', laps: 3, rivals: 3, diff: 0.94, quality: 'alta', cam: 'normal', autoGas: false, cup: 'bronce', ...load(SKEY) };
+const settings = { track: 'salon', variant: 'normal', car: 'rayo', laps: 3, rivals: 3, diff: 0.94, quality: 'alta', cam: 'normal', autoGas: false, cup: 'bronce', disc: 'race', trk: {}, lapsD: {}, ...load(SKEY) };
 function saveSettings() { try { localStorage.setItem(SKEY, JSON.stringify(settings)); } catch { /* nada */ } }
 function load(k) { try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch { return {}; } }
 
@@ -47,6 +49,25 @@ const TIPS = [
   'En la Batalla, dispara al que lleva la estrella para que la suelte.',
   'Mantén 👀 (o LB) para mirar atrás.',
 ];
+// consejos propios de Drift y Obstáculos
+const TIPS_D = {
+  drift: [
+    'Gira y no sueltes el gas: el coche se cruza solo y el gas lo sostiene.',
+    'Cuanto más rápido y más cruzado vayas, más puntos por segundo.',
+    'El multiplicador sube cada 1,6 s de derrape seguido, hasta ×5.',
+    'Enlaza un derrape con el siguiente en menos de 1 s para no perder el multiplicador.',
+    'Si tocas un muro o haces un trompo, pierdes el combo que no hayas cobrado.',
+    'Suelta el volante un segundo para cobrar el combo antes de una curva difícil.',
+  ],
+  obst: [
+    'Si te caes de un puente, vuelves a la pista en el último punto. Perder tiempo es el castigo.',
+    'Las barreras y las barras siempre se mueven igual: apréndete el ritmo.',
+    'El ventilador y la cascada empujan de lado: entra pegado al lado contrario.',
+    'Los badenes se pasan mejor rectos y sin frenar a fondo.',
+    'En el jabón no gires de golpe: suelta un poco el gas.',
+    'Los coches trepadores son lentos, pero no rebotan ni se salen.',
+  ],
+};
 
 async function init() {
   await RAPIER.init();
@@ -73,27 +94,83 @@ async function init() {
   const room = new Showroom(envMap);
 
   // ---------- Pantallas ----------
-  const screens = ['m-main', 'm-setup', 'm-settings', 'm-pause', 'm-results', 'm-garage', 'm-cups', 'm-podium'];
-  const VIEW = { 'm-main': 'main', 'm-settings': 'main', 'm-setup': 'car', 'm-garage': 'car', 'm-cups': 'car' };
+  const screens = ['m-main', 'm-disc', 'm-setup', 'm-settings', 'm-pause', 'm-results', 'm-garage', 'm-cups', 'm-podium'];
+  const VIEW = { 'm-main': 'main', 'm-disc': 'main', 'm-settings': 'main', 'm-setup': 'car', 'm-garage': 'car', 'm-cups': 'car' };
   function showScreen(id) {
     for (const s of screens) $(s).classList.toggle('hidden', s !== id);
-    $('money').classList.toggle('hidden', !['m-main', 'm-setup', 'm-garage', 'm-results', 'm-cups', 'm-podium'].includes(id));
+    $('money').classList.toggle('hidden', !['m-main', 'm-disc', 'm-setup', 'm-garage', 'm-results', 'm-cups', 'm-podium'].includes(id));
     if (VIEW[id]) { room.setView(VIEW[id]); room.showCar(id === 'm-garage' ? (gSel ||= profile.selected) : profile.selected); }
     if (id === 'm-garage') buildGarage();
+    if (id === 'm-disc') buildDiscs();
   }
-  let mode = 'race'; // 'race' | 'practice' | 'cup'
+  let mode = 'race'; // 'race' | 'practice' | 'cup' | 'battle' | 'solo'
+  let disc = discUnlocked(settings.disc, profile.cups) ? settings.disc : 'race'; // disciplina en curso (DIS-02)
   let cup = null; // { id, idx, table }
+  grantStarters();
+  const D = () => discById(disc);
+  const modeDef = (m = mode) => MODES[disc].find((x) => x.go === m) || MODES[disc][0];
+  const defTrack = { race: 'salon', drift: 'cocina', obst: 'escritorio' };
+  const curTrack = () => { const id = disc === 'race' ? settings.track : settings.trk[disc]; return tracksFor(disc).some((t) => t.id === id) ? id : defTrack[disc]; };
+  const setTrack = (id) => { if (disc === 'race') settings.track = id; else settings.trk[disc] = id; saveSettings(); };
+  const LAPS = { race: [2, 3, 5], drift: [2, 3], obst: [1, 2, 3] };
+  const curLaps = () => (disc === 'race' ? settings.laps : settings.lapsD[disc] ?? 2);
+
+  // entrar en un modo de una disciplina
+  function enter(d, go) {
+    disc = d; settings.disc = d; saveSettings();
+    useDisc(d);
+    if (go === 'cups') { buildCups(); showScreen('m-cups'); return; }
+    mode = go;
+    $('setup-title').textContent = `${D().icon} ${disc === 'race' ? modeDef().name : D().name + ' · ' + modeDef().name}`;
+    $('race-opts').style.display = go === 'race' ? '' : 'none';
+    $('m-setup').classList.remove('battle');
+    const info = { 'drift:solo': '🎯 2 vueltas tú solo. Ve de lado para sumar puntos y consigue medalla.', 'drift:race': '⚔️ Gana quien más puntos de derrape tenga cuando acabes tus vueltas.', 'obst:solo': '⏱ Una vuelta contra el reloj, con el fantasma de tu mejor tiempo.', 'obst:race': '🏁 Todos a la vez por el recorrido de obstáculos. Sin armas.' }[`${disc}:${go}`];
+    $('setup-info').textContent = info || ''; $('setup-info').classList.toggle('hidden', !info);
+    $('btn-go').textContent = disc === 'drift' ? '¡A derrapar!' : disc === 'obst' ? '¡Al lío!' : '¡A correr!';
+    buildSetup();
+    showScreen('m-setup');
+  }
+
+  // DIS-01: selector de disciplina, con los modos de cada una
+  function buildDiscs() {
+    const el = $('discs'); el.innerHTML = '';
+    for (const d of DISCS) {
+      const open = discUnlocked(d.id, profile.cups);
+      const col = document.createElement('div');
+      col.className = 'disc-col' + (open ? '' : ' locked') + (d.id === disc ? ' cur' : '');
+      col.style.setProperty('--c', d.color);
+      col.innerHTML = `<div class="disc-ic">${open ? d.icon : '🔒'}</div><b>${d.name}</b><small>${d.desc}</small>`;
+      if (open) {
+        for (const m of MODES[d.id]) {
+          const b = document.createElement('button');
+          b.className = 'big-btn' + (m.go === MODES[d.id][0].go ? '' : ' alt');
+          b.innerHTML = `<span>${m.icon}</span>${m.name}`;
+          b.addEventListener('click', () => { sfx.play('click'); enter(d.id, m.go); });
+          col.append(b);
+        }
+      } else {
+        const p = document.createElement('p'); p.className = 'lock';
+        p.innerHTML = `Queda entre los 3 primeros de la <b>${d.needsName}</b> para abrirla.<br>Te regalamos su primer coche.`;
+        col.append(p);
+      }
+      el.append(col);
+    }
+  }
+
   document.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => {
     sfx.play('click');
     const go = b.dataset.go;
-    if (go === 'race' || go === 'practice' || go === 'battle') {
-      mode = go;
-      $('setup-title').textContent = go === 'race' ? 'Carrera rápida' : go === 'battle' ? 'Batalla de la Estrella' : 'Contrarreloj';
-      $('race-opts').style.display = go === 'practice' ? 'none' : '';
-      $('m-setup').classList.toggle('battle', go === 'battle');
+    if (go === 'battle') {
+      mode = go; disc = 'race'; useDisc('race');
+      $('setup-title').textContent = 'Batalla de la Estrella';
+      $('race-opts').style.display = '';
+      $('setup-info').classList.add('hidden');
+      $('btn-go').textContent = '¡A correr!';
+      $('m-setup').classList.add('battle');
       buildSetup();
       showScreen('m-setup');
-    } else if (go === 'cups') { buildCups(); showScreen('m-cups'); }
+    } else if (go === 'back') showScreen(mode === 'battle' ? 'm-main' : 'm-disc');
+    else if (go === 'garage') { gDisc = disc; gSel = useDisc(gDisc) || profile.selected; showScreen('m-garage'); }
     else showScreen('m-' + go);
   }));
   function updateMoney(bump) {
@@ -130,39 +207,42 @@ async function init() {
   // Tarjetas de los coches que tienes (preparar carrera y campeonato)
   function carCards(el, rebuild) {
     el.innerHTML = '';
-    for (const d of CARS.filter((x) => isOwned(x.id))) {
+    for (const d of CARS.filter((x) => isOwned(x.id) && carAllowed(x, disc))) {
       const c = document.createElement('button');
       c.className = 'card' + (profile.selected === d.id ? ' sel' : '');
       const bar = (n, v) => `<div class="bar">${n}<i style="--v:${v * 20}%"></i></div>`;
       c.innerHTML = `${carPv(d)}<b>${d.name}</b><small>${d.clase} · ${d.motor}</small>` +
         bar('Vel', d.stats.vel) + bar('Ace', d.stats.acel) + bar('Man', d.stats.manejo);
-      c.addEventListener('click', () => { selectCar(d.id); sfx.play('click'); room.showCar(d.id); rebuild(); });
+      c.addEventListener('click', () => { selectCar(d.id, disc); sfx.play('click'); room.showCar(d.id); rebuild(); });
       el.append(c);
     }
-    if (CARS.some((x) => !isOwned(x.id))) {
+    if (CARS.some((x) => !isOwned(x.id) && carAllowed(x, disc) && !x.secret)) {
       const c = document.createElement('button');
       c.className = 'card locked';
       c.innerHTML = '<div class="sw pv more">🔒</div><b>Más coches</b><small>Gana carreras y cómpralos en el Garaje</small>';
-      c.addEventListener('click', () => { sfx.play('click'); showScreen('m-garage'); });
+      c.addEventListener('click', () => { sfx.play('click'); gDisc = disc; gSel = profile.selected; showScreen('m-garage'); });
       el.append(c);
     }
   }
 
-  const trackKey = () => settings.track + (settings.variant && settings.variant !== 'normal' ? ':' + settings.variant : '');
+  const trackKey = () => curTrack() + (settings.variant && settings.variant !== 'normal' ? ':' + settings.variant : '');
+  const medalIcon = (key) => { const l = profile.medals[key] || 0; return l ? MEDALS[l - 1].icon : ''; };
   function buildSetup() {
     if (!variantUnlocked(settings.variant, profile.cups)) settings.variant = 'normal';
     const tracks = $('tracks'); tracks.innerHTML = '';
-    const vr = settings.variant || 'normal';
-    for (const t of TRACKS) {
+    const vr = settings.variant || 'normal', cur = curTrack();
+    for (const t of tracksFor(disc)) {
       const key = t.id + (vr !== 'normal' ? ':' + vr : '');
       const best = getBest(key);
       const c = document.createElement('button');
-      c.className = 'card' + (settings.track === t.id ? ' sel' : '') + (vr !== 'normal' ? ' v-' + vr : '');
-      const star = mode === 'practice' && vr === 'normal' ? `<span class="star ${profile.stars[t.id] ? 'got' : ''}">${profile.stars[t.id] ? '⭐' : '☆'}</span>` : '';
-      const ghost = mode === 'practice' && hasGhost(key) ? '<span class="ghost-ic">👻</span>' : '';
-      c.innerHTML = `${trackPv(t, star + ghost)}<b>${trackFromKey(key).name}</b><small>${t.desc}</small>` +
-        `<div class="rec">⏱ ${fmtTime(best.lap)}${best.wins ? ' · 🏆' + best.wins : ''}</div>`;
-      c.addEventListener('click', () => { settings.track = t.id; saveSettings(); sfx.play('click'); buildSetup(); });
+      c.className = 'card' + (cur === t.id ? ' sel' : '') + (vr !== 'normal' ? ' v-' + vr : '');
+      const star = disc === 'race' && mode === 'practice' && vr === 'normal' ? `<span class="star ${profile.stars[t.id] ? 'got' : ''}">${profile.stars[t.id] ? '⭐' : '☆'}</span>` : '';
+      const ghost = (mode === 'practice' || (disc === 'obst' && mode === 'solo')) && hasGhost(key) ? '<span class="ghost-ic">👻</span>' : '';
+      const medal = disc !== 'race' && medalIcon(key) ? `<span class="star got">${medalIcon(key)}</span>` : '';
+      const rec = disc === 'drift' ? `💨 ${best.score ? fmtPts(best.score) + ' pts' : '— pts'}` : disc === 'obst' ? `⏱ ${fmtTime(best.race)}` : `⏱ ${fmtTime(best.lap)}`;
+      c.innerHTML = `${trackPv(t, star + ghost + medal)}<b>${trackFromKey(key).name}</b><small>${t.desc}</small>` +
+        `<div class="rec">${rec}${best.wins ? ' · 🏆' + best.wins : ''}</div>`;
+      c.addEventListener('click', () => { setTrack(t.id); sfx.play('click'); buildSetup(); });
       tracks.append(c);
     }
     // sentido: normal, al revés, espejo (UX-13)
@@ -180,16 +260,18 @@ async function init() {
       vEl.append(b);
     }
     carCards($('cars'), buildSetup);
-    seg('opt-laps', [[2, '2'], [3, '3'], [5, '5']], () => settings.laps, (v) => { settings.laps = v; saveSettings(); });
-    seg('opt-rivals', [[1, '1'], [3, '3'], [5, '5']], () => settings.rivals, (v) => { settings.rivals = v; saveSettings(); });
+    seg('opt-laps', LAPS[disc].map((n) => [n, String(n)]), curLaps, (v) => { if (disc === 'race') settings.laps = v; else settings.lapsD[disc] = v; saveSettings(); });
+    seg('opt-rivals', disc === 'drift' && mode !== 'battle' ? [[1, '1'], [2, '2'], [3, '3']] : [[1, '1'], [3, '3'], [5, '5']], () => (disc === 'drift' && mode !== 'battle' ? Math.min(3, settings.rivals) : settings.rivals), (v) => { settings.rivals = v; saveSettings(); });
     seg('opt-diff', [[0.86, 'Fácil'], [0.94, 'Normal'], [1.02, 'Difícil']], () => settings.diff, (v) => { settings.diff = v; saveSettings(); });
   }
 
   // ---------- Campeonato ----------
   function buildCups() {
     const el = $('cups'); el.innerHTML = '';
-    if (!cupUnlocked(cupById(settings.cup), profile.cups)) settings.cup = 'bronce';
-    for (const c of CUPS) {
+    const list = cupsFor(disc);
+    $('cups-title').textContent = disc === 'race' ? 'Campeonato' : `${D().icon} ${list[0].name}`;
+    if (!list.some((c) => c.id === settings.cup) || !cupUnlocked(cupById(settings.cup), profile.cups)) settings.cup = list[0].id;
+    for (const c of list) {
       const open = cupUnlocked(c, profile.cups), best = profile.cups[c.id];
       const b = document.createElement('button');
       b.className = 'card cup' + (settings.cup === c.id ? ' sel' : '') + (open ? '' : ' locked');
@@ -242,21 +324,37 @@ async function init() {
   controls.onCamera = () => race && nextCam();
 
   // ---------- Garaje ----------
-  let gSel = null;
+  let gSel = null, gDisc = 'race';
   const statVals = (def, up) => {
     const t = carTuning({ engine: 1, maxSpeed: 1, gripFront: 1, gripRear: 1, steerMax: 1, steerSpeed: 1, suspStiff: 1, rearBias: 90 }, def, 1, up);
     return [['Velocidad', t.maxSpeed, 0.85, 1.25], ['Aceleración', t.engine, 0.9, 1.6], ['Agarre', t.gripFront, 0.9, 1.4], ['Giro', t.steerMax, 0.85, 1.4]];
   };
   function buildGarage() {
+    // DIS-03: pestañas por disciplina
+    const tabs = $('g-tabs'); tabs.innerHTML = '';
+    for (const dd of DISCS) {
+      const open = discUnlocked(dd.id, profile.cups);
+      const b = document.createElement('button');
+      b.textContent = `${open ? dd.icon : '🔒'} ${dd.name}`;
+      b.classList.toggle('sel', gDisc === dd.id); b.classList.toggle('locked', !open);
+      b.addEventListener('click', () => {
+        sfx.play('click');
+        if (!open) { toast(`🔒 Queda entre los 3 primeros de la ${dd.needsName}`); return; }
+        gDisc = dd.id; gSel = useDisc(gDisc) || CARS.find((x) => carAllowed(x, gDisc)).id; room.showCar(gSel); buildGarage();
+      });
+      tabs.append(b);
+    }
+    if (!gSel || !carAllowed(carById(gSel), gDisc)) gSel = profile.sel[gDisc] && carAllowed(carById(profile.sel[gDisc]), gDisc) ? profile.sel[gDisc] : CARS.find((x) => carAllowed(x, gDisc)).id;
+    const inUse = (id) => profile.sel[gDisc] === id;
     const list = $('g-cars'); list.innerHTML = '';
-    for (const d of CARS) {
+    for (const d of CARS.filter((x) => carAllowed(x, gDisc))) {
       const own = isOwned(d.id), hidden = d.secret && !own;
       const c = document.createElement('button');
       c.className = 'card' + (gSel === d.id ? ' sel' : '') + (own ? '' : ' locked') + (hidden ? ' secret' : '');
       c.innerHTML = hidden
         ? `${carPv(d)}<b>❓ Secreto</b><small>Consigue todas las estrellas</small><div class="price">⭐ ${starsGot()}/${TRACKS.length}</div>`
         : `${carPv(d)}<b>${own ? '' : '🔒 '}${d.name}</b><small>${d.clase}</small>` +
-        (own ? `<div class="own">${profile.selected === d.id ? '✔ En uso' : 'Tuyo'}</div>` : `<div class="price">🪙 ${coins(d.price)}</div>`);
+        (own ? `<div class="own">${inUse(d.id) ? '✔ En uso' : 'Tuyo'}</div>` : `<div class="price">🪙 ${coins(d.price)}</div>`);
       c.addEventListener('click', () => { gSel = d.id; sfx.play('click'); room.showCar(d.id); buildGarage(); });
       list.append(c);
     }
@@ -280,12 +378,12 @@ async function init() {
       $('g-desc').textContent = `Consigue las ${TRACKS.length} estrellas ocultas en Contrarreloj (llevas ${starsGot()})`;
       btn(`⭐ ${starsGot()}/${TRACKS.length}`, 'buy', false, () => {});
     } else if (!own) {
-      btn(`Comprar · 🪙 ${coins(d.price)}`, 'buy', profile.money >= d.price, () => { if (buyCar(d.id)) { sfx.play('finish'); buildGarage(); } });
+      btn(`Comprar · 🪙 ${coins(d.price)}`, 'buy', profile.money >= d.price, () => { if (buyCar(d.id, gDisc)) { sfx.play('finish'); buildGarage(); } });
     } else {
-      btn(profile.selected === d.id ? '✔ En uso' : 'Usar este', 'use', profile.selected !== d.id, () => { selectCar(d.id); sfx.play('click'); buildGarage(); });
-      const many = Object.keys(profile.owned).length > 1;
+      btn(inUse(d.id) ? '✔ En uso' : 'Usar este', 'use', !inUse(d.id), () => { selectCar(d.id, gDisc); sfx.play('click'); buildGarage(); });
+      const many = Object.keys(profile.owned).length > 1 && !d.starter;
       btn(`Vender · +🪙 ${coins(sellValue(d.id))}`, '', many, () => {
-        if (confirm(`¿Vender ${d.name} por ${sellValue(d.id)} monedas?`) && sellCar(d.id)) { sfx.play('pass'); gSel = profile.selected; room.showCar(gSel); buildGarage(); }
+        if (confirm(`¿Vender ${d.name} por ${sellValue(d.id)} monedas?`) && sellCar(d.id)) { sfx.play('pass'); gSel = useDisc(gDisc) || null; buildGarage(); room.showCar(gSel); }
       });
     }
     const ups = $('g-ups'); ups.innerHTML = '';
@@ -306,18 +404,21 @@ async function init() {
   function raceConfig() {
     if (mode === 'cup') {
       const c = cupById(cup.id);
-      return { track: c.tracks[cup.idx], laps: c.laps, rivals: c.rivals, diff: c.diff, practice: false, kind: `${c.icon} ${c.name} · Carrera ${cup.idx + 1} de ${c.tracks.length}` };
+      return { track: c.tracks[cup.idx], laps: c.laps, rivals: c.rivals, diff: c.diff, practice: false, kind: `${c.icon} ${c.name} · Prueba ${cup.idx + 1} de ${c.tracks.length}` };
     }
     if (mode === 'battle') return { track: 'arena', battle: true, laps: 1, rivals: Math.max(1, settings.rivals), diff: settings.diff, practice: false, kind: '⭐ Batalla de la Estrella' };
+    if (mode === 'solo') return { track: trackKey(), laps: disc === 'drift' ? 2 : 1, rivals: 0, diff: 1, practice: false, solo: true, kind: `${modeDef().icon} ${D().name} · ${modeDef().name}` };
     if (mode === 'practice') return { track: trackKey(), laps: 3, rivals: 0, diff: 1, practice: true, kind: '⏱ Contrarreloj' };
-    return { track: trackKey(), laps: settings.laps, rivals: settings.rivals, diff: settings.diff, practice: false, kind: '🏁 Carrera rápida' };
+    return { track: trackKey(), laps: curLaps(), rivals: disc === 'drift' ? Math.min(3, settings.rivals) : settings.rivals, diff: settings.diff, practice: false, kind: disc === 'race' ? '🏁 Carrera rápida' : `${modeDef().icon} ${D().name} · ${modeDef().name}` };
   }
+  const medalGoals = (def) => (def.medals ? MEDALS.map((m, i) => `${m.icon} ${def.disc === 'drift' ? fmtPts(def.medals[i]) : fmtTime(def.medals[i])}`).join(' · ') : '');
 
   function showLoading(def, cfg) {
     $('ld-kind').textContent = cfg.kind;
     $('ld-name').textContent = def.name;
-    $('ld-desc').textContent = cfg.battle ? `${def.desc} · ${cfg.rivals + 1} coches · reloj de 60 s` : def.desc + (cfg.practice && def.variant ? '' : cfg.practice ? (profile.stars[def.id] ? ' · ⭐ estrella conseguida' : ' · ☆ busca la estrella') : ` · ${cfg.laps} vueltas · ${cfg.rivals + 1} coches`);
-    $('ld-tip').textContent = '💡 ' + TIPS[Math.floor(Math.random() * TIPS.length)];
+    $('ld-desc').textContent = cfg.solo ? `${def.desc} · ${medalGoals(def)}` : cfg.battle ? `${def.desc} · ${cfg.rivals + 1} coches · reloj de 60 s` : def.desc + (cfg.practice && def.variant ? '' : cfg.practice ? (profile.stars[def.id] ? ' · ⭐ estrella conseguida' : ' · ☆ busca la estrella') : ` · ${cfg.laps} vueltas · ${cfg.rivals + 1} coches`);
+    const tips = TIPS_D[def.disc] || TIPS;
+    $('ld-tip').textContent = '💡 ' + tips[Math.floor(Math.random() * tips.length)];
     $('loading').style.setProperty('--tc', def.color);
     $('loading').classList.remove('hidden', 'go');
     void $('loading').offsetWidth;
@@ -343,7 +444,7 @@ async function init() {
         trackDef: def, carDef: carById(profile.selected), carUpgrades: { ...upgradesOf(profile.selected) },
         laps: cfg.laps, rivals: cfg.rivals, difficulty: cfg.diff, practice: cfg.practice,
         baseTuning: tuning, onFinish: showResults, camMode: settings.cam,
-        star: cfg.practice && !def.variant ? { taken: !!profile.stars[def.id] } : null,
+        star: cfg.practice && !def.variant && !def.disc ? { taken: !!profile.stars[def.id] } : null,
         battle: !!cfg.battle,
         onStar: () => {
           const got = takeStar(def.id) ? STAR_PRIZE : 0;
@@ -363,8 +464,8 @@ async function init() {
       resize();
       $('loading').classList.add('hidden');
       $('hud').classList.remove('hidden');
-      sfx.startMusic('race', cfg.battle ? 'batalla' : def.id);
-      sfx.startAmbient(cfg.battle ? 'salon' : def.id);
+      sfx.startMusic('race', cfg.battle ? 'batalla' : def.music || def.id);
+      sfx.startAmbient(cfg.battle ? 'salon' : def.ambient || def.id);
     }, 30));
   }
   $('btn-go').addEventListener('click', () => { sfx.play('click'); startRace(); });
@@ -398,20 +499,29 @@ async function init() {
   function showResults(res) {
     if (!race) return;
     const cfg = raceConfig(), inCup = mode === 'cup';
+    const def = cfg.battle ? ARENA : trackFromKey(cfg.track), drift = def.disc === 'drift';
     const me = res.find((r) => r.player);
     if (inCup) addPoints(cup, res);
-    $('res-kind').textContent = `${cfg.kind} · ${cfg.battle ? ARENA.name : trackFromKey(cfg.track).name}`;
-    $('res-title').textContent = me.place === 1 ? '🏆 ¡Has ganado!' : `Has quedado ${me.place}º`;
-    $('res-table').innerHTML = res.map((r) => `<tr class="${r.player ? 'me' : ''}"><td>${r.place}º</td><td><span class="dot" style="background:${r.color}"></span>${r.name}</td>` +
-      `<td>${r.finished ? fmtTime(r.time) : '—'}</td><td>⏱ ${fmtTime(r.best)}</td>${inCup ? `<td class="pts">+${POINTS[r.place - 1] || 0}</td>` : ''}</tr>`).join('');
-    const reward = raceReward(me.place, res.length, cfg.laps, cfg.diff);
-    if (reward) addMoney(reward);
+    $('res-kind').textContent = `${cfg.kind} · ${def.name}`;
+    let reward = 0, title = me.place === 1 ? '🏆 ¡Has ganado!' : `Has quedado ${me.place}º`;
+    if (cfg.solo) { // DEC-01: medalla por puntos (drift) o por tiempo (obstáculos)
+      const value = drift ? me.score : me.time, lvl = medalLevel(def, value), got = awardMedal(def.key || def.id, lvl);
+      reward = got.reward;
+      title = lvl ? `${MEDALS[lvl - 1].icon} ¡Medalla de ${MEDALS[lvl - 1].name.toLowerCase()}!${got.isNew ? '' : ' (repetida)'}` : 'Sin medalla… ¡otra vez!';
+    } else reward = raceReward(me.place, res.length, cfg.laps, cfg.diff);
+    $('res-title').textContent = title;
+    $('res-table').innerHTML = res.map((r) => `<tr class="${r.player ? 'me' : ''}"><td>${cfg.solo ? '' : r.place + 'º'}</td><td><span class="dot" style="background:${r.color}"></span>${r.name}</td>` +
+      (drift ? `<td class="pts">${fmtPts(r.score)} pts</td>` : `<td>${r.finished ? fmtTime(r.time) : '—'}</td>`) +
+      `<td>⏱ ${fmtTime(drift ? (r.finished ? r.time : 0) : r.best)}</td>${inCup ? `<td class="pts">+${POINTS[r.place - 1] || 0}</td>` : ''}</tr>`).join('');
+    if (reward && !cfg.solo) addMoney(reward);
     $('res-reward').textContent = reward ? `+ 🪙 ${coins(reward)}` : '';
     $('res-cup').classList.toggle('hidden', !inCup);
     document.querySelector('#m-results .res-col').classList.toggle('wide', inCup);
     if (inCup) $('cup-table').innerHTML = standingsRows(standings(cup));
     const best = getBest(cfg.track);
-    $('res-best').textContent = cfg.battle ? 'Tiempo = segundos que cada uno llevó la estrella' : `Récord del circuito: vuelta ${fmtTime(best.lap)} · carrera ${fmtTime(best.race)}`;
+    $('res-best').textContent = cfg.battle ? 'Tiempo = segundos que cada uno llevó la estrella'
+      : cfg.solo ? `Tu récord: ${drift ? fmtPts(best.score || 0) + ' pts' : fmtTime(best.race)} · Medallas: ${medalGoals(def)}`
+        : drift ? `Tu récord en este circuito: ${fmtPts(best.score || 0)} pts` : `Récord del circuito: vuelta ${fmtTime(best.lap)} · carrera ${fmtTime(best.race)}`;
     const btns = $('res-btns'); btns.innerHTML = '';
     const btn = (label, cls, fn) => {
       const b = document.createElement('button');
@@ -422,7 +532,7 @@ async function init() {
     if (inCup) {
       if (cup.idx >= cupById(cup.id).tracks.length - 1) btn('Ver el podio 🏆', '', showPodium);
       else {
-        btn('Siguiente carrera ▶', '', () => { cup.idx++; startRace(); });
+        btn('Siguiente prueba ▶', '', () => { cup.idx++; startRace(); });
         btn('Abandonar', 'alt', () => { if (confirm('¿Abandonar la copa? Perderás los puntos.')) quit(); });
       }
     } else {
@@ -456,6 +566,7 @@ async function init() {
     setCupResult(c.id, place);
     if (prize) addMoney(prize);
     const opened = CUPS.filter((x, i) => !before[i] && cupUnlocked(x, profile.cups));
+    const newDiscs = grantStarters(); // DIS-04
     loadToken++;
     if (race) { race.dispose(); race = null; }
     $('hud').classList.add('hidden');
@@ -463,7 +574,8 @@ async function init() {
     $('pod-sub').textContent = place === 1 ? '¡Eres el campeón!' : place <= 3 ? `¡Al podio! Has quedado ${place}º` : `Has quedado ${place}º. ¡La próxima vez!`;
     $('pod-table').innerHTML = standingsRows(table);
     $('pod-reward').textContent = prize ? `Premio de la copa: + 🪙 ${coins(prize)}` : 'Sin premio: hay que acabar entre los 3 primeros';
-    $('pod-unlock').textContent = opened.length ? `🔓 ¡${opened.map((x) => x.name).join(' y ')} desbloqueada!` : '';
+    $('pod-unlock').innerHTML = [opened.length ? `🔓 ¡${opened.map((x) => x.name).join(' y ')} desbloqueada!` : '',
+      ...newDiscs.map((d) => `${d.icon} ¡Nueva disciplina: <b>${d.name}</b>! Regalo: ${carById(d.starter).name}`)].filter(Boolean).join('<br>');
     room.showPodium(table);
     room.setView('podium');
     sfx.stopAmbient();
@@ -512,6 +624,7 @@ async function init() {
     pad.update(dt, { racing: !!race && !race.paused && race.phase !== 'done' && !$('m-results').offsetParent });
     if (race) {
       race.update(dt);
+      for (let k = 1; k < FAST; k++) race.update(0.08); // ?fast=N: acelera las pruebas en Chrome headless
       race.render(race.acc / FIXED, dt);
       sfx.updateRivals(race);
     } else if (loadingEl.classList.contains('hidden')) room.render(renderer, dt); // con la carga delante no hace falta dibujar
@@ -530,7 +643,7 @@ async function init() {
 
   window.__game = {
     renderer, controls, pad, sfx, settings, room, profile, showScreen, startRace, quit,
-    get race() { return race; }, get cup() { return cup; },
+    get race() { return race; }, get cup() { return cup; }, get disc() { return disc; }, enter,
     startCup(id) { mode = 'cup'; cup = { id, idx: 0, table: {} }; startRace(); },
     // fotos para las tarjetas (tests/previews.mjs)
     carPreviews: () => import('./previews.js').then((m) => m.carPreviews()),
@@ -550,10 +663,14 @@ async function init() {
     if (params.has('laps')) settings.laps = +params.get('laps');
     if (params.has('diff')) settings.diff = +params.get('diff');
     if (params.get('camMode')) settings.cam = params.get('camMode');
-    mode = params.has('practice') ? 'practice' : params.has('battle') ? 'battle' : 'race';
+    mode = params.has('practice') ? 'practice' : params.has('battle') ? 'battle' : params.has('solo') ? 'solo' : 'race';
+    if (params.get('track')) { disc = trackById(params.get('track')).disc || 'race'; settings.trk[disc] = params.get('track'); }
+    if (params.get('disc')) disc = params.get('disc');
+    if (params.has('unlock')) { profile.cups.bronce = 1; profile.cups.plata = 1; grantStarters(); }
+    if (!params.get('car')) useDisc(disc);
     sfx.start();
     if (params.get('cup')) { mode = 'cup'; cup = { id: params.get('cup'), idx: +(params.get('cupIdx') || 0), table: {} }; }
-    if (params.get('screen')) { sfx.startMusic('menu'); showScreen(params.get('screen')); if (params.get('screen') === 'm-cups') buildCups(); }
+    if (params.get('screen')) { sfx.startMusic('menu'); showScreen(params.get('screen')); if (params.get('screen') === 'm-cups') buildCups(); if (params.get('screen') === 'm-setup') enter(disc, mode === 'solo' ? 'solo' : mode); }
     else startRace();
   }
 }

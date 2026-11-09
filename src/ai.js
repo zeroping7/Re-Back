@@ -3,8 +3,8 @@ import * as THREE from 'three';
 // Piloto de la IA: sigue la pista con un carril propio, frena antes de las curvas,
 // esquiva coches, sale de atascos y usa objetos.
 export class AIDriver {
-  constructor(car, circuit, { skill = 1, seed = 1 } = {}) {
-    this.car = car; this.c = circuit; this.skill = skill;
+  constructor(car, circuit, { skill = 1, seed = 1, drift = false } = {}) {
+    this.car = car; this.c = circuit; this.skill = skill; this.drift = drift;
     this.rand = mulberry(seed * 9973);
     this.lane = (this.rand() - 0.5) * 0.6;
     this.laneTarget = this.lane;
@@ -49,22 +49,40 @@ export class AIDriver {
         if (Math.abs(lat - this.lane) < 0.5) this.laneTarget = THREE.MathUtils.clamp(this.lane + (lat > this.lane ? -0.6 : 0.6), -0.75, 0.75);
       }
     }
-    this.lane += THREE.MathUtils.clamp(this.laneTarget - this.lane, -dt * 0.8, dt * 0.8);
+    // obstáculos del recorrido (OBS-04): apartarse del más cercano que tengo delante y frenar en los estrechos
+    let hzSlow = Infinity, near = null, nd = Infinity;
+    for (const hz of race.T.hazards || []) {
+      const dx = hz.pos.x - p.x, dz = hz.pos.z - p.z, d = Math.hypot(dx, dz), ah = dx * f.x + dz * f.z;
+      if (d > 18 + hz.r || ah < -0.5) continue;
+      if (hz.slow) hzSlow = Math.min(hzSlow, hz.slow);
+      if (hz.r > 0 && ah < nd) { nd = ah; near = hz; }
+    }
+    if (near) {
+      const s = S[idx];
+      const lat = near.lat ?? ((near.pos.x - s.p.x) * s.n.x + (near.pos.z - s.p.z) * s.n.z) / (W / 2), need = near.r / (W / 2) + 0.3;
+      if (Math.abs(lat - this.lane) < need) {
+        let side = lat > this.lane ? -1 : 1;
+        if (Math.abs(lat + side * need) > 0.86) side = -side; // no hay sitio por ese lado
+        this.laneTarget = THREE.MathUtils.clamp(lat + side * need, -0.86, 0.86);
+        this.laneTimer = 0.8;
+      }
+    }
+    this.lane += THREE.MathUtils.clamp(this.laneTarget - this.lane, -dt * (hzSlow < Infinity ? 2.2 : 0.8), dt * (hzSlow < Infinity ? 2.2 : 0.8));
 
     // punto objetivo
     const sp = this.c.spacing;
     const look = Math.max(2, Math.round((5 + speed * 0.35) / sp));
     const ts = S[(idx + look) % N];
     // en curvas, tirar hacia el interior
-    const inner = ts.radius < 25 ? -ts.turn * 0.25 : 0;
-    const lane = THREE.MathUtils.clamp(this.lane + inner, -0.8, 0.8);
+    const inner = ts.radius < 25 && !near ? -ts.turn * 0.25 : 0;
+    const lane = THREE.MathUtils.clamp(this.lane + inner, -0.86, 0.86);
     const tx = ts.p.x + ts.n.x * lane * W / 2, tz = ts.p.z + ts.n.z * lane * W / 2;
     const dx = tx - p.x, dz = tz - p.z;
     const ang = Math.atan2(f.z * dx - f.x * dz, f.x * dx + f.z * dz);
     let steer = THREE.MathUtils.clamp(ang * 2.6, -1, 1);
 
     // velocidad: no pasarse en las curvas que vienen
-    const aLat = 55 * this.skill, decel = 28;
+    const aLat = (this.drift ? 72 : 55) * this.skill, decel = 28;
     let vAllowed = Infinity;
     const nAhead = Math.ceil(42 / sp);
     for (let j = 1; j < nAhead; j += 1) {
@@ -74,8 +92,11 @@ export class AIDriver {
       if (v < vAllowed) vAllowed = v;
     }
     let throttle = 1, brake = 0;
+    vAllowed = Math.min(vAllowed, hzSlow);
     if (speed > vAllowed + 5 && Math.abs(steer) < 0.3) { throttle = 0; brake = 1; }
     else if (speed > vAllowed) throttle = 0;
+    // DRI-07: en drift no se levanta del todo en las curvas: el gas sostiene el derrape
+    if (this.drift && this.reverse <= 0 && brake === 0 && speed < vAllowed + 6) throttle = Math.max(throttle, 0.7);
 
     // atascos: marcha atrás
     if (race.started && speed < 1.5 && !car.fx.stun) this.stuck += dt; else this.stuck = 0;

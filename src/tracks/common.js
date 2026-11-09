@@ -104,7 +104,28 @@ export function createBuilder(scene, world, RAPIER, S = 1, { mirror = false, rev
   const dynCyl = (r, h, x, y, z, material, o) => dyn(new THREE.CylinderGeometry(r, r, h, 12), material, RAPIER.ColliderDesc.cylinder(h / 2 * S, r * S), x, y, z, o);
   const dynBall = (r, x, y, z, material, o) => dyn(new THREE.IcosahedronGeometry(r, 1), material, RAPIER.ColliderDesc.ball(r * S), x, y, z, o);
 
-  return { scene, world, RAPIER, fixed, collider, box, cyl, ball, wall, mat, S, dynamics, dynBox, dynCyl, dynBall, mirror, reverse };
+  // Obstáculo móvil (OBS-01): cuerpo cinemático que empuja a los coches; las ruedas no lo pisan.
+  // desc en unidades del mundo (ya escalado); set() en unidades de diseño.
+  const _kq = new THREE.Quaternion(), _ky = new THREE.Vector3(0, 1, 0);
+  function kin(mesh, desc, { groups = PROP_GROUPS, friction = 0.3, restitution = 0.5 } = {}) {
+    mesh.traverse((o) => { o.userData.dynamic = true; if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    scene.add(mesh);
+    const body = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased());
+    desc.setFriction(friction).setRestitution(restitution).setCollisionGroups(groups);
+    world.createCollider(desc, body);
+    dynamics.push({ body, mesh });
+    return {
+      body, mesh,
+      set(x, y, z, ry = 0, init = false) {
+        _kq.setFromAxisAngle(_ky, ry);
+        const t = { x: x * S * MX, y: y * S, z: z * S };
+        const r = mirror ? { x: _kq.x, y: -_kq.y, z: -_kq.z, w: _kq.w } : { x: _kq.x, y: _kq.y, z: _kq.z, w: _kq.w };
+        if (init) { body.setTranslation(t, true); body.setRotation(r, true); } else { body.setNextKinematicTranslation(t); body.setNextKinematicRotation(r); }
+      },
+    };
+  }
+
+  return { scene, world, RAPIER, fixed, collider, box, cyl, ball, wall, mat, S, MX, dynamics, dynBox, dynCyl, dynBall, kin, mirror, reverse };
 }
 
 // Construye el trazado: muestras, bordes, línea de salida, parrilla y utilidades
@@ -192,7 +213,9 @@ export function buildCircuit(B, def) {
   // ---------- Bordes ----------
   const noBarrier = def.barrier === false;
   const st = noBarrier ? { colors: ['#ffffff'] } : def.barrier;
-  const gaps = def.gaps && (B.reverse ? def.gaps.map(([a, b, sd]) => [(N - b) % N, (N - a) % N, sd === undefined ? sd : -sd]) : def.gaps);
+  let gaps = def.gaps && (B.reverse ? def.gaps.map(([a, b, sd]) => [(N - b) % N, (N - a) % N, sd === undefined ? sd : -sd]) : def.gaps);
+  // huecos por fracción de vuelta (puentes sin bordes, OBS-01)
+  if (def.gapFracs) gaps = [...(gaps || []), ...def.gapFracs.map(([a, b, sd]) => (B.reverse ? [at(b), at(a), sd === undefined ? sd : -sd] : [at(a), at(b), sd]))];
   // bordes visibles bajos y sobrios; la colisión es un muro invisible más alto
   const blockH = st.height ?? 0.6, blockT = st.thick ?? 0.6;
   const segs = [];
@@ -502,6 +525,7 @@ export function scaleTrack(T, S, mirror = false) {
   c.width *= S; c.spacing *= S; c.length *= S;
   T.bounds = { x: T.bounds.x * S, z: T.bounds.z * S, h: T.bounds.h * S };
   for (const z of T.zones || []) if (z.pos) { z.pos = z.pos.clone().multiplyScalar(S); z.r *= S; if (mirror) z.pos.x = -z.pos.x; }
+  for (const z of T.zones || []) if (z.dir && mirror) z.dir.x = -z.dir.x;
   const L = T.lights;
   if (mirror) { L.sun = { ...L.sun, offset: [-L.sun.offset[0], L.sun.offset[1], L.sun.offset[2]] }; for (const p of L.points || []) p.pos = [-p.pos[0], p.pos[1], p.pos[2]]; }
   if (L.fog) L.fog = [L.fog[0], L.fog[1] * S, L.fog[2] * S];

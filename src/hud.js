@@ -1,5 +1,6 @@
 import { ITEMS } from './items.js';
 import { fmtTime } from './race.js';
+import { fmtPts } from './disciplines.js';
 
 // Marcador en carrera: posición, vuelta, tiempos, objeto, mensajes y minimapa
 export class Hud {
@@ -89,6 +90,35 @@ export class Hud {
     this.bEl.innerHTML = rows;
   }
 
+  // Drift: puntos, combo y multiplicador (DRI-06)
+  driftPanel(d) {
+    const st = d.drift;
+    document.getElementById('hud').classList.toggle('drift-mode', !!st);
+    if (!st) { if (this.dEl) this.dEl.classList.add('hidden'); return; }
+    if (!this.dEl) {
+      this.dEl = document.createElement('div'); this.dEl.id = 'h-drift';
+      this.dEl.innerHTML = '<div class="tot"><b></b><small>PTS</small></div><div class="combo"><span class="pts"></span><span class="mult"></span></div><div class="flash"></div>';
+      this.el('hud').append(this.dEl);
+      this.dTot = this.dEl.querySelector('.tot b'); this.dCombo = this.dEl.querySelector('.combo');
+      this.dPts = this.dEl.querySelector('.pts'); this.dMult = this.dEl.querySelector('.mult'); this.dFlash = this.dEl.querySelector('.flash');
+    }
+    this.dEl.classList.remove('hidden');
+    this.set('dtot', this.dTot, fmtPts(st.final ?? st.score));
+    const on = st.combo > 1;
+    if (this.last.dOn !== on) { this.last.dOn = on; this.dCombo.classList.toggle('on', on); }
+    if (on) {
+      this.set('dpts', this.dPts, '+' + fmtPts(st.combo * st.mult));
+      this.set('dmult', this.dMult, '×' + st.mult);
+      if (this.last.dm !== st.mult) { this.last.dm = st.mult; this.dCombo.dataset.m = st.mult; this.dMult.classList.remove('pop'); void this.dMult.offsetWidth; this.dMult.classList.add('pop'); }
+    }
+    const f = st.flash;
+    if (f && f !== this.lastFlash) {
+      this.lastFlash = f;
+      this.dFlash.textContent = f.text; this.dFlash.className = 'flash';
+      void this.dFlash.offsetWidth; this.dFlash.className = 'flash show ' + (f.ok ? 'ok' : 'bad');
+    }
+  }
+
   update(d) {
     this.set('speed', this.speed, String(Math.round(d.speed)));
     if (d.battle) {
@@ -97,10 +127,10 @@ export class Hud {
       this.set('lap', this.lap, d.battle.holder === d.player ? '⭐ ¡LA TIENES!' : '⭐ BATALLA');
       const left = d.battle.timers.get(d.player);
       this.set('time', this.time, left.toFixed(1) + ' s');
-    } else if (d.practice) {
+    } else if (d.practice || d.solo) {
       this.set('pos', this.pos, '');
       this.set('postot', this.posTot, '');
-      this.set('lap', this.lap, `VUELTA ${d.lap}`);
+      this.set('lap', this.lap, d.practice ? `VUELTA ${d.lap}` : `VUELTA ${d.lap}/${d.laps}`);
     } else {
       this.set('pos', this.pos, `${d.place}º`);
       this.set('postot', this.posTot, `/${d.total}`);
@@ -125,5 +155,7 @@ export class Hud {
     this.mapT -= 1;
     if (this.mapT <= 0) { this.mapT = 3; this.drawMap(d.cars, d.player, d.battle); }
     this.battlePanel(d);
+    this.driftPanel(d);
+    if (this.last.noItems !== !!d.noItems) { this.last.noItems = !!d.noItems; document.getElementById('hud').classList.toggle('no-items', !!d.noItems); }
   }
 }

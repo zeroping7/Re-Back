@@ -8,6 +8,7 @@ import { AIDriver } from './ai.js';
 import { Items, haloTexture } from './items.js';
 import { Particles, SkidMarks, Ripples } from './effects.js';
 import { setupBattle, battleStep, battlePlaces, battleRender, dropStar, BattleDriver } from './battle.js';
+import { discTuning, carAllowed, fmtPts } from './disciplines.js';
 import { loadGhost, saveGhost, ghostModel, poseAt, poseLerp, ReplayRecorder, Director, GHOST_HZ } from './replay.js';
 
 export const FIXED = 1 / 60;
@@ -23,6 +24,8 @@ export class Race {
     this.practice = practice;
     this.battle = battle;
     if (battle) this.laps = laps = 999;
+    this.disc = battle ? 'race' : (trackDef.disc || 'race'); // DIS-02
+    this.simT = 0;
     this.camMode = camMode;
     this.time = 0; this.phase = 'countdown'; this.countdown = 3.2; this.started = false; this.paused = false;
     this.acc = 0; this.trauma = 0; this.clock = 0;
@@ -67,24 +70,27 @@ export class Race {
     this.ai = new Map();
     const total = practice ? 1 : rivals + 1;
     // rivales de la clase que toca según la dificultad (como las copas por categorías)
-    const pool = rivalPool(difficulty).filter((c) => c.id !== carDef.id);
+    const disc = this.disc;
+    const pool = (disc === 'race' ? rivalPool(difficulty) : CARS.filter((c) => carAllowed(c, disc) && !c.secret)).filter((c) => c.id !== carDef.id); // DCO-05
     const rivalDefs = pool.length ? pool : CARS.filter((c) => c.id !== carDef.id);
     for (let i = 0; i < total; i++) {
       const isPlayer = i === total - 1; // el jugador sale el último
       const def = isPlayer ? carDef : rivalDefs[i % rivalDefs.length];
       const skill = isPlayer ? 1 : difficulty * (0.95 + 0.05 * (i / Math.max(1, total - 1)));
-      const tuning = isPlayer ? carTuning(baseTuning, def, 1, carUpgrades) : carTuning(baseTuningDefaults(baseTuning), def, skill);
+      const tuning = discTuning(isPlayer ? carTuning(baseTuning, def, 1, carUpgrades) : carTuning(baseTuningDefaults(baseTuning), def, skill), disc);
       const color = isPlayer ? def.color : RIVAL_COLORS[i % RIVAL_COLORS.length];
       const car = new Car(scene, this.world, RAPIER, def, tuning, { color, index: i, name: isPlayer ? 'Tú' : RIVAL_NAMES[i % RIVAL_NAMES.length] });
       const slot = this.circuit.gridSlot(i);
       car.reset(slot.pos, slot.yaw);
       car.isPlayer = isPlayer;
+      car.driftMode = disc === 'drift';
+      if (disc !== 'race') car.damageK = disc === 'obst' ? 0.3 : 0.5;
       this.cars.push(car);
-      this.states.set(car, { idx: slot.idx, progress: slot.idx - this.circuit.N, laps: 0, finished: false, finishTime: 0, lapStart: 0, lastLap: 0, bestLap: 0, wrongT: 0, place: 0 });
+      this.states.set(car, { idx: slot.idx, progress: slot.idx - this.circuit.N, laps: 0, finished: false, finishTime: 0, lapStart: 0, lastLap: 0, bestLap: 0, wrongT: 0, place: 0, score: 0, combo: 0, mult: 1, driftT: 0, grace: 0 });
       if (isPlayer) this.player = car;
-      else this.ai.set(car, new AIDriver(car, this.circuit, { skill, seed: i + 1 }));
+      else this.ai.set(car, new AIDriver(car, this.circuit, { skill, seed: i + 1, drift: disc === 'drift' }));
     }
-    this.playerAI = new AIDriver(this.player, this.circuit, { skill: 1, seed: 99 }); // para después de la meta
+    this.playerAI = new AIDriver(this.player, this.circuit, { skill: 1, seed: 99, drift: disc === 'drift' }); // para después de la meta
     if (battle) {
       for (const car of this.cars) if (!car.isPlayer) this.ai.set(car, new BattleDriver(car, this, { skill: difficulty, seed: car.index + 1 }));
       this.playerAI = new BattleDriver(this.player, this, { skill: 1, seed: 99 });
@@ -94,7 +100,7 @@ export class Race {
 
     // ---------- Objetos ----------
     this.items = new Items(this);
-    if (!practice) this.items.createPickups(T.itemSpots);
+    if (!practice && disc === 'race') this.items.createPickups(T.itemSpots);
     if (T.itemPoints) this.items.createPickupsAt(T.itemPoints);
 
     // ---------- Estrella oculta (solo Contrarreloj) ----------
@@ -110,7 +116,8 @@ export class Race {
 
     // ---------- Fantasma (Contrarreloj) y grabación para la repetición ----------
     this.stepN = 0;
-    if (practice) {
+    this.ghostOn = practice || (disc === 'obst' && total === 1); // OBS-03: fantasma también en la contrarreloj de obstáculos
+    if (this.ghostOn) {
       this.ghostRec = [];
       this.setGhost(loadGhost(this.trackKey));
     } else this.replayRec = new ReplayRecorder(this);
@@ -207,18 +214,21 @@ export class Race {
       if (!this.started) input = car.isPlayer ? { ...playerInput, throttle: 0, brake: 0, hold: true } : hold;
       else if (car.isPlayer) input = st.finished || this.autoPlayer ? this.playerAI.update(dt, this, st) : playerInput;
       else input = this.ai.get(car).update(dt, this, st);
-      if (!car.isPlayer && this.started && !this.practice && !this.battle) {
+      if (!car.isPlayer && this.started && !this.practice && !this.battle && this.disc !== 'drift') {
         const ps = this.state(this.player);
         const diff = (st.progress - ps.progress) / this.circuit.N;
         car.rubber = THREE.MathUtils.clamp(1 - diff * 0.45, 0.9, 1.1);
       }
       car.step(dt, input);
     }
+    if (this.started) this.simT += dt;
+    this.T.step?.(this.simT, dt); // obstáculos móviles (OBS-05)
     this.world.step();
     for (const car of this.cars) {
       car.afterStep(dt);
       this.trackProgress(car, dt);
       this.zoneEffects(car);
+      if (this.disc === 'drift') this.driftStep(car, this.state(car), dt);
       this.carEffects(car);
     }
     if (this.battle) battleStep(this, dt);
@@ -253,7 +263,7 @@ export class Race {
         const lapTime = this.time - st.lapStart;
         st.lastLap = lapTime; st.lapStart = this.time;
         if (!st.bestLap || lapTime < st.bestLap) st.bestLap = lapTime;
-        if (car.isPlayer && this.practice) this.playerLap(lapTime);
+        if (car.isPlayer && this.ghostOn) this.playerLap(lapTime);
         if (car.isPlayer) {
           if (!this.best.lap || lapTime < this.best.lap) { this.best.lap = lapTime; saveBest(this.trackKey, this.best); this.hud.message(`¡Récord de vuelta! ${fmtTime(lapTime)}`, 2); }
         }
@@ -283,10 +293,11 @@ export class Race {
     // fuera de la pista (por ejemplo tras una explosión)
     const sc = c.samples[st.idx];
     const lat = Math.abs((p.x - sc.p.x) * sc.n.x + (p.z - sc.p.z) * sc.n.z);
-    if (lat > c.width / 2 + 2 && car.contacts > 0) st.offT = (st.offT || 0) + dt; else st.offT = 0;
+    // (también si está en el suelo por debajo de un puente o una cuesta: se ha caído)
+    if ((lat > c.width / 2 + 2 || p.y < sc.p.y - 1.4) && car.contacts > 0) st.offT = (st.offT || 0) + dt; else st.offT = 0;
     // recolocar si vuelca o se sale
     const b = this.bounds;
-    if (car.upsideTime > 1.4 || p.y < -4 || Math.abs(p.x) > b.x + 6 || Math.abs(p.z) > b.z + 6 || st.offT > (car.isPlayer ? 2.5 : 1.5)) {
+    if (car.upsideTime > 1.4 || p.y < -4 || Math.abs(p.x) > b.x + 6 || Math.abs(p.z) > b.z + 6 || st.offT > (this.disc === 'obst' ? 0.9 : car.isPlayer ? 2.5 : 1.5)) {
       st.offT = 0;
       this.respawn(car);
     }
@@ -313,6 +324,12 @@ export class Race {
         continue;
       }
       if (Math.hypot(car.currPos.x - z.pos.x, car.currPos.z - z.pos.z) > z.r) continue;
+      if (z.effect === 'push') { // ventilador / cascada (OBS-01): empuja de lado
+        const k = (z.on ? z.on(this.simT) : 1) * z.force * car.mass * FIXED;
+        if (k) car.body.applyImpulse({ x: z.dir.x * k, y: 0, z: z.dir.z * k }, true);
+        if (z.surface) { surf = z.surface; car.waterY = z.pos.y + 0.05; car.fx.wet = Math.max(car.fx.wet, 0.3); }
+        continue;
+      }
       if (z.effect === 'wet') {
         surf = z.surface || 'water';
         car.waterY = z.pos.y + 0.07 * this.S;
@@ -407,8 +424,32 @@ export class Race {
     }
   }
 
+  // ---------- Drift: puntos por ir de lado (DRI-01..03) ----------
+  driftStep(car, st, dt) {
+    if (!this.started || st.finished) return;
+    const fwd = car.fwdSpeed, beta = Math.atan2(Math.abs(car.localVel.x), Math.max(0.01, fwd));
+    if (fwd < -2 && car.speed > 4) return this.loseCombo(car, st, 'trompo');
+    for (const e of car.events) if (e.type === 'hit' && e.strength > 0.24) return this.loseCombo(car, st, 'golpe');
+    const sliding = fwd > 3 && car.speed > 7 && car.contacts >= 2 && beta > 0.21;
+    if (sliding) {
+      st.driftT += dt; st.grace = 1;
+      st.mult = Math.min(5, 1 + Math.floor(st.driftT / 1.6));
+      st.combo += car.speed * Math.min(beta, 1.1) * 6 * dt;
+    } else if (st.combo > 0 && (st.grace -= dt) <= 0) {
+      const got = st.combo * st.mult;
+      st.score += got; st.combo = 0; st.driftT = 0; st.mult = 1;
+      if (car.isPlayer) { st.flash = { t: this.clock, text: `+${fmtPts(got)}`, ok: true }; if (got > 400) this.sfx.play('pickup'); }
+    }
+  }
+
+  loseCombo(car, st, why) {
+    if (st.combo > 30 && car.isPlayer) { st.flash = { t: this.clock, text: why === 'trompo' ? '¡Trompo!' : why === 'golpe' ? '¡Golpe!' : 'Combo perdido', ok: false }; this.sfx.play('wrong'); }
+    st.combo = 0; st.driftT = 0; st.mult = 1; st.grace = 0;
+  }
+
   respawn(car) {
     const st = this.state(car), c = this.circuit;
+    if (this.disc === 'drift') this.loseCombo(car, st);
     if (this.battle && this.battleState?.holder === car) dropStar(this, car.currPos);
     if (this.battle && this.T.spawns) { // arena: al punto libre más cercano
       const p = car.currPos;
@@ -417,7 +458,10 @@ export class Race {
       if (car.isPlayer) this.trauma = 0;
       return;
     }
-    const s = c.samples[st.idx];
+    // no recolocar encima de un obstáculo (OBS-02): se retrocede hasta un punto libre
+    let ri = st.idx;
+    for (let k = 0; k < 14 && (this.T.hazards || []).some((hz) => hz.r > 0 && Math.hypot(hz.pos.x - c.samples[ri].p.x, hz.pos.z - c.samples[ri].p.z) < hz.r + 5); k++) ri = (ri - 1 + c.N) % c.N;
+    const s = c.samples[ri];
     // altura real del suelo en ese punto (rampas, cuestas…)
     const ray = new RAPIER.Ray({ x: s.p.x, y: s.p.y + 20, z: s.p.z }, { x: 0, y: -1, z: 0 });
     const hit = this.world.castRay(ray, 40, true, undefined, WHEEL_RAY_GROUPS);
@@ -478,6 +522,7 @@ export class Race {
     if (this.battle && this.battleState) return battlePlaces(this);
     const list = [...this.cars].sort((a, b) => {
       const A = this.state(a), Bs = this.state(b);
+      if (this.disc === 'drift') return (Bs.final ?? Bs.score + Bs.combo * Bs.mult) - (A.final ?? A.score + A.combo * A.mult); // DRI-05: por puntos
       if (A.finished && Bs.finished) return A.finishTime - Bs.finishTime;
       if (A.finished) return -1;
       if (Bs.finished) return 1;
@@ -494,9 +539,20 @@ export class Race {
     const st = this.state(this.player);
     this.phase = 'done';
     this.sfx.play('finish');
-    this.hud.message(`¡META! ${st.place}º`, 3, 'big go');
+    if (this.disc === 'drift') { // DRI-05: se cobra el combo y se proyecta la puntuación de los que no han acabado
+      const goal = this.laps * this.circuit.N;
+      for (const car of this.cars) {
+        const s = this.state(car);
+        s.score += s.combo * s.mult; s.combo = 0;
+        s.final = s.finished ? s.score : s.score * Math.min(2.5, goal / Math.max(goal * 0.4, s.progress));
+      }
+      this.updatePlaces();
+      if (this.laps === 2 && (!this.best.score || st.final > this.best.score)) this.best.score = st.final; // récord: siempre a 2 vueltas
+    }
+    const solo = this.cars.length === 1;
+    this.hud.message(this.disc === 'drift' ? `¡META! ${fmtPts(st.final)} pts` : solo ? `¡META! ${fmtTime(st.finishTime)}` : `¡META! ${st.place}º`, 3, 'big go');
     if (!this.best.race || st.finishTime < this.best.race) { this.best.race = st.finishTime; }
-    this.best.wins = (this.best.wins || 0) + (st.place === 1 ? 1 : 0);
+    this.best.wins = (this.best.wins || 0) + (st.place === 1 && this.cars.length > 1 ? 1 : 0);
     saveBest(this.trackKey, this.best);
     setTimeout(() => { if (this.replayRec) this.replayRec.on = false; this.onFinish?.(this.results()); }, 2500);
   }
@@ -504,7 +560,7 @@ export class Race {
   results() {
     return this.order.map((car) => {
       const st = this.state(car);
-      return { name: car.name, color: car.color, def: car.def.id, player: car.isPlayer, place: st.place, finished: st.finished, time: st.finishTime, best: st.bestLap, laps: st.laps };
+      return { name: car.name, color: car.color, def: car.def.id, player: car.isPlayer, place: st.place, finished: st.finished, time: st.finishTime, best: st.bestLap, laps: st.laps, score: st.final ?? st.score };
     });
   }
 
@@ -656,6 +712,7 @@ export class Race {
       bomb: this.items.bombs.get(this.player)?.t,
       cars: this.cars, player: this.player,
       battle: this.battleState,
+      drift: this.disc === 'drift' ? st : null, solo: this.cars.length === 1 && !this.practice, noItems: this.disc !== 'race',
     });
   }
 
@@ -829,7 +886,7 @@ export class Race {
 
   applyTuning(base) {
     this.baseTuning = base;
-    this.player.t = carTuning(base, this.player.def, 1, this.carUpgrades);
+    this.player.t = discTuning(carTuning(base, this.player.def, 1, this.carUpgrades), this.disc);
     this.player.applyTuning();
     this.world.gravity = { x: 0, y: -base.gravity, z: 0 };
   }

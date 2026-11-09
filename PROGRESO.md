@@ -7,7 +7,19 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - **APK (última versión):** https://zeroping7.github.io/Re-Back/re-back.apk
   (alternativa: https://github.com/zeroping7/Re-Back/releases/latest)
 
-## Estado: fases 1-5 hechas ✅ — ahora puliendo para parecerse lo máximo a Re-Volt (ver `specs/`)
+## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
+
+### Disciplinas: Drift y Obstáculos ✅ (specs/11-disciplinas.md)
+- Menú: **Jugar** abre el selector de disciplina (Carrera · Drift · Obstáculos), cada una con sus modos, circuitos, coches y copa.
+  Drift se abre con la Copa Bronce y Obstáculos con la Plata (entre los 3 primeros); al abrirse regalan su coche básico.
+- **Drift** (por puntos): conducción arcade propia (el volante cruza el coche y el gas lo sostiene), combo con multiplicador ×1-×5
+  que se pierde al tocar un muro o hacer un trompo. Modos Puntuación (solo, medallas), Duelo y Copa Derrape.
+  Circuitos: La cocina encerada y El garaje. Coches: Patín, Humo, Trompo, Katana (+ Bólido, Flecha y Saeta).
+- **Obstáculos**: rampas-libro, puentes sin bordes, eslalon, barreras que van y vienen, barras giratorias, ventilador, cascadas,
+  badenes y jabón. Modos Contrarreloj (solo, medallas y fantasma), Carrera y Copa Obstáculos.
+  Circuitos: El escritorio y El fregadero. Coches: Cabra, Oruga, Yeti (+ Tanque, Morsa y Rally).
+- Garaje con pestañas por disciplina; cada disciplina recuerda su coche.
+- **Pendiente de ajustar con pruebas reales**: tacto del derrape, puntos y tiempos de las medallas (salen de simulaciones con la IA).
 
 ### Fase 1 — Conducción ✅
 - Coche con controlador de vehículo por rayos de Rapier: suspensión real, 4x4 con reparto trasero,
