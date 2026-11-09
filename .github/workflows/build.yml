@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: build-${{ github.ref }}
@@ -16,6 +18,9 @@ jobs:
   apk:
     name: Compilar APK y publicar web
     runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -42,12 +47,12 @@ jobs:
       - run: cp android/app/build/outputs/apk/debug/app-debug.apk re-back.apk
       - name: Subir web + APK a la rama gh-pages
         run: cp re-back.apk dist/re-back.apk
-      - uses: peaceiris/actions-gh-pages@v4
+      - uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          force_orphan: true
-          commit_message: "web: ${{ github.sha }}"
+          path: ./dist
+      - name: Publicar en GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
       - uses: actions/upload-artifact@v4
         with:
           name: re-back-apk
