@@ -1,0 +1,14 @@
+# 08 · Audio
+
+Todo el sonido se **sintetiza por código** (Web Audio): no hay archivos de audio ni música de terceros.
+
+| ID | Requisito | Estado |
+|---|---|---|
+| AUD-01 | Motor del jugador: zumbido eléctrico que sube con la velocidad y el gas | ✅ |
+| AUD-02 | **Motor nitro** para los coches de nitro: más grave, áspero y con vibración | 🚧 |
+| AUD-03 | **Motores de los rivales cercanos** (2 voces) con volumen según la distancia | 🚧 |
+| AUD-04 | Derrape, golpes, explosiones, salpicaduras, turbo, cohete, bomba, recogida, vueltas, meta | ✅ |
+| AUD-05 | Pulso eléctrico (zumbido) y bola de acero (rodar) | 🚧 |
+| AUD-06 | **Ambiente por circuito**: salón (tic-tac de reloj y rumor de casa), supermercado (zumbido de neveras y aviso por megafonía), jardín (viento y pájaros) | 🚧 |
+| AUD-07 | Música procedimental en menús y carrera, se puede apagar | ✅ |
+| AUD-08 | Sonido y música se pueden silenciar por separado (Opciones) | ✅ |

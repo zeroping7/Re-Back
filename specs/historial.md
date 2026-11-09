@@ -1,0 +1,25 @@
+# Historial de peticiones y decisiones
+
+Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs reflejan el estado actual.
+
+| # | Petición del usuario | Decisión / resultado |
+|---|---|---|
+| 1 | Crear el juego y la fase 1 en una casa, sin parar | Vite + Three.js + Rapier + Capacitor; coche RC con suspensión, circuito "El salón", CI web + APK |
+| 2 | La descarga del APK no termina | APK válido; se publica también en GitHub Pages para descarga directa |
+| 3 | Ajuste preferido: tracción trasera 90, freno 10, giro 0,3 | Pasan a ser los valores por defecto |
+| 4 | Modelo del coche más realista | Buggy 1:10 con suspensión animada, neumáticos de tacos, llantas |
+| 5 | Hacer el resto del juego siguiendo la esencia | Fases 2-5: IA, vueltas, armas, 3 circuitos, 5 coches, menús, música, APK final |
+| 6 | Coches más lentos; pistas el doble de anchas y largas | Velocidad 25; mundo de los circuitos escalado ×2 |
+| 7 | Más curvas, algo más estrechas, menos cajas y obstáculos, detalles divertidos, mejores modelos y más coches | Trazados nuevos, ancho 7, 2 puntos de cajas, detalles animados, 4 coches nuevos (9 en total) |
+| 8 | Compra/venta de coches, mejoras con dinero del juego, empezar con los peores, modelos más reales | Monedas, garaje, mejoras, 60 % al vender; carrocerías suavizadas y más detalles |
+| 9 | ¿Se puede jugar en el navegador? | Sí; Pages pasa a publicarse con GitHub Actions |
+| 10 | Arreglar el deslizado de tarjetas; objetos para interactuar; cuestas; zonas de derrape controlables; más velocidad y menos agarre | Tarjetas deslizables, objetos sueltos, cuestas, zonas de derrape, turbos, vel. 29 y agarre 3,0/2,6 |
+| 11 | Quitar escalones en cuestas y rampas; turbos lejos de curvas; físicas lo más parecidas a Re-Volt; deformación y salud; circuitos más largos; mejores texturas | Superficies continuas sin aristas internas, turbos automáticos en rectas, motor eléctrico y suspensión blanda, abolladuras y salud, circuitos ~1,7× más largos, texturas con relieve |
+| 12 | Actuar como experto UI/UX y ambientación para parecerse lo máximo a Re-Volt; quitar objetos con los que se choca; implementar SDD con todo lo hablado | Specs creadas (esta carpeta). Plan: decorado despejado, flechas en curvas, nuevas armas, copas, estrellas ocultas, fichas de coche, cámaras, taller 3D en menús, carga con consejos, ambiente sonoro |
+
+## Preferencias del usuario
+
+- Trabaja **solo desde el móvil**; Claude programa, sube y publica; el usuario prueba y da feedback.
+- Respuestas **breves y concisas**, en español.
+- Mantener `PROGRESO.md` y estas specs al día.
+- Objetivo principal: **parecerse lo máximo posible a Re-Volt**.

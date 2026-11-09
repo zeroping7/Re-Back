@@ -1,0 +1,41 @@
+# 03 · Coches
+
+## Catálogo
+
+Cada coche tiene clase, motor, tracción y peso propios (estilo ficha de Re-Volt) y multiplicadores sobre el
+ajuste base. Nombres y diseños originales.
+
+| ID | Coche | Estilo | Clase | Motor | Tracción | Peso | Precio |
+|---|---|---|---|---|---|---|---|
+| furgo | Furgo | furgoneta de pizzas | Novato | Eléctrico | 4x4 | 10 | 600 (inicial) |
+| pulga | Pulga | burbuja con ojos | Novato | Eléctrico | 4x4 | 6,5 | 600 (inicial) |
+| chispa | Chispa | buggy | Aficionado | Eléctrico | 4x4 | 7 | 1.500 |
+| rayo | Rayo | buggy | Aficionado | Eléctrico | 4x4 | 8 | 2.500 |
+| tanque | Tanque | monster truck | Avanzado | Nitro | 4x4 50/50 | 11 | 3.000 |
+| rally | Rally | rally compacto | Avanzado | Nitro | 4x4 60 % detrás | 8,5 | 4.000 |
+| bolido | Bólido | buggy | Semi-pro | Nitro | 4x4 | 8 | 5.500 |
+| flecha | Flecha | turismo | Semi-pro | Eléctrico | 4x4 70 % detrás | 8 | 7.500 |
+| formula | Fórmula | monoplaza | Pro | Nitro | Trasera | 7,5 | 10.000 |
+
+| ID | Requisito | Estado |
+|---|---|---|
+| COC-01 | 9 coches con multiplicadores de potencia, velocidad, agarre, giro y suspensión | ✅ |
+| COC-02 | Clase, motor (eléctrico/nitro), tracción y peso por coche, visibles en el garaje | 🚧 |
+| COC-03 | Motor nitro con sonido distinto (más grave y rasposo) | 🚧 |
+
+## Modelos 3D (hechos por código)
+
+| ID | Requisito | Estado |
+|---|---|---|
+| COC-10 | Estilos: buggy, turismo, monster truck, rally, furgoneta, monoplaza, burbuja | ✅ |
+| COC-11 | Perfiles suavizados (Chaikin) con normales suaves, pasos de rueda, matrículas, retrovisores, líneas de puertas | ✅ |
+| COC-12 | Suspensión visible y animada (trapecios, amortiguadores con muelle), discos y pinzas de freno | ✅ |
+| COC-13 | Neumáticos de tacos o lisos, llantas con radios a escala, antena con muelle | ✅ |
+| COC-14 | Decoraciones: franjas, rally, llamas, lunares, pizza; dorsal y calcomanías | ✅ |
+| COC-15 | Piezas fijas fusionadas por material (pocas llamadas de dibujo); menos detalle en coches lejanos | ✅ |
+| COC-16 | Abolladuras y desgaste (ver FIS-31..34) | ✅ |
+
+## Mejoras (desviación DES-02)
+
+Motor (+7 % potencia/nivel), Velocidad punta (+4,5 %), Neumáticos (+5 % agarre), Dirección (+5 % giro y respuesta).
+3 niveles cada una. Precio ver [09-economia.md](09-economia.md). Estado ✅.
