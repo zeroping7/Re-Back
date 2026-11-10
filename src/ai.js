@@ -73,7 +73,7 @@ export class AIDriver {
 
     // punto objetivo
     const sp = this.c.spacing;
-    const look = Math.max(2, Math.round((5 + speed * 0.35) / sp));
+    const look = hold ? 1 : Math.max(2, Math.round((5 + speed * 0.35) / sp)); // en puentes estrechos mira cerca para no desviarse
     const ts = S[(idx + look) % N];
     // en curvas, tirar hacia el interior
     const inner = ts.radius < 25 && !near ? -ts.turn * 0.25 : 0;

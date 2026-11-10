@@ -661,6 +661,7 @@ async function init() {
   // modo prueba: salta los menús
   if (params.has('test')) {
     $('start').classList.add('hidden');
+    if (params.get('variant')) settings.variant = params.get('variant');
     if (params.get('track')) settings.track = params.get('track');
     if (params.get('car')) { profile.owned[params.get('car')] ??= {}; profile.selected = params.get('car'); }
     if (params.has('rivals')) settings.rivals = +params.get('rivals');

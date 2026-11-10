@@ -336,6 +336,9 @@ export class Race {
         } else if (z.effect === 'slide') {
           car.fx.slide = 0.2;
           if (z.surface) surf = z.surface;
+        } else if (z.effect === 'sand') {
+          car.fx.sand = 0.2;
+          if (z.surface) surf = z.surface;
         }
         continue;
       }

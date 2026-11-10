@@ -1,21 +1,37 @@
 import * as THREE from 'three';
 import { groundTex } from '../textures.js';
 import { buildCircuit, room, trackRibbon, bannerTexture } from './common.js';
-import { crawlKit } from './crawlkit.js';
+import { crawlKit, LEN } from './crawlkit.js';
 import { rockWalls, rockField, pines, curtainMaterial, moon } from './diorama.js';
 
 // Circuito 1 de Obstáculos · "La maqueta" (CRW-09..12): diorama de crawlers sobre mesa, con cortinas azules y luna.
 // Un solo camino estrecho (A→B, la meta está donde la salida) con nueve obstáculos obligatorios que ocupan todo el ancho.
 const R = { x: 74, z: 38, h: 44 };
-const PTS = [[-44, 13], [-30, 13], [-16, 13], [-2, 13], [12, 13], [26, 13], [40, 13], [46, 13], [55.2, 9.2], [59, 0], [55.2, -9.2], [46, -13],
-  [40, -13], [26, -13], [12, -13], [-2, -13], [-16, -13], [-30, -13], [-40, -13], [-46, -13], [-55.2, -9.2], [-59, 0], [-55.2, 9.2], [-46, 13]];
+// Óvalo corto: dos tramos rectos (y=±10) unidos por semicírculos de radio 10. Los obstáculos van casi seguidos (CRW-13).
+const XW = 42, RAD = 10;
+const arc = (cx, a0, a1, n) => Array.from({ length: n }, (_, k) => { const a = a0 + (a1 - a0) * (k + 1) / (n + 1); return [cx + RAD * Math.cos(a), RAD * Math.sin(a)]; });
+const PTS = [
+  ...[-XW, -28, -14, 0, 14, 28, XW].map((x) => [x, RAD]),
+  ...arc(XW, Math.PI / 2, -Math.PI / 2, 3),
+  ...[XW, 28, 14, 0, -14, -28, -XW].map((x) => [x, -RAD]),
+  ...arc(-XW, -Math.PI / 2, -3 * Math.PI / 2, 3),
+];
+// Centros de los obstáculos: se reparten en cada recta con el mismo hueco entre ellos (mínimo 4,5 u)
+function lay(names, x0, dir, span, entry) {
+  const free = span - names.reduce((t, n) => t + LEN[n], 0) - entry, gap = Math.max(4.5, free / names.length);
+  let x = x0 + dir * (entry + gap * 0.5);
+  return names.map((n) => { const c = x + dir * LEN[n] / 2; x += dir * (LEN[n] + gap); return [n, c]; });
+}
+const TOP = lay(['steps', 'logs', 'ramp', 'bridge'], -XW, 1, 2 * XW - 5, 3);
+const BOT = lay(['ford', 'climb', 'garden', 'tib'], XW, -1, 2 * XW - 5, 6);
+const at = (list, n) => list.find((q) => q[0] === n)[1];
 
 export default {
   id: 'senda', disc: 'obst',
   name: 'La maqueta', short: 'Maqueta',
   desc: 'Un solo camino y nueve obstáculos obligatorios',
   color: '#8d6e3f',
-  medals: [160, 135, 115],
+  medals: [220, 180, 150],
   music: 'parque', ambient: 'salon',
   build,
 };
@@ -33,10 +49,10 @@ function build(B) {
 
   const circuit = buildCircuit(B, {
     points: PTS,
-    start: [-44, 13],
+    start: [-XW, RAD],
     width: 2.6,
     limits: [R.x - 2, R.z - 2],
-    hills: [{ at: [8, -13], len: 14, h: 1.5 }],
+    hills: [{ at: [at(BOT, 'climb'), -RAD], len: LEN.climb - 1, h: 1.2 }],
     hillMaterial: dirtMat,
     barrier: { colors: ['#6c7079'], thick: 0.6, hidden: true, wallHalf: 0.55 }, // solo colisión: las rocas son el dibujo
     chevrons: false,
@@ -45,15 +61,15 @@ function build(B) {
 
   // ---------- Obstáculos (en orden de recorrido) ----------
   const K = crawlKit(B, circuit);
-  K.steps(-29.8, 13);        // 1
-  K.logPile(-10.1, 13);      // 2
-  K.rampDouble(7.4, 13);     // 3
-  K.coveredBridge(27.4, 13); // 4
-  K.sandBank(59, 0);         // 5
-  K.ford(31, -13);           // 6
-  K.rockClimb(8, -13);       // 7
-  K.rockGarden(-12.5, -13);  // 8
-  K.tibetan(-33.6, -13);     // 9
+  K.steps(at(TOP, 'steps'), RAD);        // 1
+  K.logPile(at(TOP, 'logs'), RAD);       // 2
+  K.rampDouble(at(TOP, 'ramp'), RAD);    // 3
+  K.coveredBridge(at(TOP, 'bridge'), RAD); // 4
+  K.sandBank(XW + RAD, 0);               // 5
+  K.ford(at(BOT, 'ford'), -RAD);         // 6
+  K.rockClimb(at(BOT, 'climb'), -RAD);   // 7
+  K.rockGarden(at(BOT, 'garden'), -RAD); // 8
+  K.tibetan(at(BOT, 'tib'), -RAD);       // 9
   const T = K.finish();
 
   // salida / meta
@@ -67,14 +83,14 @@ function build(B) {
 
   // ---------- Decorado ----------
   rockWalls(B, circuit);
-  rockField(B, circuit, { x0: -50, x1: 50, z0: -7, z1: 7, count: 34, rMin: 2.6, rMax: 5.2, hMin: 1.4, hMax: 2.6, away: 5, seed: 12 }); // montaña central
-  rockField(B, circuit, { x0: -R.x + 3, x1: R.x - 3, z0: 22, z1: R.z - 2, count: 46, rMin: 3, rMax: 7, hMin: 1.1, hMax: 2.3, away: 4, seed: 21 });
-  rockField(B, circuit, { x0: -R.x + 3, x1: R.x - 3, z0: -R.z + 2, z1: -22, count: 46, rMin: 3, rMax: 7, hMin: 1.1, hMax: 2.3, away: 4, seed: 22 });
-  rockField(B, circuit, { x0: 63, x1: R.x - 2, z0: -22, z1: 22, count: 14, rMin: 3, rMax: 6, hMin: 1.1, hMax: 2, away: 4, seed: 23 });
-  rockField(B, circuit, { x0: -R.x + 2, x1: -63, z0: -22, z1: 22, count: 14, rMin: 3, rMax: 6, hMin: 1.1, hMax: 2, away: 4, seed: 24 });
-  pines(B, circuit, { x0: -52, x1: 52, z0: -8, z1: 8, count: 26, away: 6, seed: 4 });
-  pines(B, circuit, { x0: -R.x + 4, x1: R.x - 4, z0: 18, z1: R.z - 3, count: 40, away: 7, seed: 5 });
-  pines(B, circuit, { x0: -R.x + 4, x1: R.x - 4, z0: -R.z + 3, z1: -18, count: 40, away: 7, seed: 6 });
+  rockField(B, circuit, { x0: -50, x1: 50, z0: -4, z1: 4, count: 30, rMin: 1.6, rMax: 3.2, hMin: 1.4, hMax: 2.6, away: 2.5, seed: 12 }); // montaña central
+  rockField(B, circuit, { x0: -R.x + 3, x1: R.x - 3, z0: 18, z1: R.z - 2, count: 46, rMin: 3, rMax: 7, hMin: 1.1, hMax: 2.3, away: 4, seed: 21 });
+  rockField(B, circuit, { x0: -R.x + 3, x1: R.x - 3, z0: -R.z + 2, z1: -18, count: 46, rMin: 3, rMax: 7, hMin: 1.1, hMax: 2.3, away: 4, seed: 22 });
+  rockField(B, circuit, { x0: 66, x1: R.x - 2, z0: -22, z1: 22, count: 14, rMin: 3, rMax: 6, hMin: 1.1, hMax: 2, away: 4, seed: 23 });
+  rockField(B, circuit, { x0: -R.x + 2, x1: -66, z0: -22, z1: 22, count: 14, rMin: 3, rMax: 6, hMin: 1.1, hMax: 2, away: 4, seed: 24 });
+  pines(B, circuit, { x0: -46, x1: 46, z0: -5, z1: 5, count: 16, away: 4, seed: 4, min: 0.9, max: 1.5 });
+  pines(B, circuit, { x0: -R.x + 4, x1: R.x - 4, z0: 16, z1: R.z - 3, count: 40, away: 7, seed: 5 });
+  pines(B, circuit, { x0: -R.x + 4, x1: R.x - 4, z0: -R.z + 3, z1: -16, count: 40, away: 7, seed: 6 });
 
   return {
     circuit,

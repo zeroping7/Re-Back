@@ -18,13 +18,14 @@ async function open(extra = '') {
   page.on('pageerror', (e) => console.log('pageerror', e.message));
   page.on('console', (m) => { if (m.type() === 'error') console.log('console.error', m.text()); });
   await page.setViewport({ width: 960, height: 540 });
-  await page.goto(`http://localhost:4173/?test&unlock&track=${track}&solo&rivals=0${extra}`, { waitUntil: 'load' });
+  await page.goto(`http://localhost:4173/?test&unlock&track=${track}&solo&rivals=0${process.env.VARIANT ? '&variant=' + process.env.VARIANT : ''}${process.env.CAR ? '&car=' + process.env.CAR : ''}${extra}`, { waitUntil: 'load' });
   await page.waitForFunction(() => window.__game?.race, { timeout: 90000 });
   return page;
 }
 for (const cam of cams) {
   if (cam === 'gates') {
     const page = await open('&fast=3');
+    await page.waitForFunction(() => window.__game.race.started, { timeout: 60000 }).catch(() => {});
     const n = await page.evaluate(() => window.__game.race.T.gates.length);
     for (let k = 0; k < n; k++) {
       if (only && !only.includes(k + 1)) continue;
@@ -42,7 +43,7 @@ for (const cam of cams) {
   } else if (cam === 'obs') {
     // vista elevada de cada obstáculo (centros en unidades de diseño; VIEW=rear|side|front)
     const page = await open('&fast=1');
-    const centers = JSON.parse(process.env.CENTERS || '[[-29.8,13],[-10.1,13],[7.4,13],[27.4,13],[59,0],[31,-13],[8,-13],[-12.5,-13],[-33.6,-13]]');
+    const centers = JSON.parse(process.env.CENTERS || '[[-29.1,10],[-10.1,10],[8,10],[26.7,10],[52,0],[26.8,-10],[8.8,-10],[-8.8,-10],[-29.6,-10]]');
     for (let k = 0; k < centers.length; k++) {
       if (only && !only.includes(k + 1)) continue;
       await page.evaluate((c, view) => {

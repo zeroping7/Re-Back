@@ -11,7 +11,22 @@ const WOOD = ['#a1744a', '#8d6238', '#b5885a', '#9b6c43'];
 const LOG = ['#7a5230', '#6b4527', '#8a5f3a', '#74492a'];
 export const ROCK = ['#80858d', '#6b7079', '#8e9299', '#60646d', '#8a8176'];
 const PHYS = { friction: 1.3, restitution: 0.04 };
-const RIDE = 0.9; // altura aproximada del centro del coche sobre el suelo (mundo)
+const RIDE = 0.9;
+// Parámetros (diseño) y longitudes de cada obstáculo: el circuito los usa para colocarlos casi seguidos (CRW-13)
+const P = {
+  steps: { n: 12, rise: 0.1334, tread: 0.5, top: 2.4 },
+  logs: { n: 30, extra: 22 },
+  ramp: { up: 4.4, deck: 3.6, h: 1.3, logs: 26 },
+  sand: { mounds: 24 },
+  ford: { rocks: 38 },
+  climb: { rocks: 32 },
+  garden: { rocks: 50 },
+  tib: { ramp: 5.4, deck: 8, h: 1.1, w: 1.2 },
+};
+export const LEN = {
+  steps: 2 * P.steps.n * P.steps.tread + P.steps.top, logs: 14, ramp: P.ramp.up * 2 + P.ramp.deck, bridge: 4 * 2 + 6.5 + 1,
+  sand: 26, ford: 14, climb: 15, garden: 13, tib: P.tib.ramp * 2 + P.tib.deck + 1,
+}; // altura aproximada del centro del coche sobre el suelo (mundo)
 
 export function crawlKit(B, circuit) {
   const SC = B.S, MX = B.MX;
@@ -39,13 +54,20 @@ export function crawlKit(B, circuit) {
     for (let a = -f.L / 2 - 4; a <= f.L / 2 + 1; a += 4.5) hazards.push({ pos: world(f.pos(a)), r: 0, slow, hold: hold ? 9 : 0 });
   }
   // Foso bajo una plataforma: si el coche está por debajo, se ha caído (top = altura de la plataforma, diseño)
-  function pit(f, a0, a1, top) { pits.push({ i0: f.idx(a0), i1: f.idx(a1), y: (f.y0 + top) * SC + 0.4 }); }
+  function pit(f, a0, a1, top) { pits.push({ i0: f.idx(a0), i1: f.idx(a1), y: (f.y0 + top) * SC + 0.2 }); }
 
   // Losa cuya cara SUPERIOR va de (a0, h0) a (a1, h1)
   function surf(f, a0, h0, a1, h1, { lat = 0, w = W * 0.94, th = 0.22, material = plankMat, solid = true } = {}) {
     const dh = h1 - h0, da = a1 - a0, ang = Math.atan2(dh, da), len = Math.hypot(da, dh) + 0.08;
     const p = f.pos((a0 + a1) / 2 + Math.sin(ang) * th / 2, lat);
     return B.box(w, th, len, p.x, f.y0 + (h0 + h1) / 2 - Math.cos(ang) * th / 2, p.z, material, { rot: [-ang, f.yaw, 0], solid, phys: PHYS });
+  }
+  // Viga invisible de cima plana (colisión) bajo la cara superior de un tronco: las ruedas no resbalan por el lomo redondo
+  function beam(f, a0, h0, a1, h1, lat, w, th = 0.3) {
+    const dh = h1 - h0, da = a1 - a0, ang = Math.atan2(dh, da), len = Math.hypot(da, dh) + 0.3;
+    const p = f.pos((a0 + a1) / 2 + Math.sin(ang) * th / 2, lat), y = f.y0 + (h0 + h1) / 2 - Math.cos(ang) * th / 2;
+    const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(-ang, f.yaw, 0, 'YXZ'));
+    B.collider(B.RAPIER.ColliderDesc.cuboid(w / 2, th / 2, len / 2), { x: p.x, y, z: p.z }, q, PHYS);
   }
   // Tronco cuya parte SUPERIOR va de (a0, h0) a (a1, h1)
   function logAlong(f, a0, h0, a1, h1, lat, r, color, solid = true) {
@@ -60,52 +82,85 @@ export function crawlKit(B, circuit) {
   }
   const post = (f, a, lat, h, r, color, y0 = 0) => { const p = f.pos(a, lat); return B.cyl(r, r, h, p.x, f.y0 + y0 + h / 2, p.z, color, { seg: 6, solid: false }); };
 
-  // 1 · Escalones de madera: subir n peldaños, meseta y bajar
-  function steps(x, z, { n = 4, rise = 0.1, tread = 1.4, top = 3.2, wide = 0.94 } = {}) {
-    const L = 2 * n * tread + top, f = frame(x, z, L, 'Escalones de madera');
+  // Suelo (diseño) en el tramo f a la distancia a; sigue la colina de la cuesta
+  const groundAt = (f, a) => samples[(((f.i + Math.round(a / sp)) % circuit.N) + circuit.N) % circuit.N].h;
+  const SAND = ['#d9bd84', '#cfae72', '#e3c88f', '#c8a766'];
+
+  // Roca suelta de forma variada (bola facetada, losa inclinada o tocón de cinco-ocho lados); `e` = cuánto sobresale del suelo
+  function rock(f, a, lat, r, e, color, kind = (rnd() * 3) | 0) {
+    if (kind) e *= 0.72; // las losas y tocones tienen la cima plana: más bajos para que el chasis no se enganche
+    const p = f.pos(a, lat), y = groundAt(f, a);
+    if (kind === 0) return B.ball(r, p.x, y + e - r, p.z, color, { detail: rnd() < 0.5 ? 0 : 1, phys: PHYS });
+    if (kind === 1) {
+      const w = r * (1.6 + rnd() * 0.8), d = r * (1.2 + rnd() * 0.8), h = Math.max(e * 1.6, r * 0.7);
+      return B.box(w, h, d, p.x, y + e - h / 2 - 0.02, p.z, color, { rot: [(rnd() - 0.5) * 0.35, rnd() * 6.28, (rnd() - 0.5) * 0.35], phys: PHYS });
+    }
+    const h = r * (1.0 + rnd() * 1.2);
+    return B.cyl(r * (0.55 + rnd() * 0.25), r, h, p.x, y + e - h / 2 - 0.02, p.z, color, { seg: 5 + ((rnd() * 4) | 0), rot: [(rnd() - 0.5) * 0.3, rnd() * 6.28, (rnd() - 0.5) * 0.3], phys: PHYS });
+  }
+  // Reparte `count` rocas al azar por el tramo (sin que se pisen mucho)
+  function scatter(f, a0, a1, count, { rMin = 0.18, rMax = 0.38, eMin = 0.1, eMax = 0.3, colors = ROCK, kinds, wide = W / 2 - 0.1, overlap = 0.72 } = {}) {
+    const placed = [];
+    for (let k = 0, tries = 0; k < count && tries < count * 40; tries++) {
+      const a = a0 + rnd() * (a1 - a0), lat = (rnd() * 2 - 1) * wide, r = rMin + rnd() * (rMax - rMin);
+      if (placed.some((q) => Math.hypot(q.a - a, q.lat - lat) < (q.r + r) * overlap)) continue;
+      placed.push({ a, lat, r });
+      rock(f, a, lat, r, eMin + rnd() * (eMax - eMin), colors[(rnd() * colors.length) | 0], kinds ? kinds[(rnd() * kinds.length) | 0] : undefined);
+      k++;
+    }
+  }
+
+  // 1 · Escalones de madera: subir n peldaños (4 veces más alto que antes), meseta y bajar
+  function steps(x, z, { n = P.steps.n, rise = P.steps.rise, tread = P.steps.tread, top = P.steps.top, wide = 0.94 } = {}) {
+    const L = LEN.steps, f = frame(x, z, L, 'Escalones de madera');
     let a = -L / 2;
     const slab = (len, h) => { const p = f.pos(a + len / 2); B.box(W * wide, h, len, p.x, f.y0 + h / 2, p.z, plankMat, { rot: [0, f.yaw, 0], phys: PHYS }); a += len; };
     for (let k = 1; k <= n; k++) slab(tread, rise * k);
     slab(top, rise * n);
     for (let k = n; k >= 1; k--) slab(tread, rise * k);
-    narrow(f, 5.5);
-    return f;
-  }
-
-  // 2 · Troncos sueltos atravesados, medio enterrados y desiguales
-  function logPile(x, z, { n = 5 } = {}) {
-    const L = 11, f = frame(x, z, L, 'Troncos sueltos');
-    for (let k = 0; k < n; k++) {
-      const r = 0.14 + rnd() * 0.08, top = 0.16 + rnd() * 0.1;
-      logAcross(f, -L / 2 + 1.5 + k * (L - 3) / (n - 1) + (rnd() - 0.5) * 0.5, top - r, (rnd() - 0.5) * 0.12, r, W * 0.97, LOG[k % 4], { yawJ: (rnd() - 0.5) * 0.26 });
-    }
     narrow(f, 5);
     return f;
   }
 
-  // 3 · Rampa de troncos: sube, meseta y baja
-  function rampDouble(x, z, { up = 3.2, deck = 3.6, h = 0.85 } = {}) {
-    const L = up * 2 + deck, f = frame(x, z, L, 'Rampa de troncos');
+  // 2 · Troncos sueltos: una maraña de troncos largos y cortos, de grosor y rumbo al azar
+  function logPile(x, z, { n = P.logs.n, extra = P.logs.extra } = {}) {
+    const L = LEN.logs, f = frame(x, z, L, 'Troncos sueltos');
+    for (let k = 0; k < n; k++) {
+      const r = 0.1 + rnd() * 0.1, top = 0.15 + rnd() * 0.15;
+      logAcross(f, -L / 2 + 0.7 + rnd() * (L - 1.4), top - r, (rnd() - 0.5) * 0.3, r, W * (0.95 + rnd() * 0.05), LOG[k % 4], { yawJ: (rnd() - 0.5) * 0.9 });
+    }
+    for (let k = 0; k < extra; k++) { // troncos cortos encima, sueltos y de cualquier rumbo
+      const r = 0.07 + rnd() * 0.07, a = -L / 2 + 1 + rnd() * (L - 2), lat = (rnd() * 2 - 1) * (W / 2 - 0.4);
+      const p = f.pos(a, lat);
+      B.cyl(r, r, 0.7 + rnd() * 0.8, p.x, f.y0 + r * 1.1 + rnd() * 0.1, p.z, LOG[(k + 1) % 4], { seg: 7, rot: [0, rnd() * 6.28, Math.PI / 2], phys: PHYS });
+    }
+    narrow(f, 4.5);
+    return f;
+  }
+
+  // 3 · Rampa de troncos: sube, meseta y baja, con troncos sueltos repartidos al azar
+  function rampDouble(x, z, { up = P.ramp.up, deck = P.ramp.deck, h = P.ramp.h } = {}) {
+    const L = LEN.ramp, f = frame(x, z, L, 'Rampa de troncos');
     const a0 = -L / 2, a1 = a0 + up, a2 = a1 + deck, a3 = a2 + up;
     surf(f, a0, 0, a1, h); surf(f, a1, h, a2, h); surf(f, a2, h, a3, 0);
-    for (const [s0, s1, h0, h1] of [[a0, a1, 0, h], [a2, a3, h, 0]]) {
-      const n = Math.round((s1 - s0) / 0.42);
-      for (let k = 0; k < n; k++) { const u = (k + 0.5) / n; logAcross(f, s0 + (s1 - s0) * u, h0 + (h1 - h0) * u + 0.03, 0, 0.1, W * 0.9, LOG[k % 4], { solid: false }); }
+    const hAt = (a) => (a < a0 ? 0 : a < a1 ? h * (a - a0) / up : a < a2 ? h : a < a3 ? h * (a3 - a) / up : 0);
+    for (let k = 0; k < P.ramp.logs; k++) {
+      const a = a0 + 0.4 + rnd() * (L - 0.8), r = 0.07 + rnd() * 0.06, len = W * (0.4 + rnd() * 0.55), lat = (rnd() - 0.5) * (W - len);
+      logAcross(f, a, hAt(a) + r * 0.45, lat, r, len, LOG[k % 4], { yawJ: (rnd() - 0.5) * 1.0 });
     }
-    logAcross(f, (a1 + a2) / 2, h + 0.03, 0, 0.1, W * 0.9, LOG[1], { solid: false });
     narrow(f, 4.5);
     return f;
   }
 
   // 4 · Puente de troncos cubierto: dos raíles de troncos (las ruedas deben ir sobre ellos) con tejado de madera
-  function coveredBridge(x, z, { ramp = 4, flat = 6.5, h = 0.5, gauge = 0.8, r = 0.2 } = {}) {
-    const L = ramp * 2 + flat + 1, f = frame(x, z, L, 'Puente de troncos');
+  function coveredBridge(x, z, { ramp = 4, flat = 6.5, h = 0.5, gauge = 0.72, r = 0.3 } = {}) {
+    const L = LEN.bridge, f = frame(x, z, L, 'Puente de troncos');
     const a0 = -L / 2 + 0.5, a1 = a0 + ramp, a2 = a1 + flat, a3 = a2 + ramp;
     for (const sd of [-1, 1]) {
       const lat = sd * gauge / 2;
-      logAlong(f, a0, 0, a1, h, lat, r, LOG[(sd + 2) & 3]);
-      logAlong(f, a1 - 0.2, h, a2 + 0.2, h, lat, r, LOG[(sd + 3) & 3]);
-      logAlong(f, a2, h, a3, 0, lat, r, LOG[(sd + 4) & 3]);
+      logAlong(f, a0, 0, a1, h, lat, r, LOG[(sd + 2) & 3], false); beam(f, a0, 0, a1, h, lat, r * 1.5);
+      logAlong(f, a1 - 0.2, h, a2 + 0.2, h, lat, r, LOG[(sd + 3) & 3], false); beam(f, a1 - 0.2, h, a2 + 0.2, h, lat, r * 1.5);
+      logAlong(f, a2, h, a3, 0, lat, r, LOG[(sd + 4) & 3], false); beam(f, a2, h, a3, 0, lat, r * 1.5);
       for (const a of [a1 + 0.5, a2 - 0.5]) post(f, a, lat, h - r, 0.12, WOOD[1]);
     }
     for (let a = a1 + 1; a < a2; a += 2.2) logAcross(f, a, h - r * 2 - 0.06, 0, 0.1, gauge + 0.7, WOOD[2], { solid: false });
@@ -123,16 +178,26 @@ export function crawlKit(B, circuit) {
     return f;
   }
 
-  // 5 · Banco de arena en una curva: poco agarre
+  // 5 · Banco de arena en la curva: arena blanda que frena mucho, con montículos de distinta altura repartidos al azar
   const sandTex = surfaceTex('sand', [1, 2]);
-  function sandBank(x, z, L = 24) {
+  function sandBank(x, z, L = LEN.sand) {
     const f = frame(x, z, L, 'Banco de arena');
-    zones.push(trackPatch(B, circuit, [x, z], L, 'slide', { ...sandTex, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0, normalScale: 1.2, inset: 0.1, surface: 'sand' }));
-    for (let i = f.i0; i <= f.i1; i += 3) hazards.push({ pos: world(samples[((i % circuit.N) + circuit.N) % circuit.N].p), r: 0, slow: 5 });
+    zones.push(trackPatch(B, circuit, [x, z], L, 'sand', { ...sandTex, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0, normalScale: 1.2, inset: 0.1, surface: 'sand' }));
+    const placed = [];
+    for (let k = 0, tries = 0; k < P.sand.mounds && tries < 900; tries++) {
+      const i = f.i0 + 2 + Math.floor(rnd() * (f.i1 - f.i0 - 3)), s = samples[i], s2 = samples[i + 1];
+      const u = rnd(), lat = (rnd() * 2 - 1) * (W / 2 - 0.15), r = 0.4 + rnd() * 0.5, e = 0.07 + rnd() * 0.24;
+      const px = s.p.x + (s2.p.x - s.p.x) * u + s.n.x * lat, pz = s.p.z + (s2.p.z - s.p.z) * u + s.n.z * lat;
+      if (placed.some((q) => Math.hypot(q.x - px, q.z - pz) < (q.r + r) * 0.62)) continue;
+      placed.push({ x: px, z: pz, r });
+      B.ball(r, px, s.h + e - r, pz, SAND[k & 3], { detail: 1, phys: { friction: 1.5, restitution: 0.02 } });
+      k++;
+    }
+    for (let i = f.i0; i <= f.i1; i += 3) hazards.push({ pos: world(samples[((i % circuit.N) + circuit.N) % circuit.N].p), r: 0, slow: 3.2 });
     return f;
   }
 
-  // 6 · Vado de agua con rocas dentro
+  // 6 · Vado de agua lleno de rocas de formas y tamaños al azar
   const wt = surfaceTex('water', [1, 4]), wt2 = surfaceTex('water', [1.7, 5]);
   const waterMat = new THREE.MeshPhysicalMaterial({
     color: '#ffffff', map: wt.map, normalMap: wt.normalMap, normalScale: new THREE.Vector2(0.35, 0.35), roughness: 0.03, metalness: 0,
@@ -140,13 +205,13 @@ export function crawlKit(B, circuit) {
     envMapIntensity: 1.6, transparent: true, opacity: 0.88, vertexColors: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4,
   });
   visuals.push((t) => { wt.normalMap.offset.set(0, -t * 0.05); wt2.normalMap.offset.set(0, -t * 0.08); wt.map.offset.set(0, -t * 0.03); });
-  function ford(x, z, L = 16) {
+  function ford(x, z, L = LEN.ford) {
     const f = frame(x, z, L, 'Vado de agua');
     const pos = [], uv = [], col = [], idx = [], hw = W / 2 + 0.1;
     let v = 0;
     for (let i = f.i0, k = 0; i <= f.i1; i++, k++) {
       const s = samples[i], fade = Math.min(1, k / 2, (f.i1 - i) / 2);
-      for (const sd of [1, -1]) { const q = s.p.clone().addScaledVector(s.n, sd * hw); pos.push(q.x, s.h + 0.1, q.z); col.push(1, 1, 1, fade); }
+      for (const sd of [1, -1]) { const q = s.p.clone().addScaledVector(s.n, sd * hw); pos.push(q.x, s.h + 0.06, q.z); col.push(1, 1, 1, fade); }
       uv.push(0, v, 1, v); v += sp / (hw * 2);
       if (i < f.i1) { const a = k * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
     }
@@ -156,43 +221,31 @@ export function crawlKit(B, circuit) {
     g.setAttribute('color', new THREE.Float32BufferAttribute(col, 4));
     g.setIndex(idx); g.computeVertexNormals();
     const m = new THREE.Mesh(g, waterMat); m.userData.dynamic = true; m.receiveShadow = true; B.scene.add(m);
-    for (const a of [-5.5, -1.8, 1.8, 5.5]) zones.push({ pos: f.pos(a), r: W * 0.7, effect: 'wet', surface: 'water' });
-    // rocas dentro del agua, alternadas a un lado y al otro
-    [[-5.8, 0.66], [-2.2, -0.66], [1.5, 0.66], [5.0, -0.66]].forEach(([a, lat], k) => {
-      const r = 0.3 + rnd() * 0.05, p = f.pos(a, lat);
-      B.ball(r, p.x, f.y0 + 0.04, p.z, ROCK[k % 5], { phys: PHYS });
-      hazards.push({ pos: world(p), r: (r + 0.3) * SC, lat: lat / (W / 2), slow: 4 });
-    });
-    narrow(f, 4);
+    for (let a = -L / 2 + 1.5; a < L / 2; a += 3.4) zones.push({ pos: f.pos(a), r: W * 0.7, effect: 'wet', surface: 'water' });
+    scatter(f, -L / 2 + 2, L / 2 - 1.5, P.ford.rocks, { rMin: 0.14, rMax: 0.32, eMin: 0.1, eMax: 0.26, overlap: 0.8 });
+    narrow(f, 3.2);
     return f;
   }
 
-  // 7 · Cuesta de roca: la elevación la crea `hills` en buildCircuit; aquí van las piedras incrustadas
-  function rockClimb(x, z, L = 16) {
+  // 7 · Cuesta de roca: la elevación la crea `hills` en buildCircuit; aquí va el pedregal que la cubre
+  function rockClimb(x, z, L = LEN.climb) {
     const f = frame(x, z, L, 'Cuesta de roca');
-    for (let i = f.i0 + 1; i < f.i1; i += 2) {
-      const s = samples[i], r = 0.2 + rnd() * 0.14, lat = (rnd() < 0.5 ? -1 : 1) * (0.4 + rnd() * 0.75), p = s.p.clone().addScaledVector(s.n, lat);
-      B.ball(r, p.x, s.h + r * 0.15, p.z, ROCK[i % 5], { phys: PHYS });
-    }
-    narrow(f, 4.5);
+    scatter(f, -L / 2 + 1, L / 2 - 1, P.climb.rocks, { rMin: 0.14, rMax: 0.34, eMin: 0.08, eMax: 0.24, overlap: 0.6 });
+    narrow(f, 3.6);
     return f;
   }
 
-  // 8 · Jardín de rocas: cuatro filas de rocas que cierran el paso; hay que trepar al menos una de cada fila (el coche se inclina)
+  // 8 · Jardín de rocas: pedregal denso de rocas al azar (el coche se inclina y tiene que trepar)
   function rockGarden(x, z) {
-    const L = 11, f = frame(x, z, L, 'Jardín de rocas');
-    const rows = [[-4, [-0.88, 0, 0.88]], [-1.3, [-0.5, 0.5]], [1.5, [-0.9, -0.02, 0.88]], [4.1, [-0.48, 0.5]]];
-    rows.forEach(([a, lats], ri) => lats.forEach((lt, k) => {
-      const r = (lats.length === 2 ? 0.3 : 0.28) + rnd() * 0.03, p = f.pos(a + (rnd() - 0.5) * 0.4, lt + (rnd() - 0.5) * 0.08);
-      B.ball(r, p.x, f.y0 - 0.05, p.z, ROCK[(ri * 2 + k) % 5], { phys: PHYS });
-    }));
-    narrow(f, 3.5);
+    const L = LEN.garden, f = frame(x, z, L, 'Jardín de rocas');
+    scatter(f, -L / 2 + 0.6, L / 2 - 0.6, P.garden.rocks, { rMin: 0.16, rMax: 0.4, eMin: 0.1, eMax: 0.3, overlap: 0.55 });
+    narrow(f, 3);
     return f;
   }
 
-  // 9 · Puente tibetano: rampa, tablillas colgando con ropes y mucha comba, sin barandilla sólida
-  function tibetan(x, z, { ramp = 3.6, deck = 9, h = 0.55, w = 1.3, sag = 0.14 } = {}) {
-    const L = ramp * 2 + deck + 1, f = frame(x, z, L, 'Puente tibetano');
+  // 9 · Puente tibetano alto: rampas largas y empinadas y una calzada casi justa para el coche; los lados son un barranco de rocas
+  function tibetan(x, z, { ramp = P.tib.ramp, deck = P.tib.deck, h = P.tib.h, w = P.tib.w, sag = 0.14 } = {}) {
+    const L = LEN.tib, f = frame(x, z, L, 'Puente tibetano');
     const a0 = -L / 2 + 0.5, a1 = a0 + ramp, a2 = a1 + deck, a3 = a2 + ramp;
     const yAt = (a) => { const u = Math.min(1, Math.max(0, (a - a1) / deck)); return h - sag * 4 * u * (1 - u); };
     surf(f, a0, 0, a1, h, { w }); surf(f, a2, h, a3, 0, { w });
@@ -213,6 +266,12 @@ export function crawlKit(B, circuit) {
         post(f, (s0 + s1) / 2, lat, 0.55, 0.02, '#cdb78a', yAt((s0 + s1) / 2));
       }
       for (const a of [a1, a2]) post(f, a, lat, 0.95, 0.07, WOOD[1], h - 0.3);
+    }
+    // barranco: bloques de roca a ambos lados de la calzada (no se puede rodear el puente por el suelo)
+    const hRamp = (a) => (a < a1 ? h * Math.max(0, a - a0) / ramp : a <= a2 ? h : h * Math.max(0, a3 - a) / ramp);
+    for (const sd of [-1, 1]) for (let a = a0 + 0.8; a <= a3 - 0.8; a += 0.75) { // barranco bajo (por debajo de la calzada) a los lados
+      const e = Math.min(0.5, hRamp(a) * 0.85); if (e < 0.14) continue;
+      const r = 0.34 + rnd() * 0.05; rock(f, a + (rnd() - 0.5) * 0.3, sd * (w / 2 + r + 0.02), r, e, ROCK[(rnd() * 5) | 0], 0);
     }
     pit(f, a1 + 0.3, a2 - 0.3, h - sag);
     narrow(f, 3.5, true);

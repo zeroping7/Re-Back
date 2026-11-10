@@ -29,7 +29,7 @@ export class Car {
     const WHEELS = (this.W = wheelsFor(def));
     this.R = def.wheelR;
     // efectos de objetos (segundos restantes)
-    this.fx = { boost: 0, oil: 0, stun: 0, wet: 0, slide: 0, zap: 0, stick: 0 };
+    this.fx = { boost: 0, oil: 0, stun: 0, wet: 0, slide: 0, sand: 0, zap: 0, stick: 0 };
     this.dirt = 0; this.surface = null; this.trail = null; this.rail = null;
     this.item = null;
     this.health = 100;
@@ -147,7 +147,7 @@ export class Car {
     const thr = stunned || zapped ? 0 : input.throttle, brk = stunned ? 0 : input.brake;
     const boost = fx.boost > 0;
     const rb = (this.rubber ?? 1) * (0.72 + 0.28 * this.health / 100);
-    const maxSpeed = t.maxSpeed * rb * (boost ? 1.35 : 1) * (fx.wet > 0 ? 0.7 : 1);
+    const maxSpeed = t.maxSpeed * rb * (boost ? 1.35 : 1) * (fx.wet > 0 ? 0.7 : 1) * (fx.sand > 0 ? 0.6 : 1);
     const power = t.engine * rb * (0.85 + 0.15 * this.health / 100) * (boost ? 1.8 : 1);
     if (thr > 0) {
       // motor eléctrico de RC (como Re-Volt): mucho par al arrancar que cae con la velocidad
@@ -189,6 +189,12 @@ export class Car {
       b.applyImpulse({ x: -this.forward.x * k, y: 0, z: -this.forward.z * k }, true);
       engine = 0;
     }
+    // arena blanda (CRW-13): se hunde, frena fuerte y cuesta avanzar
+    if (fx.sand > 0) {
+      const v = b.linvel(), k = 1.7 * this.mass * dt;
+      b.applyImpulse({ x: -v.x * k, y: 0, z: -v.z * k }, true);
+      if (fwd > maxSpeed) engine = 0;
+    }
     this.throttle = thr;
 
     const rear = t.rearBias / 100;
@@ -198,7 +204,7 @@ export class Car {
       veh.setWheelBrake(i, (front ? brakeF : brakeR) * this.massK);
       veh.setWheelSideFrictionStiffness(i, front ? t.sideFront : t.sideRear);
       // aceite: casi sin agarre · zona de derrape: agarre reducido pero controlable
-      const oil = fx.oil > 0 ? 0.22 : fx.slide > 0 ? (front ? 0.88 : 0.74) : 1;
+      const oil = fx.oil > 0 ? 0.22 : fx.slide > 0 ? (front ? 0.88 : 0.74) : fx.sand > 0 ? 0.8 : 1;
       veh.setWheelFrictionSlip(i, (front ? t.gripFront : t.gripRear * (this.drifting ? t.driftRear : 1)) * oil);
     }
 
