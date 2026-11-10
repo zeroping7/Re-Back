@@ -1,6 +1,6 @@
 # Re-Back 🏎️
 
-Carreras de coches RC low-poly para Android.
+Carreras de coches RC low-poly para Android y navegador Web.
 
 - Jugar en el navegador: https://zeroping7.github.io/Re-Back/
 - Descargar APK: https://zeroping7.github.io/Re-Back/re-back.apk (o en Releases)
