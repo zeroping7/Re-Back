@@ -10,10 +10,8 @@ ajuste base. Nombres y diseños originales.
 | furgo | Furgo | furgoneta de pizzas | Novato | Eléctrico | 4x4 | 10 | 600 (inicial) |
 | pulga | Pulga | burbuja con ojos | Novato | Eléctrico | 4x4 | 6,5 | 600 (inicial) |
 | chispa | Chispa | buggy | Aficionado | Eléctrico | 4x4 | 7 | 1.500 |
-| rayo | Rayo | buggy | Aficionado | Eléctrico | 4x4 | 8 | 2.500 |
 | tanque | Tanque | monster truck | Avanzado | Nitro | 4x4 50/50 | 11 | 3.000 |
 | rally | Rally | rally compacto | Avanzado | Nitro | 4x4 60 % detrás | 8,5 | 4.000 |
-| bolido | Bólido | buggy | Semi-pro | Nitro | 4x4 | 8 | 5.500 |
 | flecha | Flecha | turismo | Semi-pro | Eléctrico | 4x4 70 % detrás | 8 | 7.500 |
 | formula | Fórmula | monoplaza | Pro | Nitro | Trasera | 7,5 | 10.000 |
 

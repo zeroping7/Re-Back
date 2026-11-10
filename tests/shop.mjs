@@ -16,7 +16,7 @@ await page.click('#btn-start'); await sleep(600);
 await page.screenshot({ path: 'tests/shots/shop0.png' });
 await page.click('[data-go="garage"]'); await sleep(1200);
 await page.screenshot({ path: 'tests/shots/shop1.png' });
-await page.evaluate(() => [...document.querySelectorAll('#g-cars .card')].find((c) => c.textContent.includes('Rayo')).click()); await sleep(800);
+await page.evaluate(() => [...document.querySelectorAll('#g-cars .card')].find((c) => c.textContent.includes('Chispa')).click()); await sleep(800);
 await page.evaluate(() => document.querySelector('#g-actions .buy').click()); await sleep(800);
 await page.evaluate(() => document.querySelector('#g-ups button').click()); await sleep(600);
 await page.evaluate(() => document.querySelector('#g-ups button').click()); await sleep(1200);

@@ -10,7 +10,7 @@ const { tuning } = await import('../src/tuning.js');
 const sfx = { play() {}, update() {}, hit() {}, stopEngine() {} };
 const hud = { message() {}, setupMinimap() {}, update() {}, lookBack() {} };
 let ok = 0;
-for (const carId of (process.argv[2] || 'pulga,rayo,tanque,formula').split(',')) {
+for (const carId of (process.argv[2] || 'pulga,chispa,tanque,formula').split(',')) {
   const inp = { steer: 0, throttle: 1, brake: 0 };
   const controls = { read: () => inp, consumeFire: () => false, camStick: { x: 0, y: 0 } };
   const race = new Race({ renderer: null, envMap: null, sfx, controls, hud, battle: true, trackDef: ARENA, carDef: carById(carId), laps: 1, rivals: 1, difficulty: 1, baseTuning: tuning });

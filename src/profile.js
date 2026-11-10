@@ -14,10 +14,13 @@ function load() {
   return JSON.parse(JSON.stringify(START));
 }
 export const profile = load();
+for (const id of ['rayo', 'bolido', 'grillo']) delete profile.owned[id]; // coches retirados
+if (!Object.keys(profile.owned).length) profile.owned.pulga = {};
 if (!profile.owned[profile.selected]) profile.selected = Object.keys(profile.owned)[0];
 profile.cups ??= {}; // mejor puesto final en cada copa
 profile.stars ??= {}; // estrellas ocultas cogidas por circuito
-profile.sel ??= { race: profile.selected }; // último coche usado en cada disciplina (DIS-03)
+profile.sel ??= { race: profile.selected };
+for (const k in profile.sel) if (!profile.owned[profile.sel[k]]) profile.sel[k] = profile.selected; // último coche usado en cada disciplina (DIS-03)
 profile.medals ??= {}; // mejor medalla por circuito en los modos en solitario (DEC-01)
 profile.granted ??= {}; // disciplinas cuyo coche básico ya se regaló (DIS-04)
 

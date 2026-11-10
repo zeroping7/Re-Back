@@ -25,7 +25,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const FAST = params.has('test') ? +(params.get('fast') || 1) : 1;
 
 const SKEY = 'reback.settings.v1';
-const settings = { track: 'salon', variant: 'normal', car: 'rayo', laps: 3, rivals: 3, diff: 0.94, quality: 'alta', cam: 'normal', autoGas: false, cup: 'bronce', disc: 'race', trk: {}, lapsD: {}, ...load(SKEY) };
+const settings = { track: 'salon', variant: 'normal', car: 'pulga', laps: 3, rivals: 3, diff: 0.94, quality: 'alta', cam: 'normal', autoGas: false, cup: 'bronce', disc: 'race', trk: {}, lapsD: {}, ...load(SKEY) };
 function saveSettings() { try { localStorage.setItem(SKEY, JSON.stringify(settings)); } catch { /* nada */ } }
 function load(k) { try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch { return {}; } }
 

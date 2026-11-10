@@ -10,7 +10,7 @@ const { tuning } = await import('../src/tuning.js');
 const sfx = { play() {}, update() {}, hit() {}, stopEngine() {} };
 const hud = { message() {}, setupMinimap() {}, update() {} };
 for (const id of process.argv.slice(2)) {
-  const race = new Race({ renderer: null, envMap: null, sfx, controls: { read: () => ({}), consumeFire: () => false }, hud, trackDef: trackFromKey(id), carDef: carById('rayo'), laps: 1, rivals: 0, baseTuning: tuning });
+  const race = new Race({ renderer: null, envMap: null, sfx, controls: { read: () => ({}), consumeFire: () => false }, hud, trackDef: trackFromKey(id), carDef: carById('pulga'), laps: 1, rivals: 0, baseTuning: tuning });
   const c = race.circuit, S = c.samples, N = c.N, need = c.width + 2.6 * race.S;
   let worst = Infinity, wi = 0, wj = 0, minR = Infinity;
   for (let i = 0; i < N; i++) {

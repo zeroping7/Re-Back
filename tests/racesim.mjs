@@ -8,7 +8,7 @@ const { trackFromKey: trackById } = await import('../src/tracks/index.js');
 const { carById } = await import('../src/cars.js');
 const { tuning } = await import('../src/tuning.js');
 const trackId = process.argv[2] || 'salon', rivals = +(process.argv[3] || 3), laps = +(process.argv[4] || 3);
-const carId = process.argv[5] || "rayo";
+const carId = process.argv[5] || "pulga";
 const sfx = { play() {}, update() {}, hit() {}, stopEngine() {} };
 const hud = { message: (m) => { if (process.env.V) console.log('  [msg]', m); }, setupMinimap() {}, update() {} };
 const controls = { read: () => ({ steer: 0, throttle: 0, brake: 0 }), consumeFire: () => false };

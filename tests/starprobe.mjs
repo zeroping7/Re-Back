@@ -10,7 +10,7 @@ const trackId = process.argv[2];
 const sfx = { play() {}, update() {}, hit() {}, stopEngine() {} };
 const hud = { message() {}, setupMinimap() {}, update() {} };
 const controls = { read: () => ({ steer: 0, throttle: 0, brake: 0 }), consumeFire: () => false };
-const race = new Race({ renderer: null, envMap: null, sfx, controls, hud, trackDef: trackById(trackId), carDef: carById(process.argv[3] || 'rayo'), laps: 3, rivals: 0, difficulty: 0.94, baseTuning: tuning, practice: true, star: { taken: false }, onStar: () => 500 });
+const race = new Race({ renderer: null, envMap: null, sfx, controls, hud, trackDef: trackById(trackId), carDef: carById(process.argv[3] || 'pulga'), laps: 3, rivals: 0, difficulty: 0.94, baseTuning: tuning, practice: true, star: { taken: false }, onStar: () => 500 });
 race.autoPlayer = true;
 race.star.got = true; // no recoger: medir las pasadas
 const c = race.circuit, N = c.N, ramp = c.elev.find((e) => e.kind === 'ramp'), top = (ramp.i1 - 1 + N) % N;
