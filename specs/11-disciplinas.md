@@ -49,6 +49,23 @@ Las monedas y el garaje son comunes. Código: `src/disciplines.js`.
 Nota de diseño: los recorridos son **circuitos cerrados** (salida y meta en el mismo sitio), no de A a B,
 para reutilizar vueltas, minimapa, IA, recolocación y variantes al revés/espejo.
 
+## Obstáculos 2.0: crawler park (aprobado, 📝 pendiente)
+
+Lo de arriba (OBS-01..06: escritorio y fregadero con barreras móviles) **se sustituye** por un *crawler park*
+como en las fotos de referencia del usuario: todoterrenos lentos y precisos superando obstáculos de madera,
+troncos y roca. Decidido el 10-11-2026.
+
+| ID | Requisito | Estado |
+|---|---|---|
+| CRW-01 | **Física de crawler**: marcha muy corta con mucho par y poca velocidad, suspensión de mucho recorrido que se retuerce, ruedas que trepan escalones y troncos, el coche puede volcar de lado | 📝 |
+| CRW-02 | **Obstáculos** (piezas reutilizables): puente tibetano de tablillas que se balancea, puente de troncos/rampa de dos raíles, escalones de madera, pila de troncos sueltos, cuesta de roca con escalones, obstáculo lateral (coche muy inclinado), pasarela elevada estrecha sin barandilla, banco de arena, túnel | 📝 |
+| CRW-03 | **Trial**: recorrido por tramos con **puertas** (pares de postes) en orden. Resultado = tiempo + penalizaciones: puerta fallada, caerse de un obstáculo, salirse del recorrido, tocar un poste. Al caerse se vuelve al inicio del obstáculo | 📝 |
+| CRW-04 | **Rivales a elegir** antes de empezar: fantasmas a la vez (no chocan), por turnos (cada uno su recorrido, se comparan resultados) o todos juntos chocando | 📝 |
+| CRW-05 | **Escenarios**: tapete de tierra y césped en interior (piezas de madera), jardín exterior (tierra, arena, troncos, rocas, musgo) y montaje de feria en centro comercial (montaña de roca, puentes, pista alrededor) | 📝 |
+| CRW-06 | Coches de Obstáculos rehechos como **crawlers** estrechos y altos (todoterrenos de escala con baca, faros, rueda de repuesto) | 📝 |
+| CRW-07 | Se quitan los circuitos El escritorio y El fregadero y sus piezas (barreras, barras giratorias, ventilador, cascadas) | 📝 |
+| CRW-08 | Orden: primero un **prototipo** con un tramo (escalones + puente de troncos + pasarela) para validar el tacto con el usuario; después el resto | 📝 |
+
 ## Coches
 
 | ID | Requisito | Estado |

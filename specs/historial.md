@@ -30,6 +30,7 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 24 | Drift: curvas más seguidas y pista la mitad de ancha. Obstáculos: no era eso; se busca algo tipo *crawler park* (fotos de referencia) | DRI-08 rehecho; obstáculos en conversación |
 | 25 | Coches de drift parecidos a los RC de drift reales (fotos), con mucha aceleración y patinando al salir; circuitos de drift con aspecto de pista RC real y detalles que den inmersión | DCO-02 rehecho, DRI-09, DRI-10 |
 | 26 | Salida aún más bestia; física lo más parecida a un RC de drift real; poder hacer giros de 360º y trompos; las marcas de derrape se cortaban | DRI-04 rehecho (giroscopio y sobreviraje con gas), DRI-10, DRI-11, FIS-35 |
+| 27 | Obstáculos tipo crawler park (fotos): trial con tiempo + penalizaciones; rivales a elegir (fantasmas, por turnos o chocando); escenarios interior, jardín y feria; quitar escritorio y fregadero | CRW-01..08 (pendiente) |
 
 ## Preferencias del usuario
 
