@@ -95,6 +95,7 @@ async function init() {
 
   // Taller 3D detrás de los menús
   const room = new Showroom(envMap);
+  $('app-version').textContent = __APP_VERSION__ === 'dev' ? 'dev' : 'v' + __APP_VERSION__; // la pone el CI
 
   // ---------- Pantallas ----------
   const screens = ['m-main', 'm-disc', 'm-setup', 'm-settings', 'm-pause', 'm-results', 'm-garage', 'm-cups', 'm-podium'];

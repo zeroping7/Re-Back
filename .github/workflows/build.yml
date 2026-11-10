@@ -36,6 +36,8 @@ jobs:
         run: echo "ANDROID_HOME=$ANDROID_HOME" && ls "$ANDROID_HOME/platforms" "$ANDROID_HOME/build-tools"
       - run: npm ci
       - run: npm run build
+        env:
+          VERSION_NAME: 1.0.${{ github.run_number }}
       - run: npx cap sync android
       - name: Gradle assembleDebug
         working-directory: android

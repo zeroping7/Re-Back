@@ -412,3 +412,6 @@ body.pad-mode #btn-look { display: none; }
 #m-setup, #m-garage, #m-cups { background: linear-gradient(90deg, #101533f2 0%, #101533d4 50%, #10153300 64%); }
 #m-setup .menu-wide, #m-garage .menu-wide, #m-cups .menu-wide { width: 58vw; margin: auto auto auto 0; }
 @media (max-height: 430px) { #race-opts { gap: 6px 14px; } }
+
+/* Versión en la pantalla de inicio (UX-20) */
+.app-version { position: absolute; right: calc(14px + env(safe-area-inset-right)); bottom: calc(10px + env(safe-area-inset-bottom)); font-size: 12px; font-weight: 700; letter-spacing: 1px; opacity: .6; text-shadow: 0 1px 0 #0008; }

@@ -39,3 +39,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 - Mantener `PROGRESO.md` y estas specs al día.
 - Objetivo principal: **parecerse lo máximo posible a Re-Volt**.
 | 28 | En los menús de carrera rápida y garaje los paneles tapan el coche y se ve de espaldas/de lado: que se vea por delante y completo | UX-19 |
+| 29 | Mostrar el número de versión en la pantalla de inicio y que se actualice solo | UX-20 |

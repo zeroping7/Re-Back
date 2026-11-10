@@ -13,6 +13,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Preparar carrera, campeonato y garaje: paneles a la izquierda (58 %) y coche entero en la zona libre de la derecha; cada coche arranca la peana de frente en 3/4.
 - **Pendiente:** probar en el móvil el encuadre (`src/showroom.js`: `off` de la vista `car`, `FRONT_34`; `src/style.css`: bloque UX-19).
 
+### Versión en pantalla de inicio ✅ (UX-20)
+- Abajo a la derecha (`v1.0.N`, igual que el APK); se actualiza sola en cada compilación del CI.
+
 ### Disciplinas: Drift y Obstáculos ✅ (specs/11-disciplinas.md)
 - Menú: **Jugar** abre el selector de disciplina (Carrera · Drift · Obstáculos), cada una con sus modos, circuitos, coches y copa.
   Drift se abre con la Copa Bronce y Obstáculos con la Plata (entre los 3 primeros); al abrirse regalan su coche básico.
