@@ -7,7 +7,7 @@ export const CUPS = [
   { id: 'platino', name: 'Copa Platino', icon: '💎', color: '#9fe7ff', diff: 1.06, diffName: 'Experto', laps: 3, rivals: 5, tracks: ['salon:rev', 'parque:mirror', 'museo:rev', 'muelle:mirror'], prize: 10000, needs: 'oro' },
   // DEC-03: copas de Drift y Obstáculos (salen solo en su disciplina)
   { id: 'derrape', disc: 'drift', name: 'Copa Derrape', icon: '💨', color: '#b44dff', diff: 0.94, diffName: 'Por puntos', laps: 2, rivals: 3, tracks: ['cocina', 'garaje', 'cocina:rev'], prize: 4000, needs: null },
-  { id: 'trepa', disc: 'obst', name: 'Copa Obstáculos', icon: '🧗', color: '#19b89a', diff: 0.94, diffName: 'Normal', laps: 2, rivals: 3, tracks: ['escritorio', 'fregadero', 'escritorio:rev'], prize: 4000, needs: null },
+  { id: 'trepa', disc: 'obst', name: 'Copa Obstáculos', icon: '🧗', color: '#19b89a', diff: 0.94, diffName: 'Normal', laps: 2, rivals: 3, tracks: ['senda', 'senda:rev'], prize: 4000, needs: null },
 ];
 export const cupsFor = (disc) => CUPS.filter((c) => (c.disc || 'race') === disc);
 export const POINTS = [10, 6, 4, 3, 2, 1];

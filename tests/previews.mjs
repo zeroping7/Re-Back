@@ -23,7 +23,7 @@ console.log('coches:', Object.keys(cars).join(', '));
 
 // circuitos: carrera con 5 rivales en la parrilla, foto aérea
 const VIEW = JSON.parse(process.env.VIEW || '{}');
-for (const id of (process.env.TRACKS || 'salon,super,jardin,museo,muelle,parque,cocina,garaje,escritorio,fregadero').split(',')) {
+for (const id of (process.env.TRACKS || 'salon,super,jardin,museo,muelle,parque,cocina,garaje,senda').split(',')) {
   await page.setViewport({ width: 480, height: 270 });
   await page.goto(`${url}?test&track=${id}&rivals=5`, { waitUntil: 'load' });
   await page.waitForFunction(() => window.__game?.race, { timeout: 90000 });

@@ -7,12 +7,11 @@ import parque from './parque.js';
 
 import cocina from './cocina.js';
 import garaje from './garaje.js';
-import escritorio from './escritorio.js';
-import fregadero from './fregadero.js';
+import senda from './senda.js';
 
 // TRACKS = circuitos de Carrera (estrellas, coche secreto…). Los de Drift y Obstáculos llevan `disc` (DIS-02).
 export const TRACKS = [salon, superm, jardin, museo, muelle, parque];
-export const ALL_TRACKS = [...TRACKS, cocina, garaje, escritorio, fregadero];
+export const ALL_TRACKS = [...TRACKS, cocina, garaje, senda];
 export const tracksFor = (disc) => ALL_TRACKS.filter((t) => (t.disc || 'race') === disc);
 export const trackById = (id) => ALL_TRACKS.find((t) => t.id === id) || TRACKS[0];
 

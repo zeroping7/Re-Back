@@ -112,7 +112,7 @@ async function init() {
   grantStarters();
   const D = () => discById(disc);
   const modeDef = (m = mode) => MODES[disc].find((x) => x.go === m) || MODES[disc][0];
-  const defTrack = { race: 'salon', drift: 'cocina', obst: 'escritorio' };
+  const defTrack = { race: 'salon', drift: 'cocina', obst: 'senda' };
   const curTrack = () => { const id = disc === 'race' ? settings.track : settings.trk[disc]; return tracksFor(disc).some((t) => t.id === id) ? id : defTrack[disc]; };
   const setTrack = (id) => { if (disc === 'race') settings.track = id; else settings.trk[disc] = id; saveSettings(); };
   const LAPS = { race: [2, 3, 5], drift: [2, 3], obst: [1, 2, 3] };

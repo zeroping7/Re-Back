@@ -63,8 +63,9 @@ troncos y roca. Decidido el 10-11-2026.
 | CRW-04 | **Rivales a elegir** antes de empezar: fantasmas a la vez (no chocan), por turnos (cada uno su recorrido, se comparan resultados) o todos juntos chocando | 📝 |
 | CRW-05 | **Escenarios**: tapete de tierra y césped en interior (piezas de madera), jardín exterior (tierra, arena, troncos, rocas, musgo) y montaje de feria en centro comercial (montaña de roca, puentes, pista alrededor) | 📝 |
 | CRW-06 | Coches de Obstáculos rehechos como **crawlers** estrechos y altos (todoterrenos de escala con baca, faros, rueda de repuesto) | 📝 |
-| CRW-07 | Se quitan los circuitos El escritorio y El fregadero y sus piezas (barreras, barras giratorias, ventilador, cascadas) | 📝 |
-| CRW-08 | Orden: primero un **prototipo** con un tramo (escalones + puente de troncos + pasarela) para validar el tacto con el usuario; después el resto | 📝 |
+| CRW-07 | Se quitan los circuitos El escritorio y El fregadero (hecho; `kit.js` aún conserva sus piezas sin uso) | ✅ |
+| CRW-02p | Prototipo `El tapete de pruebas` (`senda`, `crawlkit.js`): escalones, puente de troncos y pasarela sin barandilla. La IA lo completa sin respawns | 🚧 validar tacto |
+| CRW-08 | Orden: primero un **prototipo** para validar el tacto con el usuario; después el resto | 🚧 |
 
 ## Coches
 

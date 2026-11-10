@@ -182,3 +182,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Despliegue automático (`.github/workflows/server.yml`) con Caddy y HTTPS (`wss://<ip>.sslip.io`).
 - Pendiente: crear la máquina en Oracle y los secrets `ORACLE_HOST` / `ORACLE_SSH_KEY`; menú Online (NET-07)
   y carrera online (NET-08).
+
+## Obstáculos 2.0 (crawler park) — en curso
+- Hecho: spec CRW-01..08, circuitos escritorio/fregadero eliminados, prototipo `senda` (escalones, puente de troncos, pasarela) con `src/tracks/crawlkit.js`.
+- Pendiente: validar tacto con el usuario; física de crawler (marcha lenta, articulación), trial con puertas y penalizaciones, rivales a elegir, escenarios jardín y feria, coches crawler, resto de obstáculos.

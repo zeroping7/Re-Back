@@ -43,12 +43,11 @@ async function run(name, q, secs, shots) {
 }
 if (want('drift')) await run('drift', 'track=cocina&solo&car=katana', 30, [5, 12, 20, 29]);
 if (want('garaje')) await run('garaje', 'track=garaje&rivals=3&car=bisonte', 30, [5, 14, 22, 29]);
-if (want('obst')) await run('obst', 'track=escritorio&rivals=3&laps=1', 60, [20, 28, 36, 44, 52, 59]);
+if (want('obst')) await run('obst', 'track=senda&rivals=3&laps=1', 60, [20, 28, 36, 44, 52, 59]);
 if (want('fin')) { // resultados: modos en solitario y duelo, acelerado
   await run('fin-drift-solo', 'track=cocina&solo&fast=6', 80, []);
-  await run('fin-obst-solo', 'track=fregadero&solo&fast=6', 60, []);
+  await run('fin-obst-solo', 'track=senda&solo&fast=6', 60, []);
   await run('fin-drift-duelo', 'track=garaje&rivals=3&laps=2&fast=6', 90, []);
 }
-if (want('freg')) await run('freg', 'track=fregadero&solo', 60, [26, 34, 42, 50, 59]);
 console.log('ERRORES:\n' + errors.slice(0, 12).join('\n'));
 await browser.close();

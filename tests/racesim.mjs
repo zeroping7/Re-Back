@@ -30,7 +30,7 @@ const playerAI = race.playerAI;
 while (t < 240) {
   const st = race.state(race.player);
   if (!battle && race.player.item && playerAI.shouldUse(race.player.item, race, st)) race.items.fire(race.player);
-  race.update(FIXED);
+  race.update(FIXED); if (process.env.MAXY) { const c = race.player; globalThis.my = Math.max(globalThis.my || 0, c.currPos.y); globalThis.mu = Math.min(globalThis.mu ?? 9, c.up.y); }
   t += FIXED;
   if (practice && race.star) { const d = race.player.currPos.distanceTo(race.star.pos); if (d < (globalThis.minStar ?? 1e9)) { globalThis.minStar = d; globalThis.minStarY = race.player.currPos.y - race.star.pos.y; } }
   if (process.env.TRACE && Math.abs(t % 5) < FIXED) for (const c of race.cars) { const s = race.state(c); if (!s.finished) console.log(`   t=${t.toFixed(0)} ${c.name} p=${c.currPos.x.toFixed(1)},${c.currPos.y.toFixed(1)},${c.currPos.z.toFixed(1)} idx=${s.idx} prog=${s.progress} v=${c.speed.toFixed(1)} up=${c.up.y.toFixed(2)} stun=${c.fx.stun.toFixed(1)}`); }
@@ -48,3 +48,4 @@ const r = race.results();
 console.log(trackId, `len=${race.circuit.length.toFixed(0)} t=${t.toFixed(1)}`);
 for (const x of r) { const car = race.cars.find((c) => c.name === x.name); console.log(`  ${x.place}. ${x.name.padEnd(6)} fin=${x.finished} time=${x.time.toFixed(1)} best=${x.best.toFixed(2)} laps=${x.laps} resp=${respawns.get(x.name) || 0} hp=${car.health.toFixed(0)} ${car.def.id}${race.disc === 'drift' ? ` pts=${Math.round(x.score)} clips=${race.state(car).clips || 0}` : ''}`); }
 console.log('  items used:', JSON.stringify(used));
+if (process.env.MAXY) console.log("maxY", globalThis.my.toFixed(2), "minUp", globalThis.mu.toFixed(2));
