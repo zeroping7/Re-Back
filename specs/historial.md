@@ -47,3 +47,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 34 | Que cabra, oruga, yeti y morsa tengan modelo 3D propio (CRW-06) | ✅ |
 | 35 | Quitar Rally y Espejo de Obstáculos; cuesta y jardín de rocas mucho más empinados | ✅ |
 | 36 | Vado mucho más profundo; puente tibetano más estrecho, largo, alto y sin barandillas | ✅ |
+| 37 | Al elegir coche con «Más coches» desde la carrera, «Usar este» debe volver al menú de la carrera y «atrás» no debe ir al principal | UX-21 ✅ |

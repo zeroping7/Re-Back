@@ -13,6 +13,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Preparar carrera, campeonato y garaje: paneles a la izquierda (58 %) y coche entero en la zona libre de la derecha; cada coche arranca la peana de frente en 3/4.
 - **Pendiente:** probar en el móvil el encuadre (`src/showroom.js`: `off` de la vista `car`, `FRONT_34`; `src/style.css`: bloque UX-19).
 
+### «Más coches» vuelve al menú de origen ✅ (UX-21)
+Desde el garaje abierto por «Más coches», «Usar este» y «←» devuelven a la carrera/campeonato.
+
 ### Versión en pantalla de inicio y menú principal ✅ (UX-20)
 - Abajo a la derecha (`v1.0.N`, igual que el APK); se actualiza sola en cada compilación del CI.
 

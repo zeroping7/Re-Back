@@ -55,6 +55,7 @@ Inicio (toca para empezar)
 | UX-18 | Chocar con las esquinas o paredes ya no recoloca el coche: solo si se sale de verdad del escenario (+6 u) o vuelca | ✅ |
 | UX-19 | **Coche libre en preparar carrera, campeonato y garaje**: paneles en el 58 % izquierdo de la pantalla; la cámara del taller desplaza la imagen para centrar el coche en el 42 % derecho, sin que lo tape ninguna lista. Cada coche nuevo arranca la peana mostrando el frente en 3/4 | ✅ (falta probar en el móvil) |
 | UX-20 | **Versión en la pantalla de inicio y en el menú principal** (abajo a la derecha, p. ej. `v1.0.123`): la pone el CI (`1.0.<nº de ejecución>`, la misma que el APK); en local sale `dev` | ✅ |
+| UX-21 | **«Más coches» vuelve a su sitio**: si el garaje se abre desde «Más coches» (preparar carrera o campeonato), «Usar este» devuelve al menú de origen con el coche elegido y «←» también vuelve ahí (no al menú principal) | ✅ |
 
 ## Marcador en carrera
 

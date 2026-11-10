@@ -107,6 +107,8 @@ async function init() {
     if (id === 'm-garage') buildGarage();
     if (id === 'm-disc') buildDiscs();
   }
+  let garageReturn = null; // pantalla de origen si el garaje se abrió desde "Más coches" (UX-21)
+  const leaveGarage = () => { const r = garageReturn; garageReturn = null; if (r) { r.rebuild(); showScreen(r.screen); } else showScreen('m-main'); };
   let mode = 'race'; // 'race' | 'practice' | 'cup' | 'battle' | 'solo'
   let disc = discUnlocked(settings.disc, profile.cups) ? settings.disc : 'race'; // disciplina en curso (DIS-02)
   let cup = null; // { id, idx, table }
@@ -164,6 +166,7 @@ async function init() {
   document.querySelectorAll('[data-go]').forEach((b) => b.addEventListener('click', () => {
     sfx.play('click');
     const go = b.dataset.go;
+    if (go === 'main' && b.closest('#m-garage')) { leaveGarage(); return; }
     if (go === 'battle') {
       mode = go; disc = 'race'; useDisc('race');
       $('setup-title').textContent = 'Batalla de la Estrella';
@@ -174,7 +177,7 @@ async function init() {
       buildSetup();
       showScreen('m-setup');
     } else if (go === 'back') showScreen(mode === 'battle' ? 'm-main' : 'm-disc');
-    else if (go === 'garage') { gDisc = disc; gSel = useDisc(gDisc) || profile.selected; showScreen('m-garage'); }
+    else if (go === 'garage') { garageReturn = null; gDisc = disc; gSel = useDisc(gDisc) || profile.selected; showScreen('m-garage'); }
     else showScreen('m-' + go);
   }));
   function updateMoney(bump) {
@@ -224,7 +227,7 @@ async function init() {
       const c = document.createElement('button');
       c.className = 'card locked';
       c.innerHTML = '<div class="sw pv more">🔒</div><b>Más coches</b><small>Gana carreras y cómpralos en el Garaje</small>';
-      c.addEventListener('click', () => { sfx.play('click'); gDisc = disc; gSel = profile.selected; showScreen('m-garage'); });
+      c.addEventListener('click', () => { sfx.play('click'); garageReturn = { screen: screens.find((x) => !$(x).classList.contains('hidden')) || 'm-setup', rebuild }; gDisc = disc; gSel = profile.selected; showScreen('m-garage'); });
       el.append(c);
     }
   }
@@ -386,7 +389,7 @@ async function init() {
     } else if (!own) {
       btn(`Comprar · 🪙 ${coins(d.price)}`, 'buy', profile.money >= d.price, () => { if (buyCar(d.id, gDisc)) { sfx.play('finish'); buildGarage(); } });
     } else {
-      btn(inUse(d.id) ? '✔ En uso' : 'Usar este', 'use', !inUse(d.id), () => { selectCar(d.id, gDisc); sfx.play('click'); buildGarage(); });
+      btn(inUse(d.id) ? '✔ En uso' : 'Usar este', 'use', !inUse(d.id), () => { selectCar(d.id, gDisc); sfx.play('click'); if (garageReturn) leaveGarage(); else buildGarage(); });
       const many = Object.keys(profile.owned).length > 1 && !d.starter;
       btn(`Vender · +🪙 ${coins(sellValue(d.id))}`, '', many, () => {
         if (confirm(`¿Vender ${d.name} por ${sellValue(d.id)} monedas?`) && sellCar(d.id)) { sfx.play('pass'); gSel = useDisc(gDisc) || null; buildGarage(); room.showCar(gSel); }
