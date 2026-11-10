@@ -14,18 +14,18 @@ const PHYS = { friction: 1.3, restitution: 0.04 };
 const RIDE = 0.9;
 // Parámetros (diseño) y longitudes de cada obstáculo: el circuito los usa para colocarlos casi seguidos (CRW-13)
 const P = {
-  steps: { n: 12, rise: 0.1334, tread: 0.5, top: 2.4 },
-  logs: { n: 30, extra: 22 },
-  ramp: { up: 4.4, deck: 3.6, h: 1.3, logs: 26 },
-  sand: { mounds: 24 },
-  ford: { rocks: 38 },
-  climb: { rocks: 32 },
-  garden: { rocks: 50 },
+  steps: { n: 24, rise: 0.1334, tread: 0.5, top: 2.4 },
+  logs: { n: 50, extra: 52 },
+  ramp: { up: 7.5, deck: 3.6, h: 2.6, logs: 70 },
+  sand: { mounds: 48 },
+  ford: { rocks: 76 },
+  climb: { rocks: 64 },
+  garden: { rocks: 100 },
   tib: { ramp: 5.4, deck: 8, h: 1.1, w: 1.2 },
 };
 export const LEN = {
-  steps: 2 * P.steps.n * P.steps.tread + P.steps.top, logs: 14, ramp: P.ramp.up * 2 + P.ramp.deck, bridge: 4 * 2 + 6.5 + 1,
-  sand: 26, ford: 14, climb: 15, garden: 13, tib: P.tib.ramp * 2 + P.tib.deck + 1,
+  steps: 2 * P.steps.n * P.steps.tread + P.steps.top, logs: 18, ramp: P.ramp.up * 2 + P.ramp.deck, bridge: 4 * 2 + 6.5 + 1,
+  sand: 26, ford: 16, climb: 17, garden: 16, tib: P.tib.ramp * 2 + P.tib.deck + 1,
 }; // altura aproximada del centro del coche sobre el suelo (mundo)
 
 export function crawlKit(B, circuit) {
@@ -99,13 +99,13 @@ export function crawlKit(B, circuit) {
     return B.cyl(r * (0.55 + rnd() * 0.25), r, h, p.x, y + e - h / 2 - 0.02, p.z, color, { seg: 5 + ((rnd() * 4) | 0), rot: [(rnd() - 0.5) * 0.3, rnd() * 6.28, (rnd() - 0.5) * 0.3], phys: PHYS });
   }
   // Reparte `count` rocas al azar por el tramo (sin que se pisen mucho)
-  function scatter(f, a0, a1, count, { rMin = 0.18, rMax = 0.38, eMin = 0.1, eMax = 0.3, colors = ROCK, kinds, wide = W / 2 - 0.1, overlap = 0.72 } = {}) {
+  function scatter(f, a0, a1, count, { rMin = 0.18, rMax = 0.38, eMin = 0.1, eMax = 0.3, colors = ROCK, kinds, wide = W / 2 - 0.1, overlap = 0.72, big = null } = {}) {
     const placed = [];
-    for (let k = 0, tries = 0; k < count && tries < count * 40; tries++) {
-      const a = a0 + rnd() * (a1 - a0), lat = (rnd() * 2 - 1) * wide, r = rMin + rnd() * (rMax - rMin);
+    for (let k = 0, tries = 0; k < count && tries < count * 60; tries++) {
+      const a = a0 + rnd() * (a1 - a0), lat = (rnd() * 2 - 1) * wide, isBig = big && rnd() < big[0], r = (rMin + rnd() * (rMax - rMin)) * (isBig ? big[1] : 1);
       if (placed.some((q) => Math.hypot(q.a - a, q.lat - lat) < (q.r + r) * overlap)) continue;
       placed.push({ a, lat, r });
-      rock(f, a, lat, r, eMin + rnd() * (eMax - eMin), colors[(rnd() * colors.length) | 0], kinds ? kinds[(rnd() * kinds.length) | 0] : undefined);
+      rock(f, a, lat, r, (eMin + rnd() * (eMax - eMin)) * (isBig ? big[2] : 1), colors[(rnd() * colors.length) | 0], kinds ? kinds[(rnd() * kinds.length) | 0] : undefined);
       k++;
     }
   }
@@ -126,11 +126,11 @@ export function crawlKit(B, circuit) {
   function logPile(x, z, { n = P.logs.n, extra = P.logs.extra } = {}) {
     const L = LEN.logs, f = frame(x, z, L, 'Troncos sueltos');
     for (let k = 0; k < n; k++) {
-      const r = 0.1 + rnd() * 0.1, top = 0.15 + rnd() * 0.15;
+      const r = 0.1 + rnd() * 0.1, top = 0.1 + rnd() * 0.1;
       logAcross(f, -L / 2 + 0.7 + rnd() * (L - 1.4), top - r, (rnd() - 0.5) * 0.3, r, W * (0.95 + rnd() * 0.05), LOG[k % 4], { yawJ: (rnd() - 0.5) * 0.9 });
     }
     for (let k = 0; k < extra; k++) { // troncos cortos encima, sueltos y de cualquier rumbo
-      const r = 0.07 + rnd() * 0.07, a = -L / 2 + 1 + rnd() * (L - 2), lat = (rnd() * 2 - 1) * (W / 2 - 0.4);
+      const r = 0.06 + rnd() * 0.06, a = -L / 2 + 1 + rnd() * (L - 2), lat = (rnd() * 2 - 1) * (W / 2 - 0.4);
       const p = f.pos(a, lat);
       B.cyl(r, r, 0.7 + rnd() * 0.8, p.x, f.y0 + r * 1.1 + rnd() * 0.1, p.z, LOG[(k + 1) % 4], { seg: 7, rot: [0, rnd() * 6.28, Math.PI / 2], phys: PHYS });
     }
@@ -184,11 +184,11 @@ export function crawlKit(B, circuit) {
     const f = frame(x, z, L, 'Banco de arena');
     zones.push(trackPatch(B, circuit, [x, z], L, 'sand', { ...sandTex, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0, normalScale: 1.2, inset: 0.1, surface: 'sand' }));
     const placed = [];
-    for (let k = 0, tries = 0; k < P.sand.mounds && tries < 900; tries++) {
+    for (let k = 0, tries = 0; k < P.sand.mounds && tries < 3000; tries++) {
       const i = f.i0 + 2 + Math.floor(rnd() * (f.i1 - f.i0 - 3)), s = samples[i], s2 = samples[i + 1];
-      const u = rnd(), lat = (rnd() * 2 - 1) * (W / 2 - 0.15), r = 0.4 + rnd() * 0.5, e = 0.07 + rnd() * 0.24;
+      const u = rnd(), lat = (rnd() * 2 - 1) * (W / 2 - 0.15), tall = rnd() < 0.22, e = tall ? 0.34 + rnd() * 0.24 : 0.05 + rnd() * 0.2, r = tall ? 0.75 + rnd() * 0.4 : 0.35 + rnd() * 0.4;
       const px = s.p.x + (s2.p.x - s.p.x) * u + s.n.x * lat, pz = s.p.z + (s2.p.z - s.p.z) * u + s.n.z * lat;
-      if (placed.some((q) => Math.hypot(q.x - px, q.z - pz) < (q.r + r) * 0.62)) continue;
+      if (placed.some((q) => Math.hypot(q.x - px, q.z - pz) < (q.r + r) * 0.5)) continue;
       placed.push({ x: px, z: pz, r });
       B.ball(r, px, s.h + e - r, pz, SAND[k & 3], { detail: 1, phys: { friction: 1.5, restitution: 0.02 } });
       k++;
@@ -222,7 +222,7 @@ export function crawlKit(B, circuit) {
     g.setIndex(idx); g.computeVertexNormals();
     const m = new THREE.Mesh(g, waterMat); m.userData.dynamic = true; m.receiveShadow = true; B.scene.add(m);
     for (let a = -L / 2 + 1.5; a < L / 2; a += 3.4) zones.push({ pos: f.pos(a), r: W * 0.7, effect: 'wet', surface: 'water' });
-    scatter(f, -L / 2 + 2, L / 2 - 1.5, P.ford.rocks, { rMin: 0.14, rMax: 0.32, eMin: 0.1, eMax: 0.26, overlap: 0.8 });
+    scatter(f, -L / 2 + 2, L / 2 - 1.5, P.ford.rocks, { rMin: 0.12, rMax: 0.3, eMin: 0.08, eMax: 0.2, overlap: 0.7 });
     narrow(f, 3.2);
     return f;
   }
@@ -230,7 +230,7 @@ export function crawlKit(B, circuit) {
   // 7 · Cuesta de roca: la elevación la crea `hills` en buildCircuit; aquí va el pedregal que la cubre
   function rockClimb(x, z, L = LEN.climb) {
     const f = frame(x, z, L, 'Cuesta de roca');
-    scatter(f, -L / 2 + 1, L / 2 - 1, P.climb.rocks, { rMin: 0.14, rMax: 0.34, eMin: 0.08, eMax: 0.24, overlap: 0.6 });
+    scatter(f, -L / 2 + 1, L / 2 - 1, P.climb.rocks, { rMin: 0.12, rMax: 0.34, eMin: 0.08, eMax: 0.24, overlap: 0.5, big: [0.12, 1.6, 1.2] });
     narrow(f, 3.6);
     return f;
   }
@@ -238,7 +238,7 @@ export function crawlKit(B, circuit) {
   // 8 · Jardín de rocas: pedregal denso de rocas al azar (el coche se inclina y tiene que trepar)
   function rockGarden(x, z) {
     const L = LEN.garden, f = frame(x, z, L, 'Jardín de rocas');
-    scatter(f, -L / 2 + 0.6, L / 2 - 0.6, P.garden.rocks, { rMin: 0.16, rMax: 0.4, eMin: 0.1, eMax: 0.3, overlap: 0.55 });
+    scatter(f, -L / 2 + 0.6, L / 2 - 0.6, P.garden.rocks, { rMin: 0.1, rMax: 0.36, eMin: 0.1, eMax: 0.24, overlap: 0.45, big: [0.16, 1.9, 1.05] });
     narrow(f, 3);
     return f;
   }

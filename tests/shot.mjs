@@ -43,7 +43,7 @@ for (const cam of cams) {
   } else if (cam === 'obs') {
     // vista elevada de cada obstáculo (centros en unidades de diseño; VIEW=rear|side|front)
     const page = await open('&fast=1');
-    const centers = JSON.parse(process.env.CENTERS || '[[-29.1,10],[-10.1,10],[8,10],[26.7,10],[52,0],[26.8,-10],[8.8,-10],[-8.8,-10],[-29.6,-10]]');
+    const centers = JSON.parse(process.env.CENTERS || '[[-31.5,10],[-4.9,10],[17.9,10],[39.5,10],[60,0],[34,-10],[10,-10],[-10,-10],[-36,-10]]');
     for (let k = 0; k < centers.length; k++) {
       if (only && !only.includes(k + 1)) continue;
       await page.evaluate((c, view) => {

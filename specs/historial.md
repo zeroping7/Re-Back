@@ -42,3 +42,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 29 | Mostrar el número de versión en la pantalla de inicio y que se actualice solo | UX-20 |
 | 30 | El prototipo de obstáculos no gusta (césped plano, pista ancha, tres piezas sueltas). Rehacerlo como crawler park de las fotos: un solo camino, obstáculos obligatorios, física de crawler realista, estructura A→B con checkpoints, una ambientación por circuito (empezando por la maqueta sobre mesa) | CRW-01, CRW-09..12 |
 | 31 | La maqueta es demasiado fácil: obstáculos más seguidos, arena que frene y con montículos, rocas y troncos aleatorios mucho más densos, escalones ×4, rampa y puente más altos, puente más estrecho | CRW-13 |
+| 32 | Más difícil aún: escalones ×2 (24 peldaños), +50 troncos, rampa ×2, arena ×2 montículos (alturas muy distintas), vado ×2 rocas, cuesta +32, jardín +50 (tamaños muy distintos) | CRW-14 |

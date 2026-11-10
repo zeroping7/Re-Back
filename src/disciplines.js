@@ -49,7 +49,7 @@ export function crawlTuning(t) {
     gripFront: t.gripFront * 1.7, gripRear: t.gripRear * 1.7,
     sideFront: 1.4, sideRear: 1.4,
     steerMax: t.steerMax * 1.45, steerSpeed: 4.2, steerFalloff: 0.012, steerLow: 0.15,
-    suspRest: t.suspRest * 1.3, suspStiff: t.suspStiff * 0.8, suspComp: 2.6, suspRelax: 3.4,
+    suspRest: Math.max(t.suspRest * 1.3, 0.48), suspStiff: t.suspStiff * 0.8, suspComp: 2.6, suspRelax: 3.4,
     brake: 7, downforce: 0, airControl: 5,
   };
 }

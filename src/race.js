@@ -514,7 +514,14 @@ export class Race {
     if (this.T.safe && st.progress >= 0) { // CRW-11: se reaparece en la puerta del obstáculo en el que estabas (o tras el último superado)
       let best = null;
       for (const i of this.T.safe) if (i <= ri) best = i;
-      if (best !== null) ri = best;
+      if (best !== null) {
+        // un rival que falla 3 veces seguidas el mismo obstáculo se salta al siguiente punto seguro (el jugador nunca)
+        if (!car.isPlayer) {
+          car.rsN = car.rsIdx === best ? (car.rsN || 0) + 1 : 1; car.rsIdx = best;
+          if (car.rsN >= 3) { const nx = this.T.safe.find((i) => i > best); if (nx !== undefined) { best = nx; car.rsN = 0; car.rsIdx = null; } }
+        }
+        ri = best;
+      }
     }
     for (let k = 0; k < 14 && (this.T.hazards || []).some((hz) => hz.r > 0 && Math.hypot(hz.pos.x - c.samples[ri].p.x, hz.pos.z - c.samples[ri].p.z) < hz.r + 5); k++) ri = (ri - 1 + c.N) % c.N;
     const s = c.samples[ri];

@@ -6,14 +6,14 @@ import { rockWalls, rockField, pines, curtainMaterial, moon } from './diorama.js
 
 // Circuito 1 de Obstáculos · "La maqueta" (CRW-09..12): diorama de crawlers sobre mesa, con cortinas azules y luna.
 // Un solo camino estrecho (A→B, la meta está donde la salida) con nueve obstáculos obligatorios que ocupan todo el ancho.
-const R = { x: 74, z: 38, h: 44 };
+const R = { x: 84, z: 38, h: 44 };
 // Óvalo corto: dos tramos rectos (y=±10) unidos por semicírculos de radio 10. Los obstáculos van casi seguidos (CRW-13).
-const XW = 42, RAD = 10;
+const XW = 50, RAD = 10;
 const arc = (cx, a0, a1, n) => Array.from({ length: n }, (_, k) => { const a = a0 + (a1 - a0) * (k + 1) / (n + 1); return [cx + RAD * Math.cos(a), RAD * Math.sin(a)]; });
 const PTS = [
-  ...[-XW, -28, -14, 0, 14, 28, XW].map((x) => [x, RAD]),
+  ...[-XW, -34, -17, 0, 17, 34, XW].map((x) => [x, RAD]),
   ...arc(XW, Math.PI / 2, -Math.PI / 2, 3),
-  ...[XW, 28, 14, 0, -14, -28, -XW].map((x) => [x, -RAD]),
+  ...[XW, 34, 17, 0, -17, -34, -XW].map((x) => [x, -RAD]),
   ...arc(-XW, -Math.PI / 2, -3 * Math.PI / 2, 3),
 ];
 // Centros de los obstáculos: se reparten en cada recta con el mismo hueco entre ellos (mínimo 4,5 u)
@@ -31,7 +31,7 @@ export default {
   name: 'La maqueta', short: 'Maqueta',
   desc: 'Un solo camino y nueve obstáculos obligatorios',
   color: '#8d6e3f',
-  medals: [220, 180, 150],
+  medals: [270, 220, 180],
   music: 'parque', ambient: 'salon',
   build,
 };
@@ -83,12 +83,12 @@ function build(B) {
 
   // ---------- Decorado ----------
   rockWalls(B, circuit);
-  rockField(B, circuit, { x0: -50, x1: 50, z0: -4, z1: 4, count: 30, rMin: 1.6, rMax: 3.2, hMin: 1.4, hMax: 2.6, away: 2.5, seed: 12 }); // montaña central
+  rockField(B, circuit, { x0: -58, x1: 58, z0: -4, z1: 4, count: 30, rMin: 1.6, rMax: 3.2, hMin: 1.4, hMax: 2.6, away: 2.5, seed: 12 }); // montaña central
   rockField(B, circuit, { x0: -R.x + 3, x1: R.x - 3, z0: 18, z1: R.z - 2, count: 46, rMin: 3, rMax: 7, hMin: 1.1, hMax: 2.3, away: 4, seed: 21 });
   rockField(B, circuit, { x0: -R.x + 3, x1: R.x - 3, z0: -R.z + 2, z1: -18, count: 46, rMin: 3, rMax: 7, hMin: 1.1, hMax: 2.3, away: 4, seed: 22 });
-  rockField(B, circuit, { x0: 66, x1: R.x - 2, z0: -22, z1: 22, count: 14, rMin: 3, rMax: 6, hMin: 1.1, hMax: 2, away: 4, seed: 23 });
-  rockField(B, circuit, { x0: -R.x + 2, x1: -66, z0: -22, z1: 22, count: 14, rMin: 3, rMax: 6, hMin: 1.1, hMax: 2, away: 4, seed: 24 });
-  pines(B, circuit, { x0: -46, x1: 46, z0: -5, z1: 5, count: 16, away: 4, seed: 4, min: 0.9, max: 1.5 });
+  rockField(B, circuit, { x0: 76, x1: R.x - 2, z0: -22, z1: 22, count: 14, rMin: 3, rMax: 6, hMin: 1.1, hMax: 2, away: 4, seed: 23 });
+  rockField(B, circuit, { x0: -R.x + 2, x1: -76, z0: -22, z1: 22, count: 14, rMin: 3, rMax: 6, hMin: 1.1, hMax: 2, away: 4, seed: 24 });
+  pines(B, circuit, { x0: -54, x1: 54, z0: -5, z1: 5, count: 16, away: 4, seed: 4, min: 0.9, max: 1.5 });
   pines(B, circuit, { x0: -R.x + 4, x1: R.x - 4, z0: 16, z1: R.z - 3, count: 40, away: 7, seed: 5 });
   pines(B, circuit, { x0: -R.x + 4, x1: R.x - 4, z0: -R.z + 3, z1: -16, count: 40, away: 7, seed: 6 });
 
