@@ -52,7 +52,10 @@ function build(B) {
     start: [-XW, RAD],
     width: 2.6,
     limits: [R.x - 2, R.z - 2],
-    hills: [{ at: [at(BOT, 'climb'), -RAD], len: LEN.climb - 1, h: 3.0 }, { at: [at(BOT, 'garden'), -RAD], len: LEN.garden - 1, h: 2.2 }],
+    hills: [
+      // vado hundido (CRW-16): orillas altas a la entrada y la salida, el agua llena el hueco
+      ...[-1, 1].map((sd) => ({ at: [at(BOT, 'ford') + sd * (LEN.ford / 2 - 0.4), -RAD], len: 4.4, h: 0.52 })),
+      { at: [at(BOT, 'climb'), -RAD], len: LEN.climb - 1, h: 3.0 }, { at: [at(BOT, 'garden'), -RAD], len: LEN.garden - 1, h: 2.2 }],
     hillMaterial: dirtMat,
     barrier: { colors: ['#6c7079'], thick: 0.6, hidden: true, wallHalf: 0.55 }, // solo colisión: las rocas son el dibujo
     chevrons: false,

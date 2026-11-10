@@ -18,10 +18,10 @@ const P = {
   logs: { n: 50, extra: 52 },
   ramp: { up: 7.5, deck: 3.6, h: 2.6, logs: 70 },
   sand: { mounds: 48 },
-  ford: { rocks: 76 },
+  ford: { rocks: 76, depth: 0.44, bank: 0.52 },
   climb: { rocks: 64 },
   garden: { rocks: 100 },
-  tib: { ramp: 5.4, deck: 8, h: 1.1, w: 1.2 },
+  tib: { ramp: 6.5, deck: 12, h: 2.2, w: 0.95 },
 };
 export const LEN = {
   steps: 2 * P.steps.n * P.steps.tread + P.steps.top, logs: 18, ramp: P.ramp.up * 2 + P.ramp.deck, bridge: 4 * 2 + 6.5 + 1,
@@ -215,7 +215,7 @@ export function crawlKit(B, circuit) {
     let v = 0;
     for (let i = f.i0, k = 0; i <= f.i1; i++, k++) {
       const s = samples[i], fade = Math.min(1, k / 2, (f.i1 - i) / 2);
-      for (const sd of [1, -1]) { const q = s.p.clone().addScaledVector(s.n, sd * hw); pos.push(q.x, s.h + 0.06, q.z); col.push(1, 1, 1, fade); }
+      for (const sd of [1, -1]) { const q = s.p.clone().addScaledVector(s.n, sd * hw); pos.push(q.x, f.y0 + P.ford.depth, q.z); col.push(1, 1, 1, fade); }
       uv.push(0, v, 1, v); v += sp / (hw * 2);
       if (i < f.i1) { const a = k * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
     }
@@ -262,15 +262,7 @@ export function crawlKit(B, circuit) {
       const y = yAt(a), slope = Math.atan2(yAt(a + 0.2) - yAt(a - 0.2), 0.4), p = f.pos(a);
       B.box(w + 0.1, 0.07, 0.34, p.x, f.y0 + y + 0.035, p.z, WOOD[(Math.round(a * 7) & 3)], { rot: [-slope, f.yaw + (rnd() - 0.5) * 0.06, 0], solid: false });
     }
-    for (const sd of [-1, 1]) { // cuerdas laterales y postes
-      const lat = sd * (w / 2 + 0.09);
-      for (let k = 0; k < nSeg; k++) {
-        const s0 = a1 + k * deck / nSeg, s1 = a1 + (k + 1) * deck / nSeg;
-        logAlong(f, s0, yAt(s0) + 0.62, s1, yAt(s1) + 0.62, lat, 0.035, '#cdb78a', false);
-        post(f, (s0 + s1) / 2, lat, 0.55, 0.02, '#cdb78a', yAt((s0 + s1) / 2));
-      }
-      for (const a of [a1, a2]) post(f, a, lat, 0.95, 0.07, WOOD[1], h - 0.3);
-    }
+    for (const sd of [-1, 1]) for (const a of [a1, a2]) post(f, a, sd * (w / 2 + 0.16), 0.95, 0.07, WOOD[1], h - 0.3); // solo los anclajes, sin barandillas
     // barranco: bloques de roca a ambos lados de la calzada (no se puede rodear el puente por el suelo)
     const hRamp = (a) => (a < a1 ? h * Math.max(0, a - a0) / ramp : a <= a2 ? h : h * Math.max(0, a3 - a) / ramp);
     for (const sd of [-1, 1]) for (let a = a0 + 0.8; a <= a3 - 0.8; a += 0.75) { // barranco bajo (por debajo de la calzada) a los lados
