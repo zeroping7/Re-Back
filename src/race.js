@@ -57,7 +57,7 @@ export class Race {
       smoke: new Particles(scene, 700),
       sparks: new Particles(scene, 400, { additive: true, soft: 0.6 }),
       fire: new Particles(scene, 300, { additive: true, soft: 1 }),
-      skids: new SkidMarks(scene, 2400),
+      skids: new SkidMarks(scene, this.disc === 'drift' ? 7000 : 2400), // en drift hay muchas más marcas
       chunks: new Particles(scene, 600, { soft: 0.12 }), // barro y gotas (bordes duros)
       ripples: new Ripples(scene),
     };
@@ -84,6 +84,7 @@ export class Race {
       car.reset(slot.pos, slot.yaw);
       car.isPlayer = isPlayer;
       car.driftMode = disc === 'drift';
+      car.gyro = isPlayer ? undefined : 1; // la IA lleva el giroscopio a tope
       if (disc !== 'race') car.damageK = disc === 'obst' ? 0.3 : 0.5;
       this.cars.push(car);
       this.states.set(car, { idx: slot.idx, progress: slot.idx - this.circuit.N, laps: 0, finished: false, finishTime: 0, lapStart: 0, lastLap: 0, bestLap: 0, wrongT: 0, place: 0, score: 0, combo: 0, mult: 1, driftT: 0, grace: 0 });
@@ -264,6 +265,7 @@ export class Race {
         st.lastLap = lapTime; st.lapStart = this.time;
         if (!st.bestLap || lapTime < st.bestLap) st.bestLap = lapTime;
         if (car.isPlayer && this.ghostOn) this.playerLap(lapTime);
+        st.donuts = 0;
         if (car.isPlayer) {
           if (!this.best.lap || lapTime < this.best.lap) { this.best.lap = lapTime; saveBest(this.trackKey, this.best); this.hud.message(`¡Récord de vuelta! ${fmtTime(lapTime)}`, 2); }
         }
@@ -427,14 +429,33 @@ export class Race {
   // ---------- Drift: puntos por ir de lado (DRI-01..03) ----------
   driftStep(car, st, dt) {
     if (!this.started || st.finished) return;
-    const fwd = car.fwdSpeed, beta = Math.atan2(Math.abs(car.localVel.x), Math.max(0.01, fwd));
-    if (fwd < -2 && car.speed > 4) return this.loseCombo(car, st, 'trompo');
+    const fwd = car.fwdSpeed, beta = Math.atan2(Math.abs(car.localVel.x), fwd); // 0..π (de lado, cruzado o de culo)
+    const yr = car.body.angvel().y;
     for (const e of car.events) if (e.type === 'hit' && e.strength > 0.24) return this.loseCombo(car, st, 'golpe');
-    const sliding = fwd > 3 && car.speed > 7 && car.contacts >= 2 && beta > 0.21;
+    // derrape: va de lado (o girando sobre sí mismo), no marcha atrás recto
+    const sliding = (car.speed > 5 || (car.speed > 1 && Math.abs(yr) > 2)) && car.contacts >= 2 && beta > 0.21 && !car.reversing && !(fwd < -2 && Math.abs(yr) < 1);
     if (sliding) {
-      st.driftT += dt; st.grace = 1;
-      st.mult = Math.min(5, 1 + Math.floor(st.driftT / 1.6));
-      st.combo += car.speed * Math.min(beta, 1.1) * 6 * dt;
+      // DRI-11: trompo de 360º derrapando sin parar
+      st.rot = (st.rot || 0) + yr * dt; st.rotV = (st.rotV || 0) + car.speed * dt; st.rotT = (st.rotT || 0) + dt;
+      if (Math.abs(st.rot) >= Math.PI * 2) {
+        // en marcha vale mucho; un donut parado, poco (para que no se pueda ganar sin moverse)
+        const moving = st.rotV / st.rotT > 7;
+        st.rot -= Math.sign(st.rot) * Math.PI * 2; st.rotV = 0; st.rotT = 0;
+        if (!moving) st.donuts = (st.donuts || 0) + 1; // máx. 3 donuts con premio por vuelta
+        const got = !moving && st.donuts > 3 ? 0 : (moving ? 300 * st.mult : 40);
+        if (got) {
+          st.combo += moving ? got / st.mult : got;
+          if (car.isPlayer) { st.flash = { t: this.clock, text: moving ? `¡TROMPO 360°! +${got}` : `¡DONUT! +${got}`, ok: true }; this.sfx.play(moving ? 'star' : 'pickup'); }
+        }
+      }
+      // solo puntúa avanzando por la pista (no vale quedarse dando vueltas en un sitio)
+      const tg = this.circuit.samples[st.idx].t, along = car.velocity.x * tg.x + car.velocity.z * tg.z;
+      st.grace = 1;
+      if (along > 2) {
+        st.driftT += dt;
+        st.mult = Math.min(5, 1 + Math.floor(st.driftT / 1.6));
+        st.combo += car.speed * Math.min(beta, 1.1) * 6 * dt;
+      }
       // DRI-09: zona de clip: derrapar pegado al exterior de la curva da un bonus (una vez por paso)
       for (const cl of this.T.clips || []) {
         const inside = cl.from <= cl.to ? st.idx >= cl.from && st.idx <= cl.to : st.idx >= cl.from || st.idx <= cl.to;
@@ -450,14 +471,14 @@ export class Race {
       }
     } else if (st.combo > 0 && (st.grace -= dt) <= 0) {
       const got = st.combo * st.mult;
-      st.score += got; st.combo = 0; st.driftT = 0; st.mult = 1;
+      st.score += got; st.combo = 0; st.driftT = 0; st.mult = 1; st.rot = 0; st.rotV = 0; st.rotT = 0;
       if (car.isPlayer) { st.flash = { t: this.clock, text: `+${fmtPts(got)}`, ok: true }; if (got > 400) this.sfx.play('pickup'); }
     }
   }
 
   loseCombo(car, st, why) {
     if (st.combo > 30 && car.isPlayer) { st.flash = { t: this.clock, text: why === 'trompo' ? '¡Trompo!' : why === 'golpe' ? '¡Golpe!' : 'Combo perdido', ok: false }; this.sfx.play('wrong'); }
-    st.combo = 0; st.driftT = 0; st.mult = 1; st.grace = 0;
+    st.combo = 0; st.driftT = 0; st.mult = 1; st.grace = 0; st.rot = 0;
   }
 
   respawn(car) {
@@ -592,6 +613,11 @@ export class Race {
       let mark = 0;
       if (w.contact && w.slip > 3.5) mark = (w.slip - 3) / 6;
       if (braking) mark = Math.max(mark, 0.35);
+      // drift: al ir de lado marcan las cuatro (más las traseras), sin huecos
+      if (car.driftMode && w.contact && car.speed > 3) {
+        const ang = Math.atan2(Math.abs(car.localVel.x), Math.abs(car.fwdSpeed) + 0.5);
+        if (ang > 0.15) mark = Math.max(mark, Math.min(0.55, (rear ? 0.2 : 0.08) + ang * (rear ? 0.45 : 0.2)));
+      }
       if (launching) mark = Math.max(mark, car.driftMode ? 0.5 * car.launch + 0.15 : 0.25);
       if (car.fx.oil > 0 && w.contact) mark = Math.max(mark, 0.4);
       const tr = car.trail;

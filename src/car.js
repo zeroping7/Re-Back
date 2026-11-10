@@ -18,7 +18,7 @@ const MASS = 8; // masa de referencia: la potencia y el freno se escalan con la 
 const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q = new THREE.Quaternion(), _qi = new THREE.Quaternion();
 const UP = new THREE.Vector3(0, 1, 0);
 // DRI-04: ayudas del derrape (tope de giro, anti-trompo, empuje del gas y mando del volante)
-const DRIFT = { launch: 15, fishtail: 6, wobHz: 9, launchV: 18, wMax: 1.16, yawGain: 6, align: 2.6, spin: 0.95, spinK: 6, latGrip: 0.15, thrust: 36, vmax: 0.85 };
+export const DRIFT = { launch: 17, fishtail: 8, wobHz: 7, launchV: 22, gyro: 0.55, power: 0.9, donut: 4.2, donutV: 7, spinP: 1.15, donutCut: 1, launchMax: 0.6, wMax: 1.16, yawGain: 12, align: 2.6, spin: 0.95, spinK: 6, yawMax: 5.5, latGrip: 0.15, thrust: 36, vmax: 0.85 };
 
 export class Car {
   constructor(scene, world, RAPIER, def, tuning, { color = def.color, index = 0, name = def.name } = {}) {
@@ -177,6 +177,7 @@ export class Car {
         }
       }
     }
+    if (this.driftMode && this.donut) engine *= 1 - 0.7 * this.donut; // en el donut las ruedas patinan en el sitio
     if (boost && thr === 0 && brk === 0) engine = power * THREE.MathUtils.clamp((maxSpeed - fwd) / (maxSpeed * 0.25), 0, 1);
     if (thr === 0 && brk === 0 && !boost) brakeF = brakeR = 0.04; // resistencia a rodar
     if (input.hold) { engine = 0; brakeF = brakeR = t.brake / 4; this.reversing = false; }
@@ -243,7 +244,7 @@ export class Car {
     if (this.driftMode && contacts > 1 && thr > 0 && fwd > -1 && !input.hold) {
       const D = globalThis.__DP || DRIFT;
       const k = Math.max(0, 1 - speed / (maxSpeed * 0.85));
-      const push = thr * D.launch * (t.engine / 145) * k * m * dt;
+      const push = thr * D.launch * (t.engine / 145) * k * m * dt * (1 - D.donutCut * (this.donut || 0));
       b.applyImpulse({ x: this.forward.x * push, y: 0, z: this.forward.z * push }, true);
       this.launch = THREE.MathUtils.clamp(1 - fwd / (D.launchV ?? 13), 0, 1) * thr;
       // la cola baila a un lado y a otro mientras las ruedas patinan
@@ -251,15 +252,30 @@ export class Car {
       this.wob = (this.wob || 0) + dt * (D.wobHz ?? 13);
       this.tailWave = (Math.sin(this.wob) * 0.7 + Math.sin(this.wob * 2.3 + 1) * 0.3) * D.fishtail * this.launch;
     } else { this.tailWave = 0; if (speed < 1) this.wob = 0; }
-    if (this.driftMode && contacts > 1 && fwd > 0) {
-      // DRI-04: derrape arcade. El volante manda sobre el giro del coche, las ruedas agarran poco de lado
-      // (el coche se cruza) y el gas mantiene la velocidad; al soltar el volante se endereza solo.
+    if (this.driftMode && contacts > 1 && fwd > -4) {
+      // DRI-04: derrape de RC con giroscopio. Las traseras apenas agarran; el volante gira el coche,
+      // el gas lo cruza más (sobreviraje: con mucho gas y sin contravolante, trompo), el giroscopio
+      // endereza al soltar el gas o contravolantear. Parado con volante a tope y gas: donut.
       const D = globalThis.__DP || DRIFT;
-      const k = Math.max(THREE.MathUtils.clamp((speed - 3) / 4, 0, 1), this.launch > 0 && fwd > 0.8 ? 0.6 : 0);
+      const st = input.steer, gyro = this.gyro ?? D.gyro;
+      const ab0 = Math.abs(Math.atan2(this.localVel.x, Math.max(1, fwd)));
+      // donut parado (gas + volante) o trompo en marcha (gas + freno + volante)
+      const spinIn = thr > 0.5 && Math.abs(st) > 0.6 && (speed < D.donutV || brk > 0.5);
+      const donut = spinIn ? thr * Math.abs(st) : 0;
+      void ab0;
+      this.donut = donut;
+      const k = Math.max(THREE.MathUtils.clamp((speed - 2) / 3, 0, 1), this.launch > 0 && fwd > 0.8 ? 0.6 : 0, donut);
       if (k > 0) {
-        const beta = Math.atan2(this.localVel.x, Math.max(1, fwd)), ab = Math.abs(beta), st = input.steer;
-        let want = st * D.wMax * (t.steerMax / 0.345) + beta * D.align * (1 - 0.75 * Math.abs(st)) * (1 - 0.7 * this.launch) + this.tailWave;
-        if (ab > D.spin) want += Math.sign(beta) * (ab - D.spin) * D.spinK; // anti-trompo
+        const beta = Math.atan2(this.localVel.x, Math.max(1, fwd)), ab = Math.abs(beta);
+        let want = st * D.wMax * (t.steerMax / 0.345)
+          - Math.sign(beta) * Math.min(ab, 1.2) * thr * D.power * (1 - 0.6 * gyro) * (0.3 + 0.7 * Math.abs(st)) // el gas cruza el coche (más cuanto más cruzado y con volante)
+          + beta * D.align * gyro * (1 - 0.75 * Math.abs(st)) * (1 - 0.5 * thr) // giroscopio
+          + this.tailWave;
+        if (donut) want = want * (1 - donut) + Math.sign(st) * D.donut * donut;
+        // anti-trompo: la IA siempre; el jugador a partir de mucho ángulo, salvo que busque el trompo (freno + gas)
+        const spinLim = Math.min(gyro >= 1 ? D.spin : D.spinP, this.launch > 0.2 && Math.abs(st) < 0.5 ? D.launchMax : 9); // al salir recto, la cola baila pero no da la vuelta
+        if (!donut && ab > spinLim) want += Math.sign(beta) * (ab - spinLim) * D.spinK * (spinLim < 0.9 ? 3 : 1);
+        want = THREE.MathUtils.clamp(want, -D.yawMax, D.yawMax);
         const dw = (want - b.angvel().y) * Math.min(1, D.yawGain * dt) * k;
         b.applyTorqueImpulse({ x: 0, y: dw * 5.0 * this.massK, z: 0 }, true);
         // agarre lateral propio, suave
@@ -267,10 +283,10 @@ export class Car {
         _v.set(1, 0, 0).applyQuaternion(_q);
         b.applyImpulse({ x: _v.x * lg, y: 0, z: _v.z * lg }, true);
         // el gas sostiene la velocidad aunque las ruedas patinen
-        const push = thr * D.thrust * (t.engine / 145) * Math.max(0.4, Math.min(1, ab / 0.25)) * Math.max(0, 1 - speed / (maxSpeed * D.vmax)) * m * dt * k;
+        const push = thr * D.thrust * (t.engine / 145) * Math.max(0.4, Math.min(1, ab / 0.25)) * Math.max(0, 1 - speed / (maxSpeed * D.vmax)) * m * dt * k * (1 - D.donutCut * donut);
         if (push > 0) b.applyImpulse({ x: this.forward.x * push, y: 0, z: this.forward.z * push }, true);
         // con tan poco agarre el freno se queda corto: ayuda para frenar de verdad
-        if (this.braking) { const bk = Math.min(speed, 14 * dt) * m; b.applyImpulse({ x: -this.velocity.x / speed * bk, y: 0, z: -this.velocity.z / speed * bk }, true); }
+        if (this.braking && speed > 0.5) { const bk = Math.min(speed, 14 * dt) * m; b.applyImpulse({ x: -this.velocity.x / speed * bk, y: 0, z: -this.velocity.z / speed * bk }, true); }
       }
     }
     if (contacts > 0 && !this.rail) {

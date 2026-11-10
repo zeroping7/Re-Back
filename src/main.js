@@ -58,6 +58,9 @@ const TIPS_D = {
     'Enlaza un derrape con el siguiente en menos de 1 s para no perder el multiplicador.',
     'Si tocas un muro o haces un trompo, pierdes el combo que no hayas cobrado.',
     'Suelta el volante un segundo para cobrar el combo antes de una curva difícil.',
+    'Con volante y gas a tope el coche se cruza cada vez más: contravolantea para sujetarlo.',
+    'Parado, volante a tope y gas: donut. En marcha, gas + freno + volante: trompo de 360º.',
+    'Un trompo de 360º sin pararte da muchos puntos y no corta el combo.',
   ],
   obst: [
     'Si te caes de un puente, vuelves a la pista en el último punto. Perder tiempo es el castigo.',
