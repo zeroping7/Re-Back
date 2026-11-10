@@ -18,6 +18,7 @@ import { PadInput } from './gamepad.js';
 import { Hud } from './hud.js';
 import { Sfx } from './audio.js';
 import { tuning } from './tuning.js';
+import { DRIFT_DEFS, driftVals, applyDriftTune, resetDriftTune, driftText } from './driftTune.js';
 
 const params = new URLSearchParams(location.search);
 const $ = (id) => document.getElementById(id);
@@ -98,7 +99,7 @@ async function init() {
   document.querySelectorAll('.app-version').forEach((e) => { e.textContent = __APP_VERSION__ === 'dev' ? 'dev' : 'v' + __APP_VERSION__; }); // la pone el CI
 
   // ---------- Pantallas ----------
-  const screens = ['m-main', 'm-disc', 'm-setup', 'm-settings', 'm-pause', 'm-results', 'm-garage', 'm-cups', 'm-podium'];
+  const screens = ['m-main', 'm-disc', 'm-setup', 'm-settings', 'm-pause', 'm-results', 'm-garage', 'm-cups', 'm-podium', 'm-dtune'];
   const VIEW = { 'm-main': 'main', 'm-disc': 'main', 'm-settings': 'main', 'm-setup': 'car', 'm-garage': 'car', 'm-cups': 'car' };
   function showScreen(id) {
     for (const s of screens) $(s).classList.toggle('hidden', s !== id);
@@ -106,6 +107,8 @@ async function init() {
     if (VIEW[id]) { room.setView(VIEW[id]); room.showCar(id === 'm-garage' ? (gSel ||= profile.selected) : profile.selected); }
     if (id === 'm-garage') buildGarage();
     if (id === 'm-disc') buildDiscs();
+    $('btn-dtune').classList.toggle('hidden', disc !== 'drift');
+    $('btn-dtune-setup').classList.toggle('hidden', disc !== 'drift' || mode === 'battle');
   }
   let garageReturn = null; // pantalla de origen si el garaje se abrió desde "Más coches" (UX-21)
   const leaveGarage = () => { const r = garageReturn; garageReturn = null; if (r) { r.rebuild(); showScreen(r.screen); } else showScreen('m-main'); };
@@ -478,6 +481,35 @@ async function init() {
     }, 30));
   }
   $('btn-go').addEventListener('click', () => { sfx.play('click'); startRace(); });
+
+  // DRI-13: ajuste del handling de drift (solo en la disciplina Drift)
+  applyDriftTune();
+  let dtBack = 'm-pause';
+  function buildDtune() {
+    const box = $('dt-list'); box.innerHTML = '';
+    let g = null;
+    for (const d of DRIFT_DEFS) {
+      if (d.g !== g) { g = d.g; const h = document.createElement('h3'); h.textContent = g; box.append(h); }
+      const row = document.createElement('div'); row.className = 'dt-row';
+      const lab = document.createElement('span'); lab.textContent = d.label;
+      const inp = document.createElement('input'); inp.type = 'range'; inp.min = d.min; inp.max = d.max; inp.step = d.step; inp.value = driftVals[d.key];
+      const out = document.createElement('output');
+      const show = () => { out.textContent = +(+inp.value).toFixed(3); row.classList.toggle('chg', +inp.value !== d.def); };
+      show();
+      inp.addEventListener('input', () => { driftVals[d.key] = +inp.value; show(); applyDriftTune(); if (race) race.applyTuning(tuning); $('dt-text').textContent = driftText(); });
+      row.append(lab, inp, out); box.append(row);
+    }
+    $('dt-text').textContent = driftText();
+  }
+  const openDtune = (back) => { dtBack = back; buildDtune(); showScreen('m-dtune'); };
+  $('btn-dtune').addEventListener('click', () => { sfx.play('click'); openDtune('m-pause'); });
+  $('btn-dtune-setup').addEventListener('click', () => { sfx.play('click'); openDtune('m-setup'); });
+  $('dt-back').addEventListener('click', () => { sfx.play('click'); showScreen(dtBack); });
+  $('dt-reset').addEventListener('click', () => { sfx.play('click'); resetDriftTune(); if (race) race.applyTuning(tuning); buildDtune(); });
+  $('dt-copy').addEventListener('click', () => {
+    sfx.play('click');
+    try { navigator.clipboard.writeText(driftText()); toast('📋 Valores copiados'); } catch { toast('Mantén pulsado el texto para copiarlo'); }
+  });
 
   function pause(on) {
     if (!race || race.phase === 'done') return;

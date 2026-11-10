@@ -110,16 +110,17 @@ export function driftVenue(B, circuit, R, { theme = 'club', seed = 3 } = {}) {
 
   // ---------- Zonas de clip (DRI-09) en el exterior de las curvas ----------
   const clips = [];
+  const CLIP_R = 15; // DRI-12: clip en TODAS las curvas (antes solo las 6 más cerradas)
   const runs = [];
   let cur = null;
   for (let i = 0; i < N; i++) {
-    if (S[i].radius < 11) { if (!cur) cur = { i0: i, apex: i, r: S[i].radius, turn: S[i].turn }; cur.i1 = i; if (S[i].radius < cur.r) { cur.r = S[i].radius; cur.apex = i; cur.turn = S[i].turn; } }
+    if (S[i].radius < CLIP_R) { if (!cur) cur = { i0: i, apex: i, r: S[i].radius, turn: S[i].turn }; cur.i1 = i; if (S[i].radius < cur.r) { cur.r = S[i].radius; cur.apex = i; cur.turn = S[i].turn; } }
     else if (cur) { runs.push(cur); cur = null; }
   }
   if (cur) runs.push(cur);
   const clipTex = clipTexture();
   const clipMat = new THREE.MeshStandardMaterial({ map: clipTex, transparent: true, depthWrite: false, roughness: 0.5, polygonOffset: true, polygonOffsetFactor: -4 });
-  const best = runs.filter((r) => r.apex > 8 && r.apex < N - 8 && r.i1 - r.i0 >= 3).sort((a, b) => a.r - b.r).slice(0, 6).sort((a, b) => a.apex - b.apex);
+  const best = runs.filter((r) => r.apex > 8 && r.apex < N - 8 && r.i1 - r.i0 >= 2).sort((a, b) => a.apex - b.apex);
   best.forEach((r, n) => {
     const side = -r.turn || 1; // exterior de la curva, en el sentido de la normal
     const a = r.apex - 3, b = r.apex + 4;

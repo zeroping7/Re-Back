@@ -415,3 +415,12 @@ body.pad-mode #btn-look { display: none; }
 
 /* Versión en la pantalla de inicio (UX-20) */
 .app-version { position: absolute; right: calc(14px + env(safe-area-inset-right)); bottom: calc(10px + env(safe-area-inset-bottom)); font-size: 12px; font-weight: 700; letter-spacing: 1px; opacity: .6; text-shadow: 0 1px 0 #0008; }
+
+/* DRI-13: panel de ajuste del derrape */
+.dtune #dt-list { max-height: 54vh; overflow-y: auto; padding-right: 6px; -webkit-overflow-scrolling: touch; }
+.dtune h3 { margin: 12px 0 4px; }
+.dtune .dt-row { display: grid; grid-template-columns: 1fr 2fr 56px; align-items: center; gap: 8px; padding: 2px 0; font-size: 13px; }
+.dtune .dt-row input[type=range] { width: 100%; }
+.dtune .dt-row output { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+.dtune .dt-row.chg output { color: #ffd23f; }
+.dtune pre { white-space: pre-wrap; font-size: 11px; opacity: .8; margin: 6px 0 0; user-select: all; }

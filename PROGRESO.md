@@ -13,6 +13,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Preparar carrera, campeonato y garaje: paneles a la izquierda (58 %) y coche entero en la zona libre de la derecha; cada coche arranca la peana de frente en 3/4.
 - **Pendiente:** probar en el móvil el encuadre (`src/showroom.js`: `off` de la vista `car`, `FRONT_34`; `src/style.css`: bloque UX-19).
 
+### Clips en todas las curvas + ajuste del derrape ✅ (DRI-12, DRI-13)
+Clips en todas las curvas de Club y Garaje nocturno. Botón 🎛 en la pausa y en la preparación de Drift para probar valores en vivo y copiarlos.
+
 ### «Más coches» vuelve al menú de origen ✅ (UX-21)
 Desde el garaje abierto por «Más coches», «Usar este» y «←» devuelven a la carrera/campeonato.
 
