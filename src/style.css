@@ -407,3 +407,8 @@ body.pad-mode #btn-look { display: none; }
 @keyframes dpop { 0% { transform: scale(1.9); } 100% { transform: scale(1); } }
 @keyframes dflash { 0% { opacity: 0; transform: translate(-50%, 8px) scale(.8); } 15% { opacity: 1; transform: translate(-50%, 0) scale(1.15); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -14px) scale(1); } }
 #hud.no-items #btn-item { display: none; }
+
+/* ===== Pantallas con coche (UX-19): paneles a la izquierda, coche libre a la derecha ===== */
+#m-setup, #m-garage, #m-cups { background: linear-gradient(90deg, #101533f2 0%, #101533d4 50%, #10153300 64%); }
+#m-setup .menu-wide, #m-garage .menu-wide, #m-cups .menu-wide { width: 58vw; margin: auto auto auto 0; }
+@media (max-height: 430px) { #race-opts { gap: 6px 14px; } }

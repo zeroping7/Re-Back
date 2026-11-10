@@ -6,10 +6,14 @@ import { groundTex, canTexture } from './textures.js';
 // Taller de juguetes detrás de los menús (UX-03): el coche gira en una peana encima de un banco de trabajo
 // gigante, con herramientas colgadas, una lámpara cálida y cámara que se mueve despacio entre "sitios".
 const VIEWS = {
-  main: { pos: [-4.6, 3.6, 10.6], look: [1.4, 1.5, -1.5], drift: 0.9 },
-  car: { pos: [-2.3, 1.45, 5.7], look: [0, 0.15, 0], drift: 0.45 },
-  podium: { pos: [0, 3.1, 10.8], look: [0, 1.0, -0.5], drift: 0.35 },
+  // off = cuánto se desplaza la imagen a la derecha (fracción del ancho) para que el sujeto quede en la zona libre
+  main: { pos: [-4.6, 3.6, 10.6], look: [1.4, 1.5, -1.5], drift: 0.9, off: 0.18 },
+  // car: paneles en el 58 % izquierdo; el coche se centra en el 42 % derecho (centro al 79 % del ancho)
+  car: { pos: [-2.3, 1.45, 5.7], look: [0, 0.15, 0], drift: 0.45, off: 0.29 },
+  podium: { pos: [0, 3.1, 10.8], look: [0, 1.0, -0.5], drift: 0.35, off: 0.18 },
 };
+// Ángulo con el que arranca la peana: el frente del coche (+z) se ve en 3/4 desde la cámara
+const FRONT_34 = 0.23;
 
 export class Showroom {
   constructor(envMap) {
@@ -25,6 +29,9 @@ export class Showroom {
     this.t = 0;
     this.leds = [];
     this.views = VIEWS;
+    this.spinT0 = 0;
+    this.offX = VIEWS.main.off;
+    this.w = 1; this.h = 1; this.dirty = true;
 
     // ---------- Luces ----------
     scene.add(new THREE.HemisphereLight('#c9d6ff', '#4a3524', 0.55));
@@ -156,6 +163,7 @@ export class Showroom {
   showCar(id) {
     if (id === this.carId) return;
     this.carId = id;
+    this.spinT0 = this.t; // cada coche nuevo empieza girando desde el frente 3/4
     this.turntable.children.forEach(disposeTree);
     this.turntable.clear();
     this.turntable.add(carOnStand(carById(id), carById(id).color));
@@ -176,6 +184,7 @@ export class Showroom {
   }
 
   setView(v) {
+    if (v !== this.view) this.spinT0 = this.t;
     this.view = v;
     const pod = v === 'podium';
     this.podium.visible = pod; this.confetti.mesh.visible = pod; this.stage.visible = !pod;
@@ -183,14 +192,13 @@ export class Showroom {
 
   resize(w, h) {
     this.camera.aspect = w / h;
-    this.camera.setViewOffset(w, h, -w * 0.18, 0, w, h);
-    this.camera.updateProjectionMatrix();
+    this.w = w; this.h = h; this.dirty = true;
   }
 
   render(renderer, dt) {
     this.t += dt;
     const t = this.t, V = VIEWS[this.view];
-    this.turntable.rotation.y = t * 0.5;
+    this.turntable.rotation.y = FRONT_34 + (t - this.spinT0) * 0.5;
     const d = V.drift;
     const want = new THREE.Vector3(V.pos[0] + Math.sin(t * 0.13) * d, V.pos[1] + Math.sin(t * 0.09) * d * 0.3, V.pos[2] + Math.cos(t * 0.11) * d * 0.4);
     const k = 1 - Math.exp(-dt * 2.2);
@@ -198,6 +206,14 @@ export class Showroom {
     this.camLook.lerp(new THREE.Vector3(...V.look), k);
     this.camera.position.copy(this.camPos);
     this.camera.lookAt(this.camLook);
+    // desplazamiento lateral de la imagen según la vista (suave al cambiar de pantalla)
+    const dOff = V.off - this.offX;
+    if (this.dirty || Math.abs(dOff) > 0.0003) {
+      this.offX = Math.abs(dOff) < 0.0003 ? V.off : this.offX + dOff * k;
+      this.camera.setViewOffset(this.w, this.h, -this.w * this.offX, 0, this.w, this.h);
+      this.camera.updateProjectionMatrix();
+      this.dirty = false;
+    }
     // luces del cargador parpadeando
     this.leds.forEach((l, i) => { l.material.emissiveIntensity = i === 1 ? (Math.sin(t * 5) > 0 ? 2.5 : 0.2) : 2; });
     if (this.confetti.mesh.visible) this.confetti.update(dt);
