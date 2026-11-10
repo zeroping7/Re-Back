@@ -52,7 +52,7 @@ function build(B) {
     start: [-XW, RAD],
     width: 2.6,
     limits: [R.x - 2, R.z - 2],
-    hills: [{ at: [at(BOT, 'climb'), -RAD], len: LEN.climb - 1, h: 1.2 }],
+    hills: [{ at: [at(BOT, 'climb'), -RAD], len: LEN.climb - 1, h: 3.0 }, { at: [at(BOT, 'garden'), -RAD], len: LEN.garden - 1, h: 2.2 }],
     hillMaterial: dirtMat,
     barrier: { colors: ['#6c7079'], thick: 0.6, hidden: true, wallHalf: 0.55 }, // solo colisión: las rocas son el dibujo
     chevrons: false,

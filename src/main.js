@@ -251,7 +251,9 @@ async function init() {
     }
     // sentido: normal, al revés, espejo (UX-13)
     const vEl = $('opt-variant'); vEl.innerHTML = '';
+    if (disc === 'obst' && settings.variant === 'mirror') settings.variant = 'normal'; // sin espejo en Obstáculos
     for (const V of VARIANTS) {
+      if (disc === 'obst' && V.id === 'mirror') continue;
       const open = variantUnlocked(V.id, profile.cups);
       const b = document.createElement('button');
       b.textContent = (open ? '' : '🔒 ') + V.name + (V.icon ? ' ' + V.icon : '');

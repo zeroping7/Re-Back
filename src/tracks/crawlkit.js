@@ -83,13 +83,17 @@ export function crawlKit(B, circuit) {
   const post = (f, a, lat, h, r, color, y0 = 0) => { const p = f.pos(a, lat); return B.cyl(r, r, h, p.x, f.y0 + y0 + h / 2, p.z, color, { seg: 6, solid: false }); };
 
   // Suelo (diseño) en el tramo f a la distancia a; sigue la colina de la cuesta
-  const groundAt = (f, a) => samples[(((f.i + Math.round(a / sp)) % circuit.N) + circuit.N) % circuit.N].h;
+  const hAt = (i) => samples[((i % circuit.N) + circuit.N) % circuit.N].h;
+  // altura del suelo interpolada entre muestras (en cuestas empinadas redondear deja rocas medio enterradas o colgando)
+  const groundAt = (f, a) => { const u = f.i + a / sp, i = Math.floor(u), t = u - i; return hAt(i) * (1 - t) + hAt(i + 1) * t; };
+  const slopeAt = (f, a) => (groundAt(f, a + 0.4) - groundAt(f, a - 0.4)) / 0.8;
   const SAND = ['#d9bd84', '#cfae72', '#e3c88f', '#c8a766'];
 
   // Roca suelta de forma variada (bola facetada, losa inclinada o tocón de cinco-ocho lados); `e` = cuánto sobresale del suelo
   function rock(f, a, lat, r, e, color, kind = (rnd() * 3) | 0) {
     if (kind) e *= 0.72; // las losas y tocones tienen la cima plana: más bajos para que el chasis no se enganche
     const p = f.pos(a, lat), y = groundAt(f, a);
+    e = Math.max(0.04, e - Math.abs(slopeAt(f, a)) * r * 0.9); // en pendiente la cara de abajo asoma más
     if (kind === 0) return B.ball(r, p.x, y + e - r, p.z, color, { detail: rnd() < 0.5 ? 0 : 1, phys: PHYS });
     if (kind === 1) {
       const w = r * (1.6 + rnd() * 0.8), d = r * (1.2 + rnd() * 0.8), h = Math.max(e * 1.6, r * 0.7);
