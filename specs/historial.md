@@ -40,3 +40,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 - Objetivo principal: **parecerse lo máximo posible a Re-Volt**.
 | 28 | En los menús de carrera rápida y garaje los paneles tapan el coche y se ve de espaldas/de lado: que se vea por delante y completo | UX-19 |
 | 29 | Mostrar el número de versión en la pantalla de inicio y que se actualice solo | UX-20 |
+| 30 | El prototipo de obstáculos no gusta (césped plano, pista ancha, tres piezas sueltas). Rehacerlo como crawler park de las fotos: un solo camino, obstáculos obligatorios, física de crawler realista, estructura A→B con checkpoints, una ambientación por circuito (empezando por la maqueta sobre mesa) | CRW-01, CRW-09..12 |

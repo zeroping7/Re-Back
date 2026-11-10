@@ -24,7 +24,7 @@ export class AIDriver {
     this.laneTimer -= dt;
     if (this.laneTimer <= 0) {
       this.laneTimer = 2 + this.rand() * 4;
-      this.laneTarget = (this.rand() - 0.5) * 0.7;
+      this.laneTarget = (this.rand() - 0.5) * (this.car.crawl ? 0.3 : 0.7);
     }
     // esquivar coches que tengo delante
     for (const o of race.cars) {
@@ -50,10 +50,11 @@ export class AIDriver {
       }
     }
     // obstáculos del recorrido (OBS-04): apartarse del más cercano que tengo delante y frenar en los estrechos
-    let hzSlow = Infinity, near = null, nd = Infinity;
+    let hzSlow = Infinity, near = null, nd = Infinity, hold = false;
     for (const hz of race.T.hazards || []) {
       const dx = hz.pos.x - p.x, dz = hz.pos.z - p.z, d = Math.hypot(dx, dz), ah = dx * f.x + dz * f.z;
       if (d > 18 + hz.r || ah < -0.5) continue;
+      if (hz.hold && d < hz.hold) hold = true; // CRW: puentes y pasarelas estrechos, hay que ir por el centro
       if (hz.slow) hzSlow = Math.min(hzSlow, hz.slow);
       if (hz.r > 0 && ah < nd) { nd = ah; near = hz; }
     }
@@ -67,6 +68,7 @@ export class AIDriver {
         this.laneTimer = 0.8;
       }
     }
+    if (hold) { this.laneTarget = 0; this.laneTimer = 0.6; }
     this.lane += THREE.MathUtils.clamp(this.laneTarget - this.lane, -dt * (hzSlow < Infinity ? 2.2 : 0.8), dt * (hzSlow < Infinity ? 2.2 : 0.8));
 
     // punto objetivo
@@ -99,7 +101,7 @@ export class AIDriver {
     if (this.drift && this.reverse <= 0 && brake === 0 && speed < vAllowed + 6) throttle = Math.max(throttle, 0.7);
 
     // atascos: marcha atrás
-    if (race.started && speed < 1.5 && !car.fx.stun) this.stuck += dt; else this.stuck = 0;
+    if (race.started && speed < (car.crawl ? 0.35 : 1.5) && !car.fx.stun) this.stuck += dt; else this.stuck = 0;
     if (this.stuck > 1.2) { this.reverse = 0.9; this.stuck = 0; }
     if (this.reverse > 0) {
       this.reverse -= dt;

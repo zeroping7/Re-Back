@@ -218,6 +218,7 @@ export function buildCircuit(B, def) {
   if (def.gapFracs) gaps = [...(gaps || []), ...def.gapFracs.map(([a, b, sd]) => (B.reverse ? [at(b), at(a), sd === undefined ? sd : -sd] : [at(a), at(b), sd]))];
   // bordes visibles bajos y sobrios; la colisión es un muro invisible más alto
   const blockH = st.height ?? 0.6, blockT = st.thick ?? 0.6;
+  const wallHalf = st.wallHalf ?? 1.1; // media altura del muro invisible de colisión (CRW-09: más bajo para no encajonar la cámara)
   const segs = [];
   for (const side of noBarrier ? [] : [1, -1]) {
     for (let i = 0; i < N; i++) {
@@ -242,10 +243,10 @@ export function buildCircuit(B, def) {
     m4.compose(new THREE.Vector3(sg.mid.x, y + sg.h, sg.mid.z), q, new THREE.Vector3(1, 1, sg.len - 0.08));
     blockMesh.setMatrixAt(i, m4);
     blockMesh.setColorAt(i, col.set(st.colors[i % st.colors.length]));
-    B.collider(RAPIER.ColliderDesc.cuboid(blockT / 2, 1.1, sg.len / 2), { x: sg.mid.x, y: 1.1 + sg.h, z: sg.mid.z }, q,
+    B.collider(RAPIER.ColliderDesc.cuboid(blockT / 2, wallHalf, sg.len / 2), { x: sg.mid.x, y: wallHalf + sg.h, z: sg.mid.z }, q,
       { friction: 0.05, restitution: 0.5, groups: BARRIER_GROUPS });
   });
-  if (segs.length) scene.add(blockMesh);
+  if (segs.length && !st.hidden) scene.add(blockMesh); // hidden: solo colisión (el dibujo lo pone el circuito, p. ej. rocas)
 
   // ---------- Superficies elevadas (malla visible + colisión triangular sin aristas internas) ----------
   for (const e of elev) {

@@ -191,5 +191,5 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
   y carrera online (NET-08).
 
 ## Obstáculos 2.0 (crawler park) — en curso
-- Hecho: spec CRW-01..08, circuitos escritorio/fregadero eliminados, prototipo `senda` (escalones, puente de troncos, pasarela) con `src/tracks/crawlkit.js`.
-- Pendiente: validar tacto con el usuario; física de crawler (marcha lenta, articulación), trial con puertas y penalizaciones, rivales a elegir, escenarios jardín y feria, coches crawler, resto de obstáculos.
+- Hecho: física de crawler (`crawlTuning`, `Car.crawl`), circuito 1 **La maqueta** (`senda`: diorama sobre mesa, camino único de 2,6 u, 9 obstáculos obligatorios en `crawlkit.js`, decorado en `diorama.js`), puertas numeradas con reaparición en la puerta del obstáculo, sin choques entre coches. IA: vuelta ≈ 118 s sin reapariciones. Herramienta `tests/shot.mjs` (capturas por obstáculo).
+- Pendiente: validar tacto con el usuario (dificultad, medallas 160/135/115); selector de rivales (CRW-04); circuitos 2 (naturaleza volcánica con arroyo) y 3 (jardín/garaje gigante); coches crawler (CRW-06).

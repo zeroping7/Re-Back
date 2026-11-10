@@ -33,9 +33,25 @@ export const MODES = {
 
 // DRI-04: conducción de drift (se aplica a cualquier coche en esa disciplina)
 export function discTuning(t, disc) {
+  if (disc === 'obst') return crawlTuning(t);
   if (disc !== 'drift') return t;
   const D = globalThis.__DP || {};
   return { ...t, rearBias: 100, gripRear: t.gripRear * (D.rear ?? 0.13), gripFront: t.gripFront * (D.front ?? 0.2), steerMax: t.steerMax * (D.steer ?? 1.15), driftRear: D.hb ?? 0.8, downforce: t.downforce * 0.5 };
+}
+
+// CRW-01: física de crawler. Poca velocidad, mucho par y agarre, suspensión larga y blanda, dirección lenta y precisa
+export function crawlTuning(t) {
+  return {
+    ...t,
+    maxSpeed: t.maxSpeed * 0.5,
+    engine: t.engine * 1.15,
+    rearBias: 50,
+    gripFront: t.gripFront * 1.7, gripRear: t.gripRear * 1.7,
+    sideFront: 1.4, sideRear: 1.4,
+    steerMax: t.steerMax * 1.45, steerSpeed: 4.2, steerFalloff: 0.012, steerLow: 0.15,
+    suspRest: t.suspRest * 1.3, suspStiff: t.suspStiff * 0.8, suspComp: 2.6, suspRelax: 3.4,
+    brake: 7, downforce: 0, airControl: 5,
+  };
 }
 
 // DEC-01: medallas de los modos en solitario

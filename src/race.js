@@ -84,6 +84,8 @@ export class Race {
       car.reset(slot.pos, slot.yaw);
       car.isPlayer = isPlayer;
       car.driftMode = disc === 'drift';
+      car.crawl = disc === 'obst';
+      if (car.crawl) car.collider.setCollisionGroups((0x0004 << 16) | 0xfffb); // CRW-04: sin choques entre coches
       car.gyro = isPlayer ? undefined : 1; // la IA lleva el giroscopio a tope
       if (disc !== 'race') car.damageK = disc === 'obst' ? 0.3 : 0.5;
       this.cars.push(car);
@@ -256,6 +258,16 @@ export class Race {
     if (d > c.N / 2) d -= c.N;
     st.progress += d; st.idx = ni;
 
+    // CRW-11: puertas numeradas de los obstáculos (solo el jugador)
+    const gates = this.T.gates;
+    if (gates && car.isPlayer && this.started && !st.finished) {
+      while ((st.gateN ?? 0) < gates.length && st.progress >= gates[st.gateN ?? 0].i) {
+        const g = gates[st.gateN ?? 0]; st.gateN = (st.gateN ?? 0) + 1;
+        this.hud.message(`🚩 Obstáculo ${st.gateN}/${gates.length} · ${g.name}`, 1.8);
+        this.sfx.play('pickup');
+      }
+    }
+
     // vueltas
     if (this.started && !st.finished) {
       const laps = Math.floor(st.progress / c.N);
@@ -296,7 +308,9 @@ export class Race {
     const sc = c.samples[st.idx];
     const lat = Math.abs((p.x - sc.p.x) * sc.n.x + (p.z - sc.p.z) * sc.n.z);
     // (también si está en el suelo por debajo de un puente o una cuesta: se ha caído)
-    if ((lat > c.width / 2 + 2 || p.y < sc.p.y - 1.4) && car.contacts > 0) st.offT = (st.offT || 0) + dt; else st.offT = 0;
+    // CRW-11: foso bajo los puentes y pasarelas: si el coche está por debajo de la plataforma, se ha caído
+    const pit = (this.T.pits || []).find((q) => st.idx >= q.i0 && st.idx <= q.i1);
+    if ((lat > c.width / 2 + 2 || p.y < sc.p.y - 1.4 || (pit && p.y < pit.y)) && car.contacts > 0) st.offT = (st.offT || 0) + dt; else st.offT = 0;
     // recolocar si vuelca o se sale
     const b = this.bounds;
     if (car.upsideTime > 1.4 || p.y < -4 || Math.abs(p.x) > b.x + 6 || Math.abs(p.z) > b.z + 6 || st.offT > (this.disc === 'obst' ? 0.9 : car.isPlayer ? 2.5 : 1.5)) {
@@ -494,6 +508,11 @@ export class Race {
     }
     // no recolocar encima de un obstáculo (OBS-02): se retrocede hasta un punto libre
     let ri = st.idx;
+    if (this.T.safe && st.progress >= 0) { // CRW-11: se reaparece en la puerta del obstáculo en el que estabas (o tras el último superado)
+      let best = null;
+      for (const i of this.T.safe) if (i <= ri) best = i;
+      if (best !== null) ri = best;
+    }
     for (let k = 0; k < 14 && (this.T.hazards || []).some((hz) => hz.r > 0 && Math.hypot(hz.pos.x - c.samples[ri].p.x, hz.pos.z - c.samples[ri].p.z) < hz.r + 5); k++) ri = (ri - 1 + c.N) % c.N;
     const s = c.samples[ri];
     // altura real del suelo en ese punto (rampas, cuestas…)

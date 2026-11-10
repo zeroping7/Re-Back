@@ -57,15 +57,18 @@ troncos y roca. Decidido el 10-11-2026.
 
 | ID | Requisito | Estado |
 |---|---|---|
-| CRW-01 | **Física de crawler**: marcha muy corta con mucho par y poca velocidad, suspensión de mucho recorrido que se retuerce, ruedas que trepan escalones y troncos, el coche puede volcar de lado | 📝 |
+| CRW-01 | **Física de crawler** (`discTuning` y `Car.crawl`, solo en Obstáculos): velocidad máx. ~50 %, mucho par a baja velocidad, mucho agarre, suspensión de más recorrido y blanda, dirección lenta y precisa, **freno motor fuerte** (no se desliza hacia atrás en las cuestas), antivuelco más suave (puede volcar de lado) | ✅ |
 | CRW-02 | **Obstáculos** (piezas reutilizables): puente tibetano de tablillas que se balancea, puente de troncos/rampa de dos raíles, escalones de madera, pila de troncos sueltos, cuesta de roca con escalones, obstáculo lateral (coche muy inclinado), pasarela elevada estrecha sin barandilla, banco de arena, túnel | 📝 |
 | CRW-03 | **Trial**: recorrido por tramos con **puertas** (pares de postes) en orden. Resultado = tiempo + penalizaciones: puerta fallada, caerse de un obstáculo, salirse del recorrido, tocar un poste. Al caerse se vuelve al inicio del obstáculo | 📝 |
-| CRW-04 | **Rivales a elegir** antes de empezar: fantasmas a la vez (no chocan), por turnos (cada uno su recorrido, se comparan resultados) o todos juntos chocando | 📝 |
+| CRW-04 | **Rivales a elegir** antes de empezar: fantasmas a la vez (no chocan), por turnos (cada uno su recorrido, se comparan resultados) o todos juntos chocando | 🚧 Por ahora: fantasmas (los coches no chocan entre sí en Obstáculos; falta el selector) |
 | CRW-05 | **Escenarios**: tapete de tierra y césped en interior (piezas de madera), jardín exterior (tierra, arena, troncos, rocas, musgo) y montaje de feria en centro comercial (montaña de roca, puentes, pista alrededor) | 📝 |
 | CRW-06 | Coches de Obstáculos rehechos como **crawlers** estrechos y altos (todoterrenos de escala con baca, faros, rueda de repuesto) | 📝 |
 | CRW-07 | Se quitan los circuitos El escritorio y El fregadero (hecho; `kit.js` aún conserva sus piezas sin uso) | ✅ |
-| CRW-02p | Prototipo `El tapete de pruebas` (`senda`, `crawlkit.js`): escalones, puente de troncos y pasarela sin barandilla. La IA lo completa sin respawns | 🚧 validar tacto |
-| CRW-08 | Orden: primero un **prototipo** para validar el tacto con el usuario; después el resto | 🚧 |
+| CRW-09 | **Circuito 1 · La maqueta** (`senda`): diorama sobre mesa (cortinas azules con luna al fondo, tapete de césped, montaña de roca en el centro, pinos y cinta de balizar). **Un solo camino estrecho** (2,6 u, ~4 coches de ancho) con muros de roca a los dos lados: no hay forma de esquivar los obstáculos, todos ocupan el ancho completo | ✅ |
+| CRW-10 | **Obstáculos de La maqueta**, en este orden: 1 escalones de madera · 2 pila de troncos sueltos · 3 rampa doble de troncos · 4 puente de troncos cubierto (dos raíles) · 5 banco de arena · 6 vado de agua con rocas · 7 cuesta de roca · 8 jardín de rocas · 9 puente tibetano de tablillas sin barandilla. Vuelta de IA ≈ 118 s sin reapariciones; medallas 160/135/115 s | ✅ |
+| CRW-11 | **Puertas numeradas**: cada obstáculo empieza con una puerta (dos postes con bandera y número). Al cruzarla el marcador avisa «Obstáculo n/N». Si vuelcas, te caes o te sales **reapareces en la puerta del obstáculo en el que estabas** (no donde caíste) | ✅ |
+| CRW-12 | Es un recorrido de **A a B con checkpoints**: 1 vuelta = el recorrido entero y la meta está donde la salida (el circuito se cierra para reutilizar IA, fantasma y minimapa) | ✅ |
+| CRW-08 | Orden: primero el circuito 1 hasta dejarlo fino con el usuario; después los escenarios 2 (naturaleza volcánica con arroyo) y 3 (jardín/garaje gigante). Cada circuito tiene una sola ambientación coherente | 🚧 |
 
 ## Coches
 

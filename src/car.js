@@ -48,6 +48,7 @@ export class Car {
     this.forward = new THREE.Vector3(0, 0, 1);
     this.up = new THREE.Vector3(0, 1, 0);
     this.throttle = 0; this.braking = false; this.drifting = false; this.reversing = false;
+    this.crawl = false; // CRW-01: física de crawler (Obstáculos)
     this.antenna = { pitch: 0, roll: 0, vp: 0, vr: 0 };
     this.lastVel = new THREE.Vector3();
     this.speed = 0; this.fwdSpeed = 0; this.contacts = 4;
@@ -179,7 +180,8 @@ export class Car {
     }
     if (this.driftMode && this.donut) engine *= 1 - 0.7 * this.donut; // en el donut las ruedas patinan en el sitio
     if (boost && thr === 0 && brk === 0) engine = power * THREE.MathUtils.clamp((maxSpeed - fwd) / (maxSpeed * 0.25), 0, 1);
-    if (thr === 0 && brk === 0 && !boost) brakeF = brakeR = 0.04; // resistencia a rodar
+    // resistencia a rodar; el crawler lleva freno motor fuerte: se queda quieto en la cuesta al soltar el gas (CRW-01)
+    if (thr === 0 && brk === 0 && !boost) brakeF = brakeR = this.crawl ? 1.8 : 0.04;
     if (input.hold) { engine = 0; brakeF = brakeR = t.brake / 4; this.reversing = false; }
     // charco: frena suave con resistencia del agua (sin bloquear ruedas, que hacía trompos)
     if (fx.wet > 0 && fwd > maxSpeed) {
@@ -294,7 +296,7 @@ export class Car {
       const down = t.downforce * speed * speed / 10 * m * dt;
       b.applyImpulse({ x: -this.up.x * down, y: -this.up.y * down, z: -this.up.z * down }, true);
       // estabilizador anti-vuelco suave
-      _v.crossVectors(this.up, UP).multiplyScalar(7 * m * dt * (contacts / 4));
+      _v.crossVectors(this.up, UP).multiplyScalar((this.crawl ? 3 : 7) * m * dt * (contacts / 4)); // crawler: antivuelco suave, puede volcar de lado
       b.applyTorqueImpulse({ x: _v.x, y: _v.y, z: _v.z }, true);
     } else {
       // control en el aire: cabeceo con gas/freno, giro con dirección

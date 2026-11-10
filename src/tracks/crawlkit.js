@@ -1,73 +1,246 @@
 import * as THREE from 'three';
-import { mat } from './common.js';
+import { mat, trackPatch, bannerTexture } from './common.js';
+import { mulberry } from './kit.js';
+import { groundTex, surfaceTex } from '../textures.js';
 
-// Piezas del parque de crawlers (CRW-02). Todo en unidades de diseño; cada pieza se coloca sobre el trazado
-// en un tramo recto: along = distancia a lo largo, lat = desplazamiento lateral.
+// Piezas del parque de crawlers (CRW-02, CRW-10). Todo en unidades de diseño (el mundo es ×2).
+// Cada pieza se coloca sobre un tramo RECTO del camino por su posición (x, z) y ocupa TODO el ancho:
+// no hay forma de esquivarla. Cada una registra su puerta numerada (CRW-11), los puntos de reaparición,
+// los fosos (caída desde puentes) y los avisos para la IA (frenar y, en los estrechos, ir por el centro).
+const WOOD = ['#a1744a', '#8d6238', '#b5885a', '#9b6c43'];
+const LOG = ['#7a5230', '#6b4527', '#8a5f3a', '#74492a'];
+export const ROCK = ['#80858d', '#6b7079', '#8e9299', '#60646d', '#8a8176'];
+const PHYS = { friction: 1.3, restitution: 0.04 };
+const RIDE = 0.9; // altura aproximada del centro del coche sobre el suelo (mundo)
+
 export function crawlKit(B, circuit) {
-  const W = circuit.width, samples = circuit.samples, N = circuit.N;
-  const hazards = [];
-  const used = [];
-  const avoid = () => [...circuit.elev.map((e) => [e.i0, e.i1]), [N - 10, 10], ...used];
-  const WOOD = ['#a1744a', '#8d6238', '#b5885a'], LOG = ['#7a5230', '#6b4527', '#8a5f3a'];
+  const SC = B.S, MX = B.MX;
+  const W = circuit.width, sp = circuit.spacing, samples = circuit.samples;
+  const gates = [], safe = [], pits = [], hazards = [], zones = [], visuals = [];
+  const rnd = mulberry(77);
+  const world = (v) => new THREE.Vector3(v.x * SC * MX, 0, v.z * SC);
+  const pl = groundTex('plank', [2, 1]);
+  const plankMat = new THREE.MeshStandardMaterial({ map: pl.map, normalMap: pl.normalMap, normalScale: new THREE.Vector2(0.5, 0.5), roughness: 0.85, color: '#cfa77d' });
 
-  function frame(frac, len) {
-    const i = circuit.straightest(frac - 0.03, frac + 0.03, 3, len + 3, avoid());
-    used.push([i - 2, i + len + 3]);
-    const s = samples[((i % N) + N) % N];
-    const t = s.t.clone(), n = s.n.clone(), c = s.p.clone();
-    const yaw = Math.atan2(t.x, t.z);
-    const pos = (along, lat = 0) => c.clone().addScaledVector(t, along).addScaledVector(n, lat);
-    return { i, c, t, n, yaw, pos, len: len * circuit.spacing };
+  // Tramo del camino centrado en (x, z) de longitud L: pos(a, lat) = punto a metros a lo largo y lat al lado
+  function frame(x, z, L, name, { entry = 2, exit = 2 } = {}) {
+    const c = circuit.sampleNear(x, z).i, s = samples[c];
+    const t = s.t.clone(), n = s.n.clone(), half = Math.ceil(L / 2 / sp);
+    const f = { i: c, t, n, yaw: Math.atan2(t.x, t.z), L, y0: s.h, i0: c - half, i1: c + half, c: s.p.clone(),
+      idx: (a) => c + Math.round(a / sp),
+      pos: (a, lat = 0) => s.p.clone().addScaledVector(t, a).addScaledVector(n, lat) };
+    const ig = f.i0 - entry, ie = f.i1 + exit;
+    gates.push({ i: ig, name });
+    safe.push(ig, ie);
+    return f;
   }
-  // caja alineada con la pista, centrada en (along, lat), con su cara superior a altura top
-  function slab(f, along, lat, w, h, d, top, color, { pitch = 0 } = {}) {
-    const p = f.pos(along, lat);
-    return B.box(w, h, d, p.x, top - h / 2, p.z, color, { rot: [pitch, f.yaw, 0], phys: { friction: 1.2, restitution: 0.05 } });
+  // La IA frena en el obstáculo y, si es estrecho (hold), va por el centro
+  function narrow(f, slow, hold = false) {
+    for (let a = -f.L / 2 - 4; a <= f.L / 2 + 1; a += 4.5) hazards.push({ pos: world(f.pos(a)), r: 0, slow, hold: hold ? 9 : 0 });
   }
-  function log(f, along, lat, r, len, top, { pitch = 0, color = LOG[0], axis = 'along' } = {}) {
-    const p = f.pos(along, lat);
-    if (axis === 'along') return B.cyl(r, r, len, p.x, top - r, p.z, color, { seg: 8, rot: [pitch - Math.PI / 2, f.yaw, 0], phys: { friction: 1.2, restitution: 0.05 } });
-    return B.cyl(r, r, len, p.x, top - r, p.z, color, { seg: 8, rot: [0, f.yaw, Math.PI / 2], phys: { friction: 1.2, restitution: 0.05 } });
-  }
-  const pick = (a, k) => a[k % a.length];
+  // Foso bajo una plataforma: si el coche está por debajo, se ha caído (top = altura de la plataforma, diseño)
+  function pit(f, a0, a1, top) { pits.push({ i0: f.idx(a0), i1: f.idx(a1), y: (f.y0 + top) * SC + 0.4 }); }
 
-  // Escalones de madera: subir n peldaños, meseta, bajar n peldaños
-  function steps(frac, { n = 3, rise = 0.15, tread = 1.6, top = 4, width = 0.8 } = {}) {
-    const f = frame(frac, Math.ceil((2 * n * tread + top) / circuit.spacing) + 2);
-    let a = 1;
-    for (let k = 1; k <= n; k++) { slab(f, a + tread / 2, 0, W * width, rise * k, tread, rise * k, pick(WOOD, k)); a += tread; }
-    slab(f, a + top / 2, 0, W * width, rise * n, top, rise * n, pick(WOOD, 7)); a += top;
-    for (let k = n; k >= 1; k--) { slab(f, a + tread / 2, 0, W * width, rise * k, tread, rise * k, pick(WOOD, k + 1)); a += tread; }
+  // Losa cuya cara SUPERIOR va de (a0, h0) a (a1, h1)
+  function surf(f, a0, h0, a1, h1, { lat = 0, w = W * 0.94, th = 0.22, material = plankMat, solid = true } = {}) {
+    const dh = h1 - h0, da = a1 - a0, ang = Math.atan2(dh, da), len = Math.hypot(da, dh) + 0.08;
+    const p = f.pos((a0 + a1) / 2 + Math.sin(ang) * th / 2, lat);
+    return B.box(w, th, len, p.x, f.y0 + (h0 + h1) / 2 - Math.cos(ang) * th / 2, p.z, material, { rot: [-ang, f.yaw, 0], solid, phys: PHYS });
+  }
+  // Tronco cuya parte SUPERIOR va de (a0, h0) a (a1, h1)
+  function logAlong(f, a0, h0, a1, h1, lat, r, color, solid = true) {
+    const dh = h1 - h0, da = a1 - a0, ang = Math.atan2(dh, da), len = Math.hypot(da, dh) + 0.3;
+    const p = f.pos((a0 + a1) / 2 + Math.sin(ang) * r, lat);
+    return B.cyl(r, r, len, p.x, f.y0 + (h0 + h1) / 2 - Math.cos(ang) * r, p.z, color, { seg: 8, rot: [Math.PI / 2 - ang, f.yaw, 0], solid, phys: PHYS });
+  }
+  // Tronco atravesado, con el centro a altura y
+  function logAcross(f, a, y, lat, r, len, color, { solid = true, yawJ = 0 } = {}) {
+    const p = f.pos(a, lat);
+    return B.cyl(r, r, len, p.x, f.y0 + y, p.z, color, { seg: 8, rot: [0, f.yaw + yawJ, Math.PI / 2], solid, phys: PHYS });
+  }
+  const post = (f, a, lat, h, r, color, y0 = 0) => { const p = f.pos(a, lat); return B.cyl(r, r, h, p.x, f.y0 + y0 + h / 2, p.z, color, { seg: 6, solid: false }); };
+
+  // 1 · Escalones de madera: subir n peldaños, meseta y bajar
+  function steps(x, z, { n = 4, rise = 0.1, tread = 1.4, top = 3.2, wide = 0.94 } = {}) {
+    const L = 2 * n * tread + top, f = frame(x, z, L, 'Escalones de madera');
+    let a = -L / 2;
+    const slab = (len, h) => { const p = f.pos(a + len / 2); B.box(W * wide, h, len, p.x, f.y0 + h / 2, p.z, plankMat, { rot: [0, f.yaw, 0], phys: PHYS }); a += len; };
+    for (let k = 1; k <= n; k++) slab(tread, rise * k);
+    slab(top, rise * n);
+    for (let k = n; k >= 1; k--) slab(tread, rise * k);
+    narrow(f, 5.5);
     return f;
   }
 
-  // Puente de troncos: dos raíles (rampa, plano, rampa) sobre los que van las ruedas
-  function logBridge(frac, { h = 0.55, ramp = 5, flat = 6, gauge = 0.78, r = 0.3 } = {}) {
-    const f = frame(frac, Math.ceil((2 * ramp + flat) / circuit.spacing) + 2);
-    const pitch = -Math.atan2(h, ramp);
-    const L = Math.hypot(h, ramp) + 0.4;
+  // 2 · Troncos sueltos atravesados, medio enterrados y desiguales
+  function logPile(x, z, { n = 5 } = {}) {
+    const L = 11, f = frame(x, z, L, 'Troncos sueltos');
+    for (let k = 0; k < n; k++) {
+      const r = 0.14 + rnd() * 0.08, top = 0.16 + rnd() * 0.1;
+      logAcross(f, -L / 2 + 1.5 + k * (L - 3) / (n - 1) + (rnd() - 0.5) * 0.5, top - r, (rnd() - 0.5) * 0.12, r, W * 0.97, LOG[k % 4], { yawJ: (rnd() - 0.5) * 0.26 });
+    }
+    narrow(f, 5);
+    return f;
+  }
+
+  // 3 · Rampa de troncos: sube, meseta y baja
+  function rampDouble(x, z, { up = 3.2, deck = 3.6, h = 0.85 } = {}) {
+    const L = up * 2 + deck, f = frame(x, z, L, 'Rampa de troncos');
+    const a0 = -L / 2, a1 = a0 + up, a2 = a1 + deck, a3 = a2 + up;
+    surf(f, a0, 0, a1, h); surf(f, a1, h, a2, h); surf(f, a2, h, a3, 0);
+    for (const [s0, s1, h0, h1] of [[a0, a1, 0, h], [a2, a3, h, 0]]) {
+      const n = Math.round((s1 - s0) / 0.42);
+      for (let k = 0; k < n; k++) { const u = (k + 0.5) / n; logAcross(f, s0 + (s1 - s0) * u, h0 + (h1 - h0) * u + 0.03, 0, 0.1, W * 0.9, LOG[k % 4], { solid: false }); }
+    }
+    logAcross(f, (a1 + a2) / 2, h + 0.03, 0, 0.1, W * 0.9, LOG[1], { solid: false });
+    narrow(f, 4.5);
+    return f;
+  }
+
+  // 4 · Puente de troncos cubierto: dos raíles de troncos (las ruedas deben ir sobre ellos) con tejado de madera
+  function coveredBridge(x, z, { ramp = 4, flat = 6.5, h = 0.5, gauge = 0.8, r = 0.2 } = {}) {
+    const L = ramp * 2 + flat + 1, f = frame(x, z, L, 'Puente de troncos');
+    const a0 = -L / 2 + 0.5, a1 = a0 + ramp, a2 = a1 + flat, a3 = a2 + ramp;
     for (const sd of [-1, 1]) {
       const lat = sd * gauge / 2;
-      log(f, 1 + ramp / 2, lat, r, L, h / 2 + r * 0 + 0.0, { pitch, color: pick(LOG, sd + 2) });
-      log(f, 1 + ramp + flat / 2, lat, r, flat + 0.3, h, { color: pick(LOG, sd + 3) });
-      log(f, 1 + ramp + flat + ramp / 2, lat, r, L, h / 2, { pitch: -pitch, color: pick(LOG, sd + 4) });
+      logAlong(f, a0, 0, a1, h, lat, r, LOG[(sd + 2) & 3]);
+      logAlong(f, a1 - 0.2, h, a2 + 0.2, h, lat, r, LOG[(sd + 3) & 3]);
+      logAlong(f, a2, h, a3, 0, lat, r, LOG[(sd + 4) & 3]);
+      for (const a of [a1 + 0.5, a2 - 0.5]) post(f, a, lat, h - r, 0.12, WOOD[1]);
     }
-    // travesaños para que parezca un puente
-    for (let k = 0; k < 4; k++) log(f, 1 + ramp + 0.5 + k * (flat - 1) / 3, 0, 0.14, gauge + 0.9, h - 0.3, { axis: 'across', color: pick(WOOD, k) });
-    hazards.push({ pos: f.pos(1 + ramp + flat / 2).clone(), r: 0, slow: 0, lat: 0 });
+    for (let a = a1 + 1; a < a2; a += 2.2) logAcross(f, a, h - r * 2 - 0.06, 0, 0.1, gauge + 0.7, WOOD[2], { solid: false });
+    // tejado a dos aguas sobre postes
+    const hp = 2.3, ang = 0.32, span = 1.4;
+    for (const a of [a1 + 0.3, (a1 + a2) / 2, a2 - 0.3]) for (const sd of [-1, 1]) post(f, a, sd * 1.1, hp, 0.11, WOOD[0]);
+    for (const sd of [-1, 1]) {
+      const p = f.pos((a1 + a2) / 2, sd * span / 2 * 0.98);
+      B.box(span * 1.03, 0.1, flat + 1.6, p.x, f.y0 + hp + 0.1 + Math.tan(ang) * span / 4, p.z, '#8a5a35', { rot: [0, f.yaw, sd * ang], solid: false });
+    }
+    const ridge = f.pos((a1 + a2) / 2);
+    B.box(0.2, 0.14, flat + 1.8, ridge.x, f.y0 + hp + 0.1 + Math.tan(ang) * span / 2, ridge.z, '#3e2a18', { rot: [0, f.yaw, 0], solid: false });
+    pit(f, a1 + 0.3, a2 - 0.3, h);
+    narrow(f, 3.8, true);
     return f;
   }
 
-  // Pasarela estrecha y elevada sin barandilla
-  function walkway(frac, { h = 0.5, len = 7, wide = 1.15, ramp = 3 } = {}) {
-    const f = frame(frac, Math.ceil((len + 2 * ramp) / circuit.spacing) + 2);
-    const pitch = -Math.atan2(h, ramp), L = Math.hypot(h, ramp) + 0.2;
-    slab(f, 1 + ramp / 2, 0, wide, 0.12, L, h / 2 + 0.06, WOOD[0], { pitch });
-    slab(f, 1 + ramp + len / 2, 0, wide, 0.14, len, h, WOOD[1]);
-    slab(f, 1 + ramp + len + ramp / 2, 0, wide, 0.12, L, h / 2 + 0.06, WOOD[2], { pitch: -pitch });
-    for (let k = 0; k <= 4; k++) slab(f, 1 + ramp + k * len / 4, 0, wide + 0.3, 0.1, 0.3, h - 0.14, pick(WOOD, k + 2));
+  // 5 · Banco de arena en una curva: poco agarre
+  const sandTex = surfaceTex('sand', [1, 2]);
+  function sandBank(x, z, L = 24) {
+    const f = frame(x, z, L, 'Banco de arena');
+    zones.push(trackPatch(B, circuit, [x, z], L, 'slide', { ...sandTex, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0, normalScale: 1.2, inset: 0.1, surface: 'sand' }));
+    for (let i = f.i0; i <= f.i1; i += 3) hazards.push({ pos: world(samples[((i % circuit.N) + circuit.N) % circuit.N].p), r: 0, slow: 5 });
     return f;
   }
 
-  return { steps, logBridge, walkway, hazards, zones: [], step: () => {}, update: () => {} };
+  // 6 · Vado de agua con rocas dentro
+  const wt = surfaceTex('water', [1, 4]), wt2 = surfaceTex('water', [1.7, 5]);
+  const waterMat = new THREE.MeshPhysicalMaterial({
+    color: '#ffffff', map: wt.map, normalMap: wt.normalMap, normalScale: new THREE.Vector2(0.35, 0.35), roughness: 0.03, metalness: 0,
+    clearcoat: 1, clearcoatRoughness: 0.02, clearcoatNormalMap: wt2.normalMap, clearcoatNormalScale: new THREE.Vector2(0.5, 0.5),
+    envMapIntensity: 1.6, transparent: true, opacity: 0.88, vertexColors: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4,
+  });
+  visuals.push((t) => { wt.normalMap.offset.set(0, -t * 0.05); wt2.normalMap.offset.set(0, -t * 0.08); wt.map.offset.set(0, -t * 0.03); });
+  function ford(x, z, L = 16) {
+    const f = frame(x, z, L, 'Vado de agua');
+    const pos = [], uv = [], col = [], idx = [], hw = W / 2 + 0.1;
+    let v = 0;
+    for (let i = f.i0, k = 0; i <= f.i1; i++, k++) {
+      const s = samples[i], fade = Math.min(1, k / 2, (f.i1 - i) / 2);
+      for (const sd of [1, -1]) { const q = s.p.clone().addScaledVector(s.n, sd * hw); pos.push(q.x, s.h + 0.1, q.z); col.push(1, 1, 1, fade); }
+      uv.push(0, v, 1, v); v += sp / (hw * 2);
+      if (i < f.i1) { const a = k * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 4));
+    g.setIndex(idx); g.computeVertexNormals();
+    const m = new THREE.Mesh(g, waterMat); m.userData.dynamic = true; m.receiveShadow = true; B.scene.add(m);
+    for (const a of [-5.5, -1.8, 1.8, 5.5]) zones.push({ pos: f.pos(a), r: W * 0.7, effect: 'wet', surface: 'water' });
+    // rocas dentro del agua, alternadas a un lado y al otro
+    [[-5.8, 0.66], [-2.2, -0.66], [1.5, 0.66], [5.0, -0.66]].forEach(([a, lat], k) => {
+      const r = 0.3 + rnd() * 0.05, p = f.pos(a, lat);
+      B.ball(r, p.x, f.y0 + 0.04, p.z, ROCK[k % 5], { phys: PHYS });
+      hazards.push({ pos: world(p), r: (r + 0.3) * SC, lat: lat / (W / 2), slow: 4 });
+    });
+    narrow(f, 4);
+    return f;
+  }
+
+  // 7 · Cuesta de roca: la elevación la crea `hills` en buildCircuit; aquí van las piedras incrustadas
+  function rockClimb(x, z, L = 16) {
+    const f = frame(x, z, L, 'Cuesta de roca');
+    for (let i = f.i0 + 1; i < f.i1; i += 2) {
+      const s = samples[i], r = 0.2 + rnd() * 0.14, lat = (rnd() < 0.5 ? -1 : 1) * (0.4 + rnd() * 0.75), p = s.p.clone().addScaledVector(s.n, lat);
+      B.ball(r, p.x, s.h + r * 0.15, p.z, ROCK[i % 5], { phys: PHYS });
+    }
+    narrow(f, 4.5);
+    return f;
+  }
+
+  // 8 · Jardín de rocas: cuatro filas de rocas que cierran el paso; hay que trepar al menos una de cada fila (el coche se inclina)
+  function rockGarden(x, z) {
+    const L = 11, f = frame(x, z, L, 'Jardín de rocas');
+    const rows = [[-4, [-0.88, 0, 0.88]], [-1.3, [-0.5, 0.5]], [1.5, [-0.9, -0.02, 0.88]], [4.1, [-0.48, 0.5]]];
+    rows.forEach(([a, lats], ri) => lats.forEach((lt, k) => {
+      const r = (lats.length === 2 ? 0.3 : 0.28) + rnd() * 0.03, p = f.pos(a + (rnd() - 0.5) * 0.4, lt + (rnd() - 0.5) * 0.08);
+      B.ball(r, p.x, f.y0 - 0.05, p.z, ROCK[(ri * 2 + k) % 5], { phys: PHYS });
+    }));
+    narrow(f, 3.5);
+    return f;
+  }
+
+  // 9 · Puente tibetano: rampa, tablillas colgando con ropes y mucha comba, sin barandilla sólida
+  function tibetan(x, z, { ramp = 3.6, deck = 9, h = 0.55, w = 1.3, sag = 0.14 } = {}) {
+    const L = ramp * 2 + deck + 1, f = frame(x, z, L, 'Puente tibetano');
+    const a0 = -L / 2 + 0.5, a1 = a0 + ramp, a2 = a1 + deck, a3 = a2 + ramp;
+    const yAt = (a) => { const u = Math.min(1, Math.max(0, (a - a1) / deck)); return h - sag * 4 * u * (1 - u); };
+    surf(f, a0, 0, a1, h, { w }); surf(f, a2, h, a3, 0, { w });
+    const nSeg = Math.round(deck / 1.5);
+    for (let k = 0; k < nSeg; k++) { // cubierta resistente (oscura) siguiendo la comba
+      const s0 = a1 + k * deck / nSeg, s1 = a1 + (k + 1) * deck / nSeg;
+      surf(f, s0, yAt(s0), s1, yAt(s1), { w, th: 0.14, material: mat('#3d2b1a') });
+    }
+    for (let a = a1 + 0.2; a < a2 - 0.1; a += 0.42) { // tablillas sueltas por encima
+      const y = yAt(a), slope = Math.atan2(yAt(a + 0.2) - yAt(a - 0.2), 0.4), p = f.pos(a);
+      B.box(w + 0.1, 0.07, 0.34, p.x, f.y0 + y + 0.035, p.z, WOOD[(Math.round(a * 7) & 3)], { rot: [-slope, f.yaw + (rnd() - 0.5) * 0.06, 0], solid: false });
+    }
+    for (const sd of [-1, 1]) { // cuerdas laterales y postes
+      const lat = sd * (w / 2 + 0.09);
+      for (let k = 0; k < nSeg; k++) {
+        const s0 = a1 + k * deck / nSeg, s1 = a1 + (k + 1) * deck / nSeg;
+        logAlong(f, s0, yAt(s0) + 0.62, s1, yAt(s1) + 0.62, lat, 0.035, '#cdb78a', false);
+        post(f, (s0 + s1) / 2, lat, 0.55, 0.02, '#cdb78a', yAt((s0 + s1) / 2));
+      }
+      for (const a of [a1, a2]) post(f, a, lat, 0.95, 0.07, WOOD[1], h - 0.3);
+    }
+    pit(f, a1 + 0.3, a2 - 0.3, h - sag);
+    narrow(f, 3.5, true);
+    return f;
+  }
+
+  // Puerta numerada (CRW-11): dos postes rojiblancos y un cartel con el número
+  function gateVisual(s, num) {
+    const hw = W / 2 - 0.1;
+    for (const sd of [-1, 1]) {
+      const p = s.p.clone().addScaledVector(s.n, sd * hw);
+      B.cyl(0.07, 0.07, 0.9, p.x, s.h + 0.45, p.z, '#f5f5f5', { seg: 6, solid: false });
+      B.cyl(0.07, 0.07, 0.9, p.x, s.h + 1.35, p.z, '#e53935', { seg: 6, solid: false });
+    }
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.45), new THREE.MeshBasicMaterial({ map: bannerTexture(`OBSTÁCULO ${num}`, '#c62828'), side: THREE.DoubleSide }));
+    m.position.set(s.p.x, s.h + 1.95, s.p.z); m.rotation.y = Math.atan2(s.t.x, s.t.z) + Math.PI; // la cara con texto mira a quien llega
+    B.scene.add(m);
+  }
+
+  // Al terminar: puertas numeradas por orden de recorrido (también al revés) y puntos de reaparición
+  function finish() {
+    gates.sort((a, b) => a.i - b.i);
+    gates.forEach((g, k) => gateVisual(samples[g.i], k + 1));
+    return {
+      gates, safe: [...new Set([0, ...safe])].sort((a, b) => a - b), pits, hazards, zones,
+      step: () => {}, update: (t) => { for (const f of visuals) f(t); },
+    };
+  }
+
+  return { steps, logPile, rampDouble, coveredBridge, sandBank, ford, rockClimb, rockGarden, tibetan, finish };
 }
