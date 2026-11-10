@@ -44,3 +44,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 31 | La maqueta es demasiado fácil: obstáculos más seguidos, arena que frene y con montículos, rocas y troncos aleatorios mucho más densos, escalones ×4, rampa y puente más altos, puente más estrecho | CRW-13 |
 | 32 | Más difícil aún: escalones ×2 (24 peldaños), +50 troncos, rampa ×2, arena ×2 montículos (alturas muy distintas), vado ×2 rocas, cuesta +32, jardín +50 (tamaños muy distintos) | CRW-14 |
 | 33 | Eliminar los coches Rayo, Bólido y Grillo | ✅ |
+| 34 | Que cabra, oruga, yeti y morsa tengan modelo 3D propio (CRW-06) | ✅ |

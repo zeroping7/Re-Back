@@ -34,6 +34,43 @@ const STYLES = {
     decal: { x: 0.56, y: 0.58, z: 0.55, size: 0.34 },
     plate: { y: 0.36, zr: -1.08 }, mirrors: { x: 0.56, y: 0.92, z: 0.38 },
   },
+  // CRW-06: carrocerías propias de los crawlers
+  jeep: { // Cabra: todoterreno abierto con barra antivuelco y rueda de repuesto
+    profile: [[-1.0, -0.05], [-1.0, 0.32], [-0.2, 0.34], [0.25, 0.3], [0.32, 0.2], [1.0, 0.18], [1.04, 0.02], [0.96, -0.06]],
+    width: 0.96, y: 0.5, noseStart: 0.8, noseTaper: 0.08, topStart: 0.3,
+    cab: [[-0.12, 0.0], [-0.1, 0.2], [0.08, 0.22], [0.24, 0.0]], cabWidth: 0.84, cabY: 0.82, cabZ: 0.08,
+    tailX: 0.38, tailY: 0.6, tailZ: -1.1, headX: 0.36, headY: 0.58, headZ: 1.1,
+    wing: null,
+    decal: { x: 0.54, y: 0.62, z: 0.1, size: 0.32 },
+    plate: { y: 0.34, zr: -1.08 }, mirrors: { x: 0.52, y: 0.92, z: 0.3 },
+  },
+  crawler: { // Oruga: ancho, largo y pegado al suelo, con cabrestante
+    profile: [[-1.08, -0.06], [-1.08, 0.12], [-0.3, 0.14], [0.5, 0.14], [1.06, 0.1], [1.1, 0.0], [1.0, -0.06]],
+    width: 1.16, y: 0.46, noseStart: 0.8, noseTaper: 0.06, topStart: 0.1, topTaper: 0.06,
+    cab: [[-0.4, 0.0], [-0.34, 0.2], [0.1, 0.22], [0.34, 0.0]], cabWidth: 0.84, cabY: 0.6, cabZ: -0.1,
+    tailX: 0.45, tailY: 0.52, tailZ: -1.14, headX: 0.42, headY: 0.5, headZ: 1.12,
+    wing: null,
+    decal: { x: 0.6, y: 0.54, z: 0.35, size: 0.34 },
+    plate: { y: 0.32, zr: -1.12 }, mirrors: { x: 0.5, y: 0.8, z: 0.2 },
+  },
+  bigfoot: { // Yeti: cabina alta y cuadrada, barra de focos y cuernos de hielo
+    profile: [[-1.0, -0.05], [-1.0, 0.3], [-0.4, 0.32], [0.4, 0.32], [1.0, 0.26], [1.04, 0.02], [0.96, -0.06]],
+    width: 1.02, y: 0.55, noseStart: 0.7, noseTaper: 0.08, topStart: 0.3,
+    cab: [[-0.46, 0.0], [-0.42, 0.34], [0.18, 0.36], [0.42, 0.0]], cabWidth: 0.92, cabY: 0.87, cabZ: -0.02,
+    tailX: 0.4, tailY: 0.7, tailZ: -1.1, headX: 0.38, headY: 0.62, headZ: 1.1,
+    wing: null,
+    decal: { x: 0.58, y: 0.7, z: 0.6, size: 0.34 },
+    plate: { y: 0.4, zr: -1.08 }, mirrors: { x: 0.58, y: 1.0, z: 0.34 },
+  },
+  hauler: { // Morsa: camión con cabina adelantada, colmillos y caja volquete
+    profile: [[-1.0, -0.05], [-1.0, 0.2], [-0.05, 0.22], [0.1, 0.3], [1.0, 0.3], [1.06, 0.02], [0.96, -0.06]],
+    width: 1.06, y: 0.5, noseStart: 0.7, noseTaper: 0.06, topStart: 0.3,
+    cab: [[-0.2, 0.0], [-0.16, 0.3], [0.4, 0.32], [0.58, 0.0]], cabWidth: 0.94, cabY: 0.8, cabZ: 0.36,
+    tailX: 0.42, tailY: 0.6, tailZ: -1.1, headX: 0.4, headY: 0.62, headZ: 1.12,
+    wing: null,
+    decal: { x: 0.6, y: 0.62, z: 0.7, size: 0.34 },
+    plate: { y: 0.36, zr: -1.08 }, mirrors: { x: 0.6, y: 1.0, z: 0.6 },
+  },
   rally: {
     profile: [[-0.95, -0.12], [-0.98, 0.12], [-0.9, 0.18], [0.35, 0.2], [0.7, 0.14], [1.0, 0.06], [1.02, -0.08], [0.96, -0.13]],
     width: 1.12, y: 0.26, noseStart: 0.6, noseTaper: 0.12, topStart: 0.1, topTaper: 0.05,
@@ -821,6 +858,78 @@ const EXTRAS = {
     for (const s2 of [1, -1]) add(new THREE.CylinderGeometry(0.045, 0.045, 0.5, 8), M.chrome, s2 * 0.52, P + S.y + 0.5, -0.38, undefined, false);
     // parrilla
     add(new THREE.BoxGeometry(0.7, 0.14, 0.03), M.chrome, 0, P + S.y + 0.08, 1.06, undefined, false);
+  },
+  jeep({ add, paint, P, S }) {
+    const y0 = P + S.y;
+    // barra antivuelco
+    for (const sx of [1, -1]) {
+      add(new THREE.CylinderGeometry(0.035, 0.035, 0.5, 6), M.carbon, sx * 0.42, y0 + 0.62, -0.36, undefined, false);
+      add(new THREE.CylinderGeometry(0.035, 0.035, 0.5, 6).rotateX(Math.PI / 2), M.carbon, sx * 0.42, y0 + 0.88, -0.1, undefined, false);
+      add(new THREE.CylinderGeometry(0.035, 0.035, 0.34, 6), M.carbon, sx * 0.42, y0 + 0.72, 0.14, undefined, false);
+    }
+    add(new THREE.CylinderGeometry(0.035, 0.035, 0.84, 6).rotateZ(Math.PI / 2), M.carbon, 0, y0 + 0.88, -0.36, undefined, false);
+    // baca con bidones
+    add(new THREE.BoxGeometry(0.7, 0.03, 0.4), M.carbon, 0, y0 + 0.9, -0.1, undefined, false);
+    add(new THREE.BoxGeometry(0.2, 0.18, 0.12), M.shock, 0.18, y0 + 1.0, -0.1, undefined, false);
+    // rueda de repuesto trasera
+    const sp = add(new THREE.CylinderGeometry(0.3, 0.3, 0.2, 14).rotateZ(Math.PI / 2).rotateY(Math.PI / 2), M.tire, 0, y0 + 0.4, -1.2, undefined, false);
+    sp.castShadow = true;
+    add(new THREE.CylinderGeometry(0.15, 0.15, 0.22, 10).rotateX(Math.PI / 2), M.rim, 0, y0 + 0.4, -1.2, undefined, false);
+    // faros redondos y parachoques
+    for (const sx of [1, -1]) add(new THREE.CylinderGeometry(0.085, 0.085, 0.06, 10).rotateX(Math.PI / 2), M.head, sx * 0.34, y0 + 0.14, 1.07, undefined, false);
+    add(new THREE.BoxGeometry(0.96, 0.07, 0.1), M.chrome, 0, y0 - 0.02, 1.1, undefined, false);
+  },
+  crawler({ add, paint, P, S }) {
+    const y0 = P + S.y;
+    // cabrestante y parachoques reforzado
+    add(new THREE.BoxGeometry(1.12, 0.1, 0.14), M.carbon, 0, y0 - 0.02, 1.14, undefined, false);
+    add(new THREE.CylinderGeometry(0.07, 0.07, 0.4, 10).rotateZ(Math.PI / 2), M.chrome, 0, y0 + 0.07, 1.14, undefined, false);
+    for (const sx of [1, -1]) add(new THREE.BoxGeometry(0.08, 0.14, 0.1), M.shock, sx * 0.38, y0 + 0.07, 1.16, undefined, false);
+    // protectores laterales (rock sliders)
+    for (const sx of [1, -1]) add(new THREE.CylinderGeometry(0.05, 0.05, 1.2, 8).rotateX(Math.PI / 2), M.alu, sx * 0.6, y0 - 0.06, 0.0, undefined, false);
+    // barra de focos en el techo
+    add(new THREE.BoxGeometry(0.7, 0.07, 0.07), M.carbon, 0, y0 + 0.39, 0.12, undefined, false);
+    for (const k of [-2, -1, 0, 1, 2]) add(new THREE.CylinderGeometry(0.04, 0.04, 0.04, 8).rotateX(Math.PI / 2), M.head, k * 0.14, y0 + 0.39, 0.16, undefined, false);
+    // cajón de carga con bidón
+    add(new THREE.BoxGeometry(0.8, 0.14, 0.5), paint, 0, y0 + 0.2, -0.78);
+    add(new THREE.BoxGeometry(0.22, 0.26, 0.14), M.shock, -0.22, y0 + 0.4, -0.78, undefined, false);
+    for (const sx of [1, -1]) add(new THREE.CylinderGeometry(0.075, 0.075, 0.06, 10).rotateX(Math.PI / 2), M.head, sx * 0.4, y0 + 0.12, 1.12, undefined, false);
+  },
+  bigfoot({ add, paint, P, S }) {
+    const y0 = P + S.y;
+    // barra de focos
+    add(new THREE.BoxGeometry(0.96, 0.08, 0.08), M.carbon, 0, y0 + 0.72, 0.28, undefined, false);
+    for (let k = -3; k <= 3; k++) add(new THREE.CylinderGeometry(0.05, 0.05, 0.05, 8).rotateX(Math.PI / 2), M.head, k * 0.14, y0 + 0.72, 0.33, undefined, false);
+    // cuernos de hielo
+    for (const sx of [1, -1]) {
+      const h = add(new THREE.ConeGeometry(0.07, 0.4, 6), M.lens, sx * 0.36, y0 + 0.62, -0.3, undefined, false);
+      h.rotation.z = -sx * 0.35;
+    }
+    // aletines anchos sobre las ruedas
+    for (const sx of [1, -1]) for (const z of [0.78, -0.76]) add(new THREE.BoxGeometry(0.16, 0.05, 0.62), paint, sx * 0.62, y0 + 0.12, z, undefined, false);
+    // parrilla y defensa
+    add(new THREE.BoxGeometry(0.76, 0.18, 0.03), M.chrome, 0, y0 + 0.1, 1.06, undefined, false);
+    add(new THREE.BoxGeometry(1.0, 0.08, 0.1), M.carbon, 0, y0 - 0.03, 1.1, undefined, false);
+    add(new THREE.BoxGeometry(0.9, 0.02, 0.6), M.carbon, 0, y0 + 0.33, -0.65, undefined, false);
+  },
+  hauler({ add, paint, P, S }) {
+    const y0 = P + S.y;
+    // colmillos de morsa
+    for (const sx of [1, -1]) {
+      const t = add(new THREE.CylinderGeometry(0.035, 0.07, 0.62, 8).rotateX(Math.PI / 2), M.chrome, sx * 0.3, y0 - 0.02, 1.32, undefined, false);
+      t.rotation.y = sx * 0.1;
+      add(new THREE.SphereGeometry(0.1, 8, 6), M.plastic, sx * 0.3, y0 + 0.0, 1.08, undefined, false);
+    }
+    // caja volquete: suelo y cuatro paredes pintadas
+    const bedZ = -0.55;
+    add(new THREE.BoxGeometry(0.96, 0.04, 0.9), M.carbon, 0, y0 + 0.27, bedZ, undefined, false);
+    for (const sx of [1, -1]) add(new THREE.BoxGeometry(0.05, 0.22, 0.9), paint, sx * 0.5, y0 + 0.38, bedZ);
+    add(new THREE.BoxGeometry(1.0, 0.22, 0.05), paint, 0, y0 + 0.38, bedZ - 0.45);
+    add(new THREE.BoxGeometry(1.0, 0.22, 0.05), paint, 0, y0 + 0.38, bedZ + 0.45);
+    // chimeneas de escape
+    for (const sx of [1, -1]) add(new THREE.CylinderGeometry(0.04, 0.04, 0.55, 8), M.chrome, sx * 0.55, y0 + 0.6, 0.0, undefined, false);
+    // faros y parrilla
+    for (const sx of [1, -1]) add(new THREE.CylinderGeometry(0.075, 0.075, 0.05, 10).rotateX(Math.PI / 2), M.head, sx * 0.38, y0 + 0.16, 1.09, undefined, false);
   },
   touring({ add, paint, P, S }) {
     add(new THREE.BoxGeometry(1.35, 0.03, 0.2), M.carbon, 0, P + 0.02, 1.0, undefined, false);

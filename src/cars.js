@@ -51,7 +51,7 @@ export const CARS = [
   },
   // COC-04: coches nuevos
   {
-    id: 'morsa', disc: ['race', 'obst'], price: 3500, name: 'Morsa', desc: 'Camión pesado: empuja a todos', color: '#6d4c41', style: 'truck', number: '12', pattern: 'stripes', rimColor: '#ffcc80',
+    id: 'morsa', disc: ['race', 'obst'], price: 3500, name: 'Morsa', desc: 'Camión pesado: empuja a todos', color: '#6d4c41', style: 'hauler', number: '12', pattern: 'stripes', rimColor: '#ffcc80',
     clase: 'Avanzado', motor: 'Eléctrico', mass: 12.5, rearBias: 50,
     wheelR: 0.45, wheelX: 0.66, wheelZf: 0.76, wheelZr: -0.76,
     mods: { engine: 1.04, maxSpeed: 0.96, grip: 1.08, steer: 0.9, susp: 0.72 },
@@ -110,21 +110,21 @@ export const CARS = [
   },
   // DCO-03: coches de Obstáculos (camiones lentos, ruedas grandes, mucha suspensión y agarre)
   {
-    id: 'cabra', disc: ['obst'], starter: true, price: 1500, name: 'Cabra', desc: 'Tu primer trepador: sube por donde sea', color: '#c9a45c', style: 'truck', number: '14', pattern: 'stripes', rimColor: '#3e2723',
+    id: 'cabra', disc: ['obst'], starter: true, price: 1500, name: 'Cabra', desc: 'Tu primer trepador: sube por donde sea', color: '#c9a45c', style: 'jeep', number: '14', pattern: 'stripes', rimColor: '#3e2723',
     clase: 'Trepador', motor: 'Eléctrico', mass: 10, rearBias: 50,
     wheelR: 0.48, wheelX: 0.67, wheelZf: 0.76, wheelZr: -0.76,
     mods: { engine: 1.05, maxSpeed: 0.8, grip: 1.25, steer: 1.12, susp: 0.72, rest: 1.15 },
     stats: { vel: 1, acel: 3, manejo: 4 },
   },
   {
-    id: 'oruga', disc: ['obst'], price: 4500, name: 'Oruga', desc: 'Pesado y pegado al suelo: nada lo mueve', color: '#7cb342', style: 'truck', number: '40', pattern: 'dots', rimColor: '#fdd835',
+    id: 'oruga', disc: ['obst'], price: 4500, name: 'Oruga', desc: 'Pesado y pegado al suelo: nada lo mueve', color: '#7cb342', style: 'crawler', number: '40', pattern: 'dots', rimColor: '#fdd835',
     clase: 'Trepador', motor: 'Eléctrico', mass: 12.5, rearBias: 50,
     wheelR: 0.51, wheelX: 0.68, wheelZf: 0.78, wheelZr: -0.78,
     mods: { engine: 1.2, maxSpeed: 0.84, grip: 1.36, steer: 1.08, susp: 0.68, rest: 1.2 },
     stats: { vel: 2, acel: 4, manejo: 4 },
   },
   {
-    id: 'yeti', disc: ['obst'], price: 9000, name: 'Yeti', desc: 'Monstruo blanco: salta, aterriza y sigue', color: '#e1f5fe', style: 'truck', number: '88', pattern: 'flames', rimColor: '#0288d1',
+    id: 'yeti', disc: ['obst'], price: 9000, name: 'Yeti', desc: 'Monstruo blanco: salta, aterriza y sigue', color: '#e1f5fe', style: 'bigfoot', number: '88', pattern: 'flames', rimColor: '#0288d1',
     clase: 'Trepador', motor: 'Nitro', mass: 11, rearBias: 50,
     wheelR: 0.54, wheelX: 0.69, wheelZf: 0.78, wheelZr: -0.78,
     mods: { engine: 1.36, maxSpeed: 0.9, grip: 1.45, steer: 1.18, susp: 0.64, rest: 1.25 },

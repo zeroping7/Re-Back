@@ -169,7 +169,7 @@ export class Items {
 
   attachBomb(car, t) {
     const mesh = this.bombMesh.clone();
-    mesh.position.set(0, car.def.style === 'truck' ? 1.25 : 0.75, -0.1);
+    mesh.position.set(0, ['truck', 'jeep', 'bigfoot', 'hauler', 'crawler'].includes(car.def.style) ? 1.25 : 0.75, -0.1);
     car.model.add(mesh);
     this.bombs.set(car, { t, mesh, cool: 0.7 });
   }
