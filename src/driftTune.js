@@ -3,32 +3,33 @@
 import { DRIFT } from './car.js';
 
 export const DRIFT_DEFS = [
-  { g: 'Agarre', key: 'rear',  label: 'Agarre trasero (×)',          min: 0.03, max: 0.6, step: 0.01, def: 0.08 },
-  { g: 'Agarre', key: 'front', label: 'Agarre delantero (×)',        min: 0.05, max: 0.8, step: 0.01, def: 0.12 },
-  { g: 'Agarre', key: 'hb',    label: 'Agarre trasero con freno de mano', min: 0.1, max: 1.5, step: 0.05, def: 0.15 },
-  { g: 'Agarre', key: 'grip',  label: 'Agarre lateral (u/s²)',       min: 4,    max: 30,  step: 0.5,  def: DRIFT.grip },
-  { g: 'Ángulo', key: 'bMax',  label: 'Ángulo máximo (rad)',         min: 0.4,  max: 1.5, step: 0.02, def: DRIFT.bMax },
-  { g: 'Ángulo', key: 'angK',  label: 'Rapidez al coger ángulo',     min: 1,    max: 8,   step: 0.2,  def: DRIFT.angK },
-  { g: 'Ángulo', key: 'gas',   label: 'Cuánto abre el ángulo el gas', min: 0,   max: 1,   step: 0.05, def: DRIFT.gas },
-  { g: 'Ángulo', key: 'spinA', label: 'Ángulo del trompo (rad)',     min: 0.8,  max: 1.6, step: 0.02, def: DRIFT.spinA },
-  { g: 'Ángulo', key: 'spinK', label: 'Fuerza del trompo',           min: 0,    max: 15,  step: 0.5,  def: DRIFT.spinK },
-  { g: 'Dirección', key: 'steer', label: 'Giro de ruedas (×)',       min: 0.6,  max: 1.8, step: 0.05, def: 1.15 },
-  { g: 'Dirección', key: 'wMax',  label: 'Giro a poca velocidad',    min: 0.4,  max: 2.5, step: 0.02, def: DRIFT.wMax },
-  { g: 'Dirección', key: 'yawGain', label: 'Rapidez de respuesta',   min: 2,    max: 30,  step: 0.5,  def: DRIFT.yawGain },
-  { g: 'Dirección', key: 'yawMax', label: 'Giro máximo (rad/s)',     min: 2,    max: 10,  step: 0.1,  def: DRIFT.yawMax },
-  { g: 'Empuje', key: 'thrust', label: 'Empuje del gas derrapando',  min: 5,    max: 90,  step: 1,    def: DRIFT.thrust },
-  { g: 'Empuje', key: 'vmax',  label: 'Velocidad máx. derrapando',   min: 0.4,  max: 1.2, step: 0.01, def: DRIFT.vmax },
-  { g: 'Empuje', key: 'eng',   label: 'Empuje de las traseras de lado', min: 0, max: 1,   step: 0.05, def: DRIFT.eng },
-  { g: 'Empuje', key: 'aim',   label: 'Empuje hacia la nariz (curva)', min: 0,  max: 1,   step: 0.05, def: DRIFT.aim },
-  { g: 'Salida', key: 'launch',      label: 'Empuje de salida',      min: 0,    max: 40,  step: 1,    def: DRIFT.launch },
-  { g: 'Salida', key: 'launchV',     label: 'Velocidad fin de salida', min: 5,  max: 40,  step: 1,    def: DRIFT.launchV },
-  { g: 'Salida', key: 'fishtail',    label: 'Baile de la cola',      min: 0,    max: 20,  step: 0.5,  def: DRIFT.fishtail },
-  { g: 'Salida', key: 'wobHz',       label: 'Rapidez del baile',     min: 2,    max: 25,  step: 0.5,  def: DRIFT.wobHz },
-  { g: 'Donut', key: 'donut',        label: 'Giro del donut',        min: 1,    max: 8,   step: 0.1,  def: DRIFT.donut },
-  { g: 'Donut', key: 'donutV',       label: 'Velocidad máx. donut',  min: 2,    max: 15,  step: 0.5,  def: DRIFT.donutV },
+  { g: 'Neumáticos', key: 'muF', label: 'Agarre delantero', min: 0.6, max: 2.2, step: 0.05, def: DRIFT.muF },
+  { g: 'Neumáticos', key: 'muR', label: 'Agarre trasero', min: 0.5, max: 2.2, step: 0.05, def: DRIFT.muR },
+  { g: 'Neumáticos', key: 'B', label: 'Rigidez del neumático', min: 3, max: 16, step: 0.5, def: DRIFT.B },
+  { g: 'Neumáticos', key: 'C', label: 'Caída tras el pico (↓ cae menos)', min: 1.0, max: 1.6, step: 0.02, def: DRIFT.C },
+  { g: 'Neumáticos', key: 'launchK', label: 'Agarre extra en las salidas', min: 0, max: 1, step: 0.05, def: DRIFT.launchK },
+  { g: 'Motor y frenos', key: 'power', label: 'Potencia (u/s²)', min: 8, max: 50, step: 1, def: DRIFT.power },
+  { g: 'Motor y frenos', key: 'vtop', label: 'Velocidad punta (×)', min: 0.5, max: 1.3, step: 0.02, def: DRIFT.vtop },
+  { g: 'Motor y frenos', key: 'brake', label: 'Frenada (u/s²)', min: 8, max: 50, step: 1, def: DRIFT.brake },
+  { g: 'Motor y frenos', key: 'slideDrive', label: 'Empuje al patinar (×)', min: 0.6, max: 1.8, step: 0.05, def: DRIFT.slideDrive },
+  { g: 'Freno de mano', key: 'hbGrip', label: 'Agarre trasero con freno de mano', min: 0.1, max: 1, step: 0.05, def: DRIFT.hbGrip },
+  { g: 'Freno de mano', key: 'hbK', label: 'Frenada del freno de mano', min: 0, max: 1, step: 0.05, def: DRIFT.hbK },
+  { g: 'Dirección', key: 'lock0', label: 'Giro de ruedas parado (rad)', min: 0.2, max: 0.9, step: 0.02, def: DRIFT.lock0 },
+  { g: 'Dirección', key: 'lockMin', label: 'Giro de ruedas a toda velocidad (rad)', min: 0.1, max: 0.6, step: 0.02, def: DRIFT.lockMin },
+  { g: 'Dirección', key: 'lockV', label: 'Velocidad a la que baja el giro', min: 4, max: 30, step: 1, def: DRIFT.lockV },
+  { g: 'Dirección', key: 'steerRate', label: 'Rapidez del volante', min: 1, max: 12, step: 0.5, def: DRIFT.steerRate },
+  { g: 'Dirección', key: 'assist', label: 'Contravolante automático', min: 0, max: 1, step: 0.05, def: DRIFT.assist },
+  { g: 'Dirección', key: 'asFrom', label: 'Deriva donde empieza el contravolante (rad)', min: 0.02, max: 0.6, step: 0.02, def: DRIFT.asFrom },
+  { g: 'Dirección', key: 'asTo', label: 'Deriva donde es completo (rad)', min: 0.1, max: 1.2, step: 0.02, def: DRIFT.asTo },
+  { g: 'Donut', key: 'donutV', label: 'Velocidad máx. del donut', min: 2, max: 15, step: 0.5, def: DRIFT.donutV },
+  { g: 'Donut', key: 'donutGrip', label: 'Agarre trasero en el donut', min: 0.05, max: 1, step: 0.05, def: DRIFT.donutGrip },
+  { g: 'Peso y estabilidad', key: 'cgH', label: 'Altura del centro de gravedad', min: 0.1, max: 1, step: 0.05, def: DRIFT.cgH },
+  { g: 'Peso y estabilidad', key: 'yawDamp', label: 'Amortiguación del giro', min: 0, max: 3, step: 0.1, def: DRIFT.yawDamp },
+  { g: 'Peso y estabilidad', key: 'bLim', label: 'Ángulo máx. antes de enderezar (rad)', min: 0.5, max: 1.5, step: 0.02, def: DRIFT.bLim },
+  { g: 'Peso y estabilidad', key: 'esc', label: 'Fuerza del enderezado', min: 0, max: 120, step: 2, def: DRIFT.esc },
 ];
 
-const KEY = 'reback.drifttune.v3';
+const KEY = 'reback.drifttune.v4';
 const saved = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } })();
 export const driftVals = {};
 for (const d of DRIFT_DEFS) driftVals[d.key] = saved[d.key] ?? d.def;

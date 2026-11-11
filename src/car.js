@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { WHEEL_RAY_GROUPS, CAR_GROUPS } from './tracks/common.js';
 import { buildCarModel } from './carModel.js';
+import { driftForces } from './driftPhysics.js';
+export { DRIFT } from './driftPhysics.js';
 
 // Coche RC: chasis de Rapier + controlador de vehículo por rayos (suspensión real).
 // Ejes locales: +Z adelante, +Y arriba, +X izquierda.
@@ -17,8 +19,6 @@ const MASS = 8; // masa de referencia: la potencia y el freno se escalan con la 
 
 const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q = new THREE.Quaternion(), _qi = new THREE.Quaternion();
 const UP = new THREE.Vector3(0, 1, 0);
-// DRI-04: ayudas del derrape (tope de giro, anti-trompo, empuje del gas y mando del volante)
-export const DRIFT = { launch: 17, fishtail: 6, wobHz: 4, launchV: 22, launchMax: 0.6, donut: 4.2, donutV: 7, donutCut: 1, bMax: 1.2, eng: 0.3, aim: 0.5, angK: 3.4, gas: 0.45, spinA: 1.15, spinK: 6, grip: 14, gripV: 3, lowGrip: 8, v0: 5, v1: 6, wMax: 1.16, yawGain: 12, yawMax: 5.5, thrust: 30, vmax: 0.85 };
 
 export class Car {
   constructor(scene, world, RAPIER, def, tuning, { color = def.color, index = 0, name = def.name } = {}) {
@@ -34,7 +34,7 @@ export class Car {
     this.item = null;
     this.health = 100;
     this.pullDir = Math.random() < 0.5 ? -1 : 1;
-    this.steer = 0;
+    this.steer = 0; this._ax = 0; this._ay = 0; this._din = 0;
     this.spin = [0, 0, 0, 0];
     this.lastW = [0, 0, 0, 0];
     this.wheelState = WHEELS.map(() => ({ contact: false, point: new THREE.Vector3(), slip: 0, normal: new THREE.Vector3(0, 1, 0) }));
@@ -131,9 +131,7 @@ export class Car {
     const pull = (1 - this.health / 100) * 0.12 * this.pullDir;
     // FIS-24: giro extra a baja velocidad (maniobrar en parado), se desvanece a 6 u/s
     const lowBoost = 1 + (t.steerLow || 0) * Math.max(0, 1 - Math.abs(fwd) / 6);
-    let target = THREE.MathUtils.clamp(input.steer + (Math.abs(fwd) > 3 ? pull : 0), -1, 1) * t.steerMax * lowBoost / (1 + Math.abs(fwd) * t.steerFalloff);
-    // DRI-14: en drift las ruedas delanteras apuntan hacia donde va el coche (contravolante), no hacia donde mira el jugador
-    if (this.driftMode && fwd > 3) target = THREE.MathUtils.lerp(target, THREE.MathUtils.clamp(Math.atan2(this.localVel.x, Math.max(1, fwd)), -0.6, 0.6), THREE.MathUtils.clamp((speed - 5) / 6, 0, 1));
+    const target = THREE.MathUtils.clamp(input.steer + (Math.abs(fwd) > 3 ? pull : 0), -1, 1) * t.steerMax * lowBoost / (1 + Math.abs(fwd) * t.steerFalloff);
     const ds = t.steerSpeed * dt * (Math.sign(target - this.steer) !== Math.sign(this.steer) ? 1.6 : 1);
     this.steer += THREE.MathUtils.clamp(target - this.steer, -ds, ds);
     veh.setWheelSteering(0, this.steer);
@@ -180,9 +178,6 @@ export class Car {
         }
       }
     }
-    if (this.driftMode && this.donut) engine *= 1 - 0.7 * this.donut; // en el donut las ruedas patinan en el sitio
-    // DRI-14: de lado, las ruedas traseras patinan y casi no empujan (la fuerza que curva la trayectoria la da el modelo de drift)
-    if (this.driftMode && fwd > 1) engine *= 1 - (1 - ((globalThis.__DP || DRIFT).eng ?? 1)) * THREE.MathUtils.clamp(Math.abs(this.localVel.x) / Math.max(fwd, 1) / 0.5, 0, 1);
     if (boost && thr === 0 && brk === 0) engine = power * THREE.MathUtils.clamp((maxSpeed - fwd) / (maxSpeed * 0.25), 0, 1);
     // resistencia a rodar; el crawler lleva freno motor fuerte: se queda quieto en la cuesta al soltar el gas (CRW-01)
     if (thr === 0 && brk === 0 && !boost) brakeF = brakeR = this.crawl ? 1.8 : 0.04;
@@ -204,9 +199,10 @@ export class Car {
     const rear = t.rearBias / 100;
     for (let i = 0; i < 4; i++) {
       const front = this.W[i].front;
-      veh.setWheelEngineForce(i, ((engine * (front ? 1 - rear : rear)) / 2) * this.massK);
-      veh.setWheelBrake(i, (front ? brakeF : brakeR) * this.massK);
-      veh.setWheelSideFrictionStiffness(i, front ? t.sideFront : t.sideRear);
+      // DRI-15: en drift las fuerzas de los neumáticos las pone driftPhysics.js; Rapier solo hace la suspensión
+      veh.setWheelEngineForce(i, this.driftMode ? 0 : ((engine * (front ? 1 - rear : rear)) / 2) * this.massK);
+      veh.setWheelBrake(i, this.driftMode ? 0 : (front ? brakeF : brakeR) * this.massK);
+      veh.setWheelSideFrictionStiffness(i, this.driftMode ? 0 : front ? t.sideFront : t.sideRear);
       // aceite: casi sin agarre · zona de derrape: agarre reducido pero controlable
       const oil = fx.oil > 0 ? 0.22 : fx.slide > 0 ? (front ? 0.88 : 0.74) : fx.sand > 0 ? 0.8 : 1;
       veh.setWheelFrictionSlip(i, (front ? t.gripFront : t.gripRear * (this.drifting ? t.driftRear : 1)) * oil);
@@ -251,72 +247,11 @@ export class Car {
         b.applyTorqueImpulse({ x: 0, y: -k, z: 0 }, true);
       }
     }
-    // Salida de RC de drift: mucho par, las ruedas traseras patinan y la cola baila hasta coger velocidad
     this.launch = 0;
-    if (this.driftMode && contacts > 1 && thr > 0 && fwd > -1 && !input.hold) {
-      const D = globalThis.__DP || DRIFT;
-      const k = Math.max(0, 1 - speed / (maxSpeed * 0.85));
-      const push = thr * D.launch * (t.engine / 145) * k * m * dt * (1 - D.donutCut * (this.donut || 0));
-      b.applyImpulse({ x: this.forward.x * push, y: 0, z: this.forward.z * push }, true);
-      this.launch = THREE.MathUtils.clamp(1 - fwd / (D.launchV ?? 13), 0, 1) * thr;
-      // la cola baila a un lado y a otro mientras las ruedas patinan
-      if (fwd < 1 && !(this.wob > 0)) this.wob = Math.random() < 0.5 ? 0.01 : Math.PI; // a qué lado sale la cola
-      this.wob = (this.wob || 0) + dt * (D.wobHz ?? 13);
-      this.tailWave = (Math.sin(this.wob) * 0.7 + Math.sin(this.wob * 2.3 + 1) * 0.3) * D.fishtail * this.launch;
-    } else { this.tailWave = 0; if (speed < 1) this.wob = 0; }
-    if (this.driftMode && contacts > 1 && fwd > -4) {
-      // DRI-14: derrape de RC por ÁNGULO. El volante elige con qué ángulo se cruza el coche respecto a su trayectoria
-      // (más gas = más ángulo); la nariz gira hasta ese ángulo y lo mantiene. Los neumáticos (fuerza lateral con tope)
-      // curvan la trayectoria: más ángulo = curva más cerrada pero se pierde velocidad. Contravolante o soltar gas
-      // = enderezar. Pasado el ángulo límite, trompo.
-      const D = globalThis.__DP || DRIFT;
-      const st = input.steer;
-      // giro medido de la trayectoria: la nariz tiene que acompañarlo para mantener el ángulo
-      const hs = Math.hypot(this.velocity.x, this.velocity.z);
-      if (hs > 3) {
-        const th = Math.atan2(this.velocity.x, this.velocity.z);
-        if (this._th !== undefined) { let d = th - this._th; d = Math.atan2(Math.sin(d), Math.cos(d)); this._thd = (this._thd || 0) * 0.7 + THREE.MathUtils.clamp(d / dt, -4, 4) * 0.3; }
-        this._th = th;
-      } else { this._th = undefined; this._thd = 0; }
-      // donut parado (gas + volante) o trompo en marcha (gas + freno + volante)
-      const spinIn = thr > 0.5 && Math.abs(st) > 0.6 && (speed < D.donutV || brk > 0.5);
-      const donut = spinIn ? thr * Math.abs(st) : 0;
-      this.donut = donut;
-      const beta = Math.atan2(this.localVel.x, Math.max(1, fwd)), ab = Math.abs(beta);
-      const grip = fx.oil > 0 ? 0.25 : fx.slide > 0 ? 0.85 : fx.sand > 0 ? 1.4 : 1;
-      // fuerza lateral de los neumáticos (satura: con mucha deriva el agarre ya no sube) + amortiguación a baja velocidad
-      {
-        const vx = this.localVel.x, low = 1 - THREE.MathUtils.clamp(speed / 6, 0, 1);
-        const ax = -(D.grip * grip * Math.tanh(vx / D.gripV) + D.lowGrip * low * vx);
-        _v.set(1, 0, 0).applyQuaternion(_q);
-        b.applyImpulse({ x: _v.x * ax * m * dt, y: 0, z: _v.z * ax * m * dt }, true);
-      }
-      const k = Math.max(THREE.MathUtils.clamp((speed - 2) / 3, 0, 1), this.launch > 0 && fwd > 0.8 ? 0.6 : 0, donut);
-      if (k > 0) {
-        const sp = THREE.MathUtils.clamp((speed - D.v0) / D.v1, 0, 1);
-        const gasF = this.drifting ? 1 : 1 - D.gas + D.gas * thr; // freno de mano: ángulo completo
-        const bT = -st * D.bMax * gasF; // ángulo objetivo (volante izq. = nariz a la izq., trayectoria a la derecha)
-        let wAng = this._thd + D.angK * (beta - bT);
-        const spinA = input.human ? D.spinA : 1.55; // la IA nunca da trompo
-        if (!donut && ab > spinA) wAng -= Math.sign(beta) * (ab - spinA) * D.spinK; // pasado el límite, la cola se va
-        let want = sp * wAng + (1 - sp) * st * D.wMax * THREE.MathUtils.clamp(speed / 4, 0, 1) + this.tailWave * (1 - Math.min(1, Math.abs(st) * 1.5));
-        if (donut) want = want * (1 - donut) + Math.sign(st) * D.donut * donut;
-        want = THREE.MathUtils.clamp(want, -D.yawMax, D.yawMax);
-        const dw = (want - b.angvel().y) * Math.min(1, D.yawGain * dt) * k;
-        b.applyTorqueImpulse({ x: 0, y: dw * 5.0 * this.massK, z: 0 }, true);
-        // el gas sostiene la velocidad aunque las ruedas patinen
-        const push = thr * D.thrust * (t.engine / 145) * Math.max(0.4, Math.min(1, ab / 0.25)) * Math.max(0, 1 - speed / (maxSpeed * D.vmax)) * m * dt * k * (1 - D.donutCut * donut);
-        if (push > 0) {
-          // el empuje apunta entre la nariz y la trayectoria (aim=1 nariz: curva mucho al ir de lado; 0 trayectoria: no curva)
-          const aim = D.aim ?? 1, vh = Math.max(hs, 0.001);
-          let dx = this.forward.x * aim + (this.velocity.x / vh) * (1 - aim), dz = this.forward.z * aim + (this.velocity.z / vh) * (1 - aim);
-          const dl = Math.hypot(dx, dz) || 1; dx /= dl; dz /= dl;
-          b.applyImpulse({ x: dx * push, y: 0, z: dz * push }, true);
-        }
-        // con tan poco agarre el freno se queda corto: ayuda para frenar de verdad
-        if (this.braking && speed > 0.5) { const bk = Math.min(speed, 14 * dt) * m; b.applyImpulse({ x: -this.velocity.x / speed * bk, y: 0, z: -this.velocity.z / speed * bk }, true); }
-      }
-    } else if (this.driftMode) this._th = undefined;
+    if (this.driftMode && contacts > 0 && this.up.y > 0.3) {
+      const powerK = rb * (0.85 + 0.15 * this.health / 100) * (boost ? 1.8 : 1);
+      driftForces(this, dt, input, { thr, brk, speed, maxSpeed, powerK });
+    }
     if (contacts > 0 && !this.rail) {
       // carga aerodinámica
       const down = t.downforce * speed * speed / 10 * m * dt;

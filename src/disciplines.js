@@ -35,8 +35,7 @@ export const MODES = {
 export function discTuning(t, disc) {
   if (disc === 'obst') return crawlTuning(t);
   if (disc !== 'drift') return t;
-  const D = globalThis.__DP || {};
-  return { ...t, rearBias: 100, gripRear: t.gripRear * (D.rear ?? 0.08), gripFront: t.gripFront * (D.front ?? 0.12), steerMax: t.steerMax * (D.steer ?? 1.15), driftRear: D.hb ?? 0.15, downforce: t.downforce * 0.5 };
+  return { ...t, rearBias: 100, downforce: t.downforce * 0.5 }; // DRI-15: el agarre lo pone driftPhysics.js
 }
 
 // CRW-01: física de crawler. Poca velocidad, mucho par y agarre, suspensión larga y blanda, dirección lenta y precisa

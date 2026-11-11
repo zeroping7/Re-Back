@@ -13,7 +13,7 @@ export default {
   name: 'El club de drift', short: 'Club',
   desc: 'Nave con losetas, clips y pilotos en la tarima',
   color: '#ff3d00',
-  medals: [4000, 9000, 14000],
+  medals: [2500, 5500, 9000],
   music: 'super', ambient: 'salon',
   build,
 };
