@@ -184,9 +184,11 @@ async function init() {
     else if (go === 'garage') { garageReturn = null; gDisc = disc; gSel = useDisc(gDisc) || profile.selected; showScreen('m-garage'); }
     else showScreen('m-' + go);
   }));
+  let lastMoney = profile.money;
   function updateMoney(bump) {
     $('money-n').textContent = profile.money.toLocaleString('es-ES');
-    if (bump) { $('money').classList.remove('bump'); void $('money').offsetWidth; $('money').classList.add('bump'); }
+    const changed = profile.money !== lastMoney; lastMoney = profile.money;
+    if (bump && changed) { // solo anima si el dinero cambia (no al quitar/poner mejoras) $('money').classList.remove('bump'); void $('money').offsetWidth; $('money').classList.add('bump'); }
   }
   onProfileChange(() => updateMoney(true));
   checkSecret();

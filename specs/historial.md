@@ -63,3 +63,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 50 | Ajustar el rendimiento de los coches normales y de drift (no Obstáculos) para que cuadre con los medidores: investigar y proponer; luego «aplícalo todo» y dejar marcada la versión anterior por si hay que volver (rama `backup-v1.0.56-antes-rendimiento`) | COC-06, COC-07, DRI-17 |
 | 51 | Botón en cada coche del menú previo a la carrera que lleve al garaje; en el taller poder quitar o añadir las mejoras ya compradas | UX-22, UX-23 ✅ |
 | 52 | Las mejoras se deben poder quitar/poner una a una (nivel a nivel) como al comprarlas, y el coche debe comportarse según las montadas | UX-23 ✅ |
+| 53 | El marcador de dinero no debe animarse al quitar/poner mejoras, solo al comprar o vender | UX-23 ✅ |
