@@ -1,7 +1,10 @@
-// Sonido sintetizado: motores (eléctrico y nitro), derrapes, golpes, efectos, ambiente y música.
+// Sonido sintetizado: derrapes, golpes, efectos, ambiente y música. Motores: muestras realistas por coche (AUD-13)
+// con el motor sintetizado (AUD-10) como respaldo mientras cargan o si fallan.
+import enginesMeta from './assets/engines.json';
+import enginesUrl from './assets/engines.bin?url';
 
 // Ondas con armónicos a medida (se crean una vez por contexto)
-function makeWaves(ctx) {
+export function makeWaves(ctx) {
   const N = 32;
   const wave = (fn) => {
     const re = new Float32Array(N), im = new Float32Array(N);
@@ -17,7 +20,7 @@ function makeWaves(ctx) {
 }
 
 // Una voz de motor: 2 osciladores + chillido de engranajes + ruido (escobillas / escape) + saturación
-class EngineVoice {
+export class EngineVoice {
   constructor(ctx, out, waves, noiseBuf, { pan = false } = {}) {
     this.ctx = ctx; this.waves = waves;
     const osc = (type) => { const o = ctx.createOscillator(); if (type) o.type = type; return o; };
@@ -91,7 +94,114 @@ class EngineVoice {
     st(this.out.gain, vol, tc * 1.5);
   }
 
+  // mismo nombre que SampleVoice: el tipo y el tono salen de la ficha del coche
+  setCar(def, slot = 0) { this.setType(def?.motor === 'Nitro' ? 'nitro' : 'electric', carPitch(def) * (1 + slot * 0.02)); }
+
   silence(k = 0.05) { this.out.gain.setTargetAtTime(0, this.ctx.currentTime, k); }
+
+  dispose() {
+    this.silence(0.02);
+    const t = this.ctx.currentTime + 0.15;
+    for (const o of [this.o1, this.o2, this.whine, this.lfo, this.noise]) { try { o.stop(t); } catch { /* ya parado */ } }
+  }
+}
+
+// ---------- Motores con muestras (AUD-13) ----------
+// engines.bin: bucles μ-law de 8 sonidos base × 7 regímenes × (gas | sin gas). Ver tools/engines/make_engines.py
+export async function loadEngineBank(ctx) {
+  const bin = new Uint8Array(await (await fetch(enginesUrl)).arrayBuffer());
+  const mu = enginesMeta.mu, lut = new Float32Array(256);
+  for (let q = 0; q < 256; q++) { const y = (q / 255) * 2 - 1; lut[q] = Math.sign(y) * (Math.pow(1 + mu, Math.abs(y)) - 1) / mu; }
+  const bank = {};
+  for (const [key, b] of Object.entries(enginesMeta.bases)) {
+    const layers = { on: [], off: [] };
+    for (const l of b.loops) {
+      const buf = ctx.createBuffer(1, l.len, enginesMeta.sr), d = buf.getChannelData(0);
+      for (let i = 0; i < l.len; i++) d[i] = lut[bin[l.off + i]];
+      layers[l.load][l.layer] = { buf, r: l.r };
+    }
+    bank[key] = { type: b.type, idle: b.idle, layers };
+  }
+  return bank;
+}
+
+const SAMPLE_GAIN = 4.0; // ajusta el nivel de las muestras al del motor sintetizado
+
+// Una voz de motor con muestras: mezcla los 2 regímenes vecinos (y gas / sin gas) y ajusta el tono con las vueltas
+export class SampleVoice {
+  constructor(ctx, out, bank, { pan = false } = {}) {
+    this.ctx = ctx; this.bank = bank;
+    this.out = ctx.createGain(); this.out.gain.value = 0;
+    this.pan = pan && ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    if (this.pan) this.out.connect(this.pan).connect(out); else this.out.connect(out);
+    this.act = new Map(); this.base = null; this.pitch = 1; this.type = 'electric';
+  }
+
+  setCar(def) {
+    const nitro = def?.motor === 'Nitro', s = def?.sound || [nitro ? 'n1' : 'e1', 1];
+    const base = this.bank[s[0]] ? s[0] : nitro ? 'n1' : 'e1';
+    this.pitch = s[1];
+    if (base !== this.base) { this.base = base; this.type = this.bank[base].type; this._clear(0.04); }
+  }
+
+  _clear(k = 0.05) {
+    const t = this.ctx.currentTime;
+    for (const a of this.act.values()) { a.g.gain.setTargetAtTime(0, t, k * 0.5); try { a.src.stop(t + k * 5); } catch { /* ya parado */ } }
+    this.act.clear();
+  }
+
+  _need(key, e, gain, rate, t, tc) {
+    let a = this.act.get(key);
+    if (!a) {
+      const src = this.ctx.createBufferSource(); src.buffer = e.buf; src.loop = true;
+      const g = this.ctx.createGain(); g.gain.value = 0;
+      src.connect(g).connect(this.out);
+      src.playbackRate.value = rate;
+      src.start(0, Math.random() * e.buf.duration);
+      a = { src, g }; this.act.set(key, a);
+    }
+    a.g.gain.setTargetAtTime(gain, t, tc);
+    a.src.playbackRate.setTargetAtTime(rate, t, tc);
+  }
+
+  // rpm: 0 (ralentí) … 1,2 · load: gas 0…1 · vol: volumen final · dop: multiplicador Doppler
+  set(rpm, load, vol, { dop = 1, tc = 0.04 } = {}) {
+    const b = this.bank[this.base];
+    if (!b) return;
+    const t = this.ctx.currentTime;
+    if (vol < 0.0006) { this.out.gain.setTargetAtTime(0, t, tc * 1.5); if (this.act.size) this._clear(0.1); return; }
+    // vueltas del juego → régimen de la muestra (el nitro nunca baja del ralentí)
+    const R = b.type === 'nitro' ? b.idle + Math.min(1.25, Math.max(0, (rpm - 0.04) / 0.96)) * (1 - b.idle) : Math.max(0.03, rpm);
+    const on = b.layers.on, rs = on.map((l) => l.r);
+    let i = 0; while (i < rs.length - 2 && R > rs[i + 1]) i++;
+    const f = Math.min(1, Math.max(0, Math.log(R / rs[i]) / Math.log(rs[i + 1] / rs[i])));
+    const ld = Math.min(1, Math.max(0, load));
+    const wl = { on: Math.sin(ld * Math.PI / 2), off: Math.cos(ld * Math.PI / 2) };
+    const wr = [Math.cos(f * Math.PI / 2), Math.sin(f * Math.PI / 2)];
+    const keep = new Set();
+    for (const lk of ['on', 'off']) {
+      for (let j = 0; j < 2; j++) {
+        const g = wl[lk] * wr[j], layer = i + j, key = lk + layer;
+        if (g < 0.01) continue;
+        keep.add(key);
+        const rate = Math.min(3, Math.max(0.2, R / rs[layer] * this.pitch * dop));
+        this._need(key, b.layers[lk][layer], g, rate, t, tc);
+      }
+    }
+    for (const [key, a] of this.act) {
+      if (keep.has(key)) continue;
+      a.g.gain.setTargetAtTime(0, t, tc); try { a.src.stop(t + 0.3); } catch { /* ya parado */ }
+      this.act.delete(key);
+    }
+    this.out.gain.setTargetAtTime(vol * SAMPLE_GAIN, t, tc * 1.5);
+  }
+
+  silence(k = 0.05) {
+    this.out.gain.setTargetAtTime(0, this.ctx.currentTime, k);
+    if (this.act.size) this._clear(Math.max(0.1, k * 2));
+  }
+
+  dispose() { this.silence(0.02); }
 }
 
 // Tono propio de cada coche: el nombre cambia un poco el timbre y el peso lo hace más grave
@@ -113,7 +223,7 @@ export class Sfx {
     this.ctx = null;
     this.muted = localStorage.getItem('reback.muted') === '1';
     this.musicOn = localStorage.getItem('reback.music') !== '0';
-    this.engineType = 'electric'; this.enginePitch = 1;
+    this.engineType = 'electric'; this.enginePitch = 1; this.carDef = null; this.bank = null;
     this.rpm = 0; this._lastThr = 0; this._popCool = 0;
   }
 
@@ -138,6 +248,7 @@ export class Sfx {
     this.engine.setType(this.engineType, this.enginePitch);
     // tres voces para los motores de los rivales más cercanos
     this.rivalVoices = [0, 1, 2].map(() => new EngineVoice(ctx, this.master, waves, buf, { pan: true }));
+    this._loadBank();
 
     const n = ctx.createBufferSource(); n.buffer = buf; n.loop = true;
     this.skidFilter = ctx.createBiquadFilter(); this.skidFilter.type = 'bandpass'; this.skidFilter.frequency.value = 1800; this.skidFilter.Q.value = 3;
@@ -173,6 +284,20 @@ export class Sfx {
     this.surfGain.gain.setTargetAtTime(P ? P.vol * Math.pow(k, 0.8) : 0, t, k > 0 ? 0.12 : 0.25); // sube y baja despacio: nada de chasquidos
   }
 
+  // AUD-13: carga las muestras de motor y sustituye las voces sintetizadas (si falla, se queda el motor sintetizado)
+  _loadBank() {
+    if (this._bankLoading) return;
+    this._bankLoading = true;
+    loadEngineBank(this.ctx).then((bank) => {
+      this.bank = bank;
+      const old = [this.engine, ...this.rivalVoices];
+      this.engine = new SampleVoice(this.ctx, this.master, bank);
+      if (this.carDef) this.engine.setCar(this.carDef);
+      this.rivalVoices = [0, 1, 2].map(() => new SampleVoice(this.ctx, this.master, bank, { pan: true }));
+      for (const v of old) v.dispose();
+    }).catch((e) => console.warn('Motores con muestras no disponibles; se usa el sintetizado', e));
+  }
+
   setMuted(m) {
     this.muted = m;
     localStorage.setItem('reback.muted', m ? '1' : '0');
@@ -181,8 +306,8 @@ export class Sfx {
 
   // 'electric': zumbido de motor eléctrico RC · 'nitro': motor de explosión pequeño, rasposo y con petardeos
   setEngine(type, def) {
-    this.engineType = type; this.enginePitch = carPitch(def); this.rpm = 0;
-    if (this.engine) this.engine.setType(type, this.enginePitch);
+    this.engineType = type; this.enginePitch = carPitch(def); this.rpm = 0; this.carDef = def;
+    if (this.engine) this.engine.setCar(def);
   }
 
   // speed en m/s · throttle -1…1 · slip: deslizamiento · opts.max: velocidad punta · opts.air: en el aire
@@ -342,7 +467,7 @@ export class Sfx {
       const e = near[i];
       if (!e) { v.silence(0.1); return; }
       const [c, d2] = e, d = Math.sqrt(d2) || 1;
-      v.setType(c.def.motor === 'Nitro' ? 'nitro' : 'electric', carPitch(c.def) * (1 + i * 0.02));
+      v.setCar(c.def, i);
       const sp = c.speed || 0, max = (c.t && c.t.maxSpeed) || 30;
       const rpm = Math.min(1.1, sp / max * 0.88 + Math.abs(c.throttle || 0) * 0.14);
       // Doppler: velocidad relativa en la línea que une al jugador con el rival

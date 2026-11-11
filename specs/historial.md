@@ -59,3 +59,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 46 | No consigo un buen manejo de drift: que se pueda derrapar con mucho ángulo, divertido pero con algo de dificultad. Rediseño completo por ángulo | DRI-14 ✅ |
 | 47 | No gusta el manejo del drift: rehacerlo desde cero, parecido a un coche real (como Assetto Corsa) pero más fácil y divertido | DRI-15 ✅ |
 | 48 | Drift: al chocar (aunque sean golpes pequeños, no el roce) la puntuación pendiente se pierde; animación de la puntuación rompiéndose en rojo | DRI-16 ✅ |
+| 49 | Aplicar los sonidos de motor RC (8 sonidos: 4 nitro y 4 eléctricos, aprobados por el usuario) a cada coche según su tipo de motor, sin repetir; donde falte, cambiar un poco el tono | AUD-13 |
