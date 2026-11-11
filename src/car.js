@@ -48,6 +48,7 @@ export class Car {
     this.forward = new THREE.Vector3(0, 0, 1);
     this.up = new THREE.Vector3(0, 1, 0);
     this.throttle = 0; this.braking = false; this.drifting = false; this.reversing = false;
+    this.rpm = 0.04; // vueltas del motor nitro (0 ralentí … 1 tope), ver exhaust.js
     this.crawl = false; // CRW-01: física de crawler (Obstáculos)
     this.antenna = { pitch: 0, roll: 0, vp: 0, vr: 0 };
     this.lastVel = new THREE.Vector3();

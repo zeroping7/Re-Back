@@ -7,6 +7,7 @@ import { CARS, carById, carTuning, rivalPool } from './cars.js';
 import { AIDriver } from './ai.js';
 import { Items, haloTexture } from './items.js';
 import { Particles, SkidMarks, Ripples } from './effects.js';
+import { updateExhaust } from './exhaust.js';
 import { setupBattle, battleStep, battlePlaces, battleRender, dropStar, BattleDriver } from './battle.js';
 import { discTuning, carAllowed, fmtPts } from './disciplines.js';
 import { loadGhost, saveGhost, ghostModel, poseAt, poseLerp, ReplayRecorder, Director, GHOST_HZ } from './replay.js';
@@ -58,6 +59,7 @@ export class Race {
     // ---------- Efectos ----------
     this.effects = {
       smoke: new Particles(scene, 700),
+      exhaust: new Particles(scene, 420), // humo de escape de los nitro (COC-23), aparte para no pisar el humo de las ruedas
       sparks: new Particles(scene, 400, { additive: true, soft: 0.6 }),
       fire: new Particles(scene, 300, { additive: true, soft: 1 }),
       skids: new SkidMarks(scene, this.disc === 'drift' ? 7000 : 2400), // en drift hay muchas más marcas
@@ -224,7 +226,7 @@ export class Race {
     this.T.update?.(this.clock, this);
     this.items.update(dt);
     if (this.star) this.updateStar(dt);
-    this.effects.smoke.update(dt); this.effects.sparks.update(dt); this.effects.fire.update(dt); this.effects.chunks.update(dt); this.effects.ripples.update(dt);
+    this.effects.smoke.update(dt); this.effects.exhaust.update(dt); this.effects.sparks.update(dt); this.effects.fire.update(dt); this.effects.chunks.update(dt); this.effects.ripples.update(dt);
     this.flashLight.intensity = Math.max(0, this.flashLight.intensity - dt * 1500);
   }
 
@@ -691,6 +693,11 @@ export class Race {
       }
     }
     this.surfaceEffects(car, near);
+    // humo de escape de los nitro según las vueltas (COC-23); con la cámara del parachoques mirando atrás no se emite
+    updateExhaust(car, E.exhaust, FIXED, {
+      near, slip: Math.max(0, maxSlip - 3) + (car.braking && car.speed > 8 ? 4 : 0) + (car.launch || 0) * 5,
+      hidden: car === this.player && this.camMode === 'bumper' && !!this.controls.lookBack,
+    });
     // humo (y algo de fuego) si el coche está muy tocado
     if (near && car.health < 55 && Math.random() < (55 - car.health) / 80) {
       const top = car.currPos.clone().addScaledVector(car.forward, -0.3); top.y += 0.5;
@@ -915,7 +922,7 @@ export class Race {
     this.director = new Director(this);
     if (this.ghostMesh) this.ghostMesh.visible = false;
     this.hud.lookBack(false);
-    for (const k of ['smoke', 'sparks', 'fire', 'chunks']) this.effects[k].p.forEach((p) => { p.life = 0; });
+    for (const k of ['smoke', 'exhaust', 'sparks', 'fire', 'chunks']) this.effects[k].p.forEach((p) => { p.life = 0; });
     return true;
   }
 
@@ -952,7 +959,7 @@ export class Race {
     const ev = this.replayRec.events;
     while (r.ev < ev.length && ev[r.ev].t <= r.t) { this.items.explosionFx(ev[r.ev].pos); r.ev++; }
     this.T.update?.(this.clock, this);
-    for (const k2 of ['smoke', 'sparks', 'fire', 'chunks', 'ripples']) this.effects[k2].update(dt);
+    for (const k2 of ['smoke', 'exhaust', 'sparks', 'fire', 'chunks', 'ripples']) this.effects[k2].update(dt);
     this.flashLight.intensity = Math.max(0, this.flashLight.intensity - dt * 1500);
     const P = this.player;
     r.idx = this.circuit.nearestFrom(r.idx, P.model.position.x, P.model.position.z, 10, 30);
@@ -969,7 +976,7 @@ export class Race {
 
   resize(w, h, pr) {
     this.camera.aspect = w / h; this.camera.updateProjectionMatrix();
-    for (const k of ['smoke', 'sparks', 'fire', 'chunks']) this.effects[k].setViewport(h * pr);
+    for (const k of ['smoke', 'exhaust', 'sparks', 'fire', 'chunks']) this.effects[k].setViewport(h * pr);
   }
 
   applyTuning(base) {

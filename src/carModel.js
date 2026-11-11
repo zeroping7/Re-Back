@@ -256,6 +256,9 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
     parent.add(mesh);
     return mesh;
   };
+  // bocas de escape (COC-23): posición y dirección de salida del humo en coordenadas del modelo
+  const exhausts = [];
+  const exh = (x, y, z, dx = 0, dy = 0, dz = -1) => exhausts.push({ pos: new THREE.Vector3(x, y, z), dir: new THREE.Vector3(dx, dy, dz).normalize() });
 
   const PLATE_Y = -0.2;
 
@@ -308,7 +311,7 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
     shape(cabGeo, (v) => { if (v.y > S.cab[1][1] * 0.5) v.x *= S.cabTaper ?? 0.84; });
     add(smooth(cabGeo), M.glass, 0, PB + S.cabY, S.cabZ);
   }
-  EXTRAS[style]?.({ add, paint, P: PB, S, g, def, color, W: WHEELS, R: WHEEL_R, CONN_Y });
+  EXTRAS[style]?.({ add, exh, paint, P: PB, S, g, def, color, W: WHEELS, R: WHEEL_R, CONN_Y });
   // techo pintado sobre el cristal (drift)
   if (S.drift && S.cab) {
     const c0 = S.cab[1], c1 = S.cab[2], tw = S.cabWidth * (S.cabTaper ?? 0.84);
@@ -505,7 +508,7 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
   const detail = susp.flatMap((p) => [p.lower, p.upper, p.hub, p.shock, p.shaft]).filter((m) => !m.userData.hide);
   if (S.drift) for (const p of susp) { p.upper.visible = p.shock.visible = p.shaft.visible = false; }
 
-  g.userData = { ...dmg, detail, wheels, antenna, antennaBase: new THREE.Vector3(-0.1, 0, 0), tailMat, revMat, updateSuspension, paint };
+  g.userData = { ...dmg, exhausts, detail, wheels, antenna, antennaBase: new THREE.Vector3(-0.1, 0, 0), tailMat, revMat, updateSuspension, paint };
   return g;
 }
 
@@ -808,17 +811,18 @@ function decalMat(number) {
 }
 
 // Kit de drift común: faldón delantero, taloneras, gancho de remolque y escape grande
-function driftKit({ add, paint, P, S, def }, { lipZ = 1.04, skirt = 0.9, exhaust = -1.04 } = {}) {
+function driftKit({ add, exh, paint, P, S, def }, { lipZ = 1.04, skirt = 0.9, exhaust = -1.04 } = {}) {
   const lip = add(new THREE.BoxGeometry(S.width + 0.06, 0.035, 0.22), M.carbon, 0, P + 0.03, lipZ, undefined, false);
   lip.castShadow = true;
   for (const sx of [1, -1]) add(new THREE.BoxGeometry(0.06, 0.06, skirt * 2 - 0.5), M.carbon, sx * (S.width / 2 + 0.05), P + 0.05, -0.02, undefined, false);
   add(new THREE.BoxGeometry(0.06, 0.06, 0.1), M.caliper, -0.32, P + 0.08, lipZ + 0.08, undefined, false); // gancho
-  if (def?.motor === 'Nitro') rearExhaust(add, -0.36, P + 0.06, exhaust); // los eléctricos no llevan escape
+  if (def?.motor === 'Nitro') rearExhaust(add, exh, -0.36, P + 0.06, exhaust); // los eléctricos no llevan escape
 }
 // Tubo de escape trasero cromado con boca oscura (solo coches de motor nitro)
-function rearExhaust(add, x, y, z) {
+function rearExhaust(add, exh, x, y, z) {
   add(new THREE.CylinderGeometry(0.06, 0.06, 0.16, 10).rotateX(Math.PI / 2), M.chrome, x, y, z, undefined, false);
   add(new THREE.CylinderGeometry(0.042, 0.042, 0.02, 10).rotateX(Math.PI / 2), M.carbon, x, y, z - 0.08, undefined, false);
+  exh(x, y, z - 0.09);
 }
 function roundLights({ add, P, S }, n = 2, r = 0.075) {
   const red = new THREE.MeshStandardMaterial({ color: '#7a0000', emissive: '#ff2020', emissiveIntensity: 0.9 });
@@ -875,14 +879,17 @@ const EXTRAS = {
     add(new THREE.BoxGeometry(0.22, 0.08, 0.3), paint, 0, P + 0.46, -0.5);
     add(new THREE.BoxGeometry(0.18, 0.06, 0.02), M.carbon, 0, P + 0.46, -0.35, undefined, false);
   },
-  truck({ add, P, S }) {
+  truck({ add, exh, P, S, def }) {
     const bar = add(new THREE.BoxGeometry(1.0, 0.06, 0.06), M.carbon, 0, P + S.y + 0.62, -0.12);
     for (const s2 of [1, -1]) add(new THREE.BoxGeometry(0.06, 0.32, 0.06), M.carbon, s2 * 0.47, P + S.y + 0.46, -0.12, undefined, false);
     for (let k = -2; k <= 2; k++) add(new THREE.CylinderGeometry(0.05, 0.05, 0.05, 8).rotateX(Math.PI / 2), M.head, k * 0.17, P + S.y + 0.69, -0.09, undefined, false);
     bar.castShadow = true;
     add(new THREE.BoxGeometry(0.9, 0.02, 0.6), M.carbon, 0, P + S.y + 0.21, -0.65, undefined, false);
     // tubos de escape cromados
-    for (const s2 of [1, -1]) add(new THREE.CylinderGeometry(0.045, 0.045, 0.5, 8), M.chrome, s2 * 0.52, P + S.y + 0.5, -0.38, undefined, false);
+    for (const s2 of [1, -1]) {
+      add(new THREE.CylinderGeometry(0.045, 0.045, 0.5, 8), M.chrome, s2 * 0.52, P + S.y + 0.5, -0.38, undefined, false);
+      if (def.motor === 'Nitro') exh(s2 * 0.52, P + S.y + 0.76, -0.38, 0, 1, -0.2); // boca arriba del tubo
+    }
     // parrilla
     add(new THREE.BoxGeometry(0.7, 0.14, 0.03), M.chrome, 0, P + S.y + 0.08, 1.06, undefined, false);
   },
@@ -922,12 +929,13 @@ const EXTRAS = {
     add(new THREE.BoxGeometry(0.22, 0.26, 0.14), M.shock, -0.22, y0 + 0.4, -0.78, undefined, false);
     for (const sx of [1, -1]) add(new THREE.CylinderGeometry(0.075, 0.075, 0.06, 10).rotateX(Math.PI / 2), M.head, sx * 0.4, y0 + 0.12, 1.12, undefined, false);
   },
-  bigfoot({ add, paint, P, S, W, CONN_Y, def }) {
+  bigfoot({ add, exh, paint, P, S, W, CONN_Y, def }) {
     const y0 = P + S.y;
     // chimeneas de escape verticales detrás de la cabina (motor nitro)
     if (def.motor === 'Nitro') for (const sx of [1, -1]) {
       add(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8), M.chrome, sx * 0.38, y0 + 0.58, -0.74, undefined, false);
       add(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 8), M.carbon, sx * 0.38, y0 + 0.84, -0.74, undefined, false);
+      exh(sx * 0.38, y0 + 0.86, -0.74, 0, 1, -0.2);
     }
     // barra de focos pegada al techo de la cabina (antes quedaba en el aire sobre el parabrisas y más ancha que el techo)
     add(new THREE.BoxGeometry(0.74, 0.08, 0.08), M.carbon, 0, y0 + 0.705, 0.0, undefined, false);
@@ -959,7 +967,7 @@ const EXTRAS = {
     add(new THREE.BoxGeometry(1.0, 0.08, 0.1), M.carbon, 0, y0 - 0.03, 1.1, undefined, false);
     add(new THREE.BoxGeometry(0.9, 0.02, 0.6), M.carbon, 0, y0 + 0.33, -0.65, undefined, false);
   },
-  hauler({ add, paint, P, S, def }) {
+  hauler({ add, exh, paint, P, S, def }) {
     const y0 = P + S.y;
     // colmillos de morsa
     for (const sx of [1, -1]) {
@@ -974,18 +982,21 @@ const EXTRAS = {
     add(new THREE.BoxGeometry(1.0, 0.22, 0.05), paint, 0, y0 + 0.38, bedZ - 0.45);
     add(new THREE.BoxGeometry(1.0, 0.22, 0.05), paint, 0, y0 + 0.38, bedZ + 0.45);
     // chimeneas de escape
-    if (def.motor === 'Nitro') for (const sx of [1, -1]) add(new THREE.CylinderGeometry(0.04, 0.04, 0.55, 8), M.chrome, sx * 0.55, y0 + 0.6, 0.0, undefined, false);
+    if (def.motor === 'Nitro') for (const sx of [1, -1]) {
+      add(new THREE.CylinderGeometry(0.04, 0.04, 0.55, 8), M.chrome, sx * 0.55, y0 + 0.6, 0.0, undefined, false);
+      exh(sx * 0.55, y0 + 0.89, 0.0, 0, 1, -0.2);
+    }
     // faros y parrilla
     for (const sx of [1, -1]) add(new THREE.CylinderGeometry(0.075, 0.075, 0.05, 10).rotateX(Math.PI / 2), M.head, sx * 0.38, y0 + 0.16, 1.09, undefined, false);
   },
-  touring({ add, paint, P, S, def }) {
-    if (def.motor === 'Nitro') rearExhaust(add, -0.36, P + S.y - 0.06, -1.0);
+  touring({ add, exh, paint, P, S, def }) {
+    if (def.motor === 'Nitro') rearExhaust(add, exh, -0.36, P + S.y - 0.06, -1.0);
     add(new THREE.BoxGeometry(1.35, 0.03, 0.2), M.carbon, 0, P + 0.02, 1.0, undefined, false);
     for (const s2 of [1, -1]) add(new THREE.BoxGeometry(0.1, 0.06, 0.06), paint, s2 * 0.62, P + S.y + 0.24, 0.32, undefined, false);
     add(new THREE.BoxGeometry(0.5, 0.08, 0.03), M.carbon, 0, P + S.y + 0.0, 1.06, undefined, false);
   },
-  rally({ add, paint, P, S, def }) {
-    if (def.motor === 'Nitro') rearExhaust(add, -0.36, P + S.y - 0.06, -0.98);
+  rally({ add, exh, paint, P, S, def }) {
+    if (def.motor === 'Nitro') rearExhaust(add, exh, -0.36, P + S.y - 0.06, -0.98);
     // techo pintado, toma de aire, faros auxiliares y faldillas
     add(new THREE.BoxGeometry(0.86, 0.04, 0.82), paint, 0, P + S.cabY + 0.34, -0.25);
     add(new THREE.BoxGeometry(0.22, 0.08, 0.26), M.carbon, 0, P + S.cabY + 0.39, -0.05, undefined, false);
@@ -1010,7 +1021,7 @@ const EXTRAS = {
     add(new THREE.BoxGeometry(1.15, 0.08, 0.1), M.chrome, 0, P + S.y - 0.05, 1.08, undefined, false);
     add(new THREE.BoxGeometry(1.15, 0.08, 0.1), M.chrome, 0, P + S.y - 0.05, -1.07, undefined, false);
   },
-  f1({ add, paint, P, def }) {
+  f1({ add, exh, paint, P, def }) {
     // monocasco
     const nose = extrudeProfile([[-0.85, -0.08], [-0.88, 0.1], [-0.5, 0.14], [-0.2, 0.16], [0.1, 0.12], [0.7, 0.06], [1.15, 0.0], [1.15, -0.05], [0.6, -0.09]], 0.3, 0.05, 0.04);
     shape(nose, (v) => { const k = THREE.MathUtils.clamp((v.z - 0.3) / 0.85, 0, 1); v.x *= 1 - 0.55 * k; });
@@ -1021,6 +1032,7 @@ const EXTRAS = {
       const pod = add(new THREE.BoxGeometry(0.26, 0.17, 0.7), paint, sx * 0.3, P + 0.16, -0.2);
       pod.rotation.y = sx * 0.06;
       add(new THREE.CylinderGeometry(0.03, 0.03, 0.3, 6).rotateX(Math.PI / 2), M.chrome, sx * 0.09, P + 0.33, -0.95, undefined, false);
+      if (def.motor === 'Nitro') exh(sx * 0.09, P + 0.33, -1.11);
     }
     // caja de aire y piloto con casco
     add(new THREE.BoxGeometry(0.14, 0.22, 0.45), paint, 0, P + 0.48, -0.45);
@@ -1057,7 +1069,7 @@ const EXTRAS = {
     add(new THREE.PlaneGeometry(0.26, 0.26).rotateX(-Math.PI / 2).rotateY(Math.PI), decalMat(def.number || '2'), 0, P + 0.86, -0.1, undefined, false);
   },
   // Cometa (coche secreto): cohete de juguete con aletas, cabina de burbuja y tobera encendida
-  rocket({ add, paint, P, def }) {
+  rocket({ add, exh, paint, P, def }) {
     const body = new THREE.CylinderGeometry(0.3, 0.34, 1.45, 18, 1).rotateX(Math.PI / 2);
     planarUV(body, 1.05, 0.4);
     add(body, paint, 0, P + 0.38, -0.12);
@@ -1082,6 +1094,7 @@ const EXTRAS = {
     }
     // tobera con llama azul
     add(new THREE.CylinderGeometry(0.2, 0.27, 0.22, 16).rotateX(Math.PI / 2), M.chrome, 0, P + 0.38, -0.92, undefined, false);
+    if (def.motor === 'Nitro') exh(0, P + 0.38, -1.05);
     const glow = new THREE.MeshStandardMaterial({ color: '#7fd6ff', emissive: '#4fc3ff', emissiveIntensity: 2.2 });
     add(new THREE.CircleGeometry(0.17, 16).rotateY(Math.PI), glow, 0, P + 0.38, -1.035, undefined, false);
     add(new THREE.PlaneGeometry(0.24, 0.24).rotateY(Math.PI / 2), decalMat(def.number || '0'), 0.33, P + 0.4, -0.2, undefined, false);
