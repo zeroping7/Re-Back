@@ -32,10 +32,27 @@ export function saveProfile() {
 }
 
 export const isOwned = (id) => !!profile.owned[id];
-export const upgradesOf = (id) => profile.owned[id] || {};
+// Mejoras compradas (todos los niveles) y mejoras activas (las que no se han quitado)
+export const ownedUpgrades = (id) => profile.owned[id] || {};
+export const upgradeOn = (id, upId) => !profile.off?.[id]?.[upId];
+export function upgradesOf(id) {
+  const out = {};
+  for (const [k, v] of Object.entries(ownedUpgrades(id))) if (upgradeOn(id, k)) out[k] = v;
+  return out;
+}
+// Quita o pone una mejora ya comprada, sin perder lo pagado
+export function toggleUpgrade(id, upId) {
+  if (!(ownedUpgrades(id)[upId] > 0)) return false;
+  profile.off ??= {};
+  const o = (profile.off[id] ??= {});
+  if (o[upId]) delete o[upId]; else o[upId] = true;
+  if (!Object.keys(o).length) delete profile.off[id];
+  saveProfile();
+  return upgradeOn(id, upId);
+}
 
 export function upgradeCost(id, upId) {
-  const lvl = upgradesOf(id)[upId] || 0;
+  const lvl = ownedUpgrades(id)[upId] || 0;
   if (lvl >= MAX_LEVEL) return null;
   const base = 150 + carById(id).price * 0.1;
   return Math.round((base * (lvl + 1)) / 50) * 50;
@@ -43,7 +60,7 @@ export function upgradeCost(id, upId) {
 
 function spentOn(id) {
   let total = carById(id).price;
-  const up = upgradesOf(id);
+  const up = ownedUpgrades(id);
   for (const u of UPGRADES) {
     for (let l = 0; l < (up[u.id] || 0); l++) total += Math.round(((150 + carById(id).price * 0.1) * (l + 1)) / 50) * 50;
   }
@@ -66,6 +83,7 @@ export function sellCar(id) {
   if (!isOwned(id) || Object.keys(profile.owned).length <= 1 || carById(id).starter) return false;
   profile.money += sellValue(id);
   delete profile.owned[id];
+  if (profile.off) delete profile.off[id];
   if (profile.selected === id) profile.selected = Object.keys(profile.owned)[0];
   saveProfile();
   return true;
@@ -76,6 +94,7 @@ export function buyUpgrade(id, upId) {
   if (cost === null || !isOwned(id) || profile.money < cost) return false;
   profile.money -= cost;
   profile.owned[id][upId] = (profile.owned[id][upId] || 0) + 1;
+  if (profile.off?.[id]) { delete profile.off[id][upId]; if (!Object.keys(profile.off[id]).length) delete profile.off[id]; } // al mejorar, se vuelve a montar
   saveProfile();
   return true;
 }

@@ -437,3 +437,11 @@ body.pad-mode #btn-look { display: none; }
 .dtune .dt-row output { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
 .dtune .dt-row.chg output { color: #ffd23f; }
 .dtune pre { white-space: pre-wrap; font-size: 11px; opacity: .8; margin: 6px 0 0; user-select: all; }
+
+/* UX-22: botón de garaje en cada tarjeta de coche; UX-23: quitar/poner mejoras */
+.card { position: relative; }
+.card .gbtn { position: absolute; top: 6px; right: 6px; width: 34px; height: 34px; border-radius: 50%; background: #000000a0; border: 1px solid #ffffff55; display: flex; align-items: center; justify-content: center; font-size: 17px; z-index: 2; }
+.up-row.off .nm, .up-row.off .pips { opacity: .4; }
+.up-row button.tg { min-width: 64px; background: #ffffff22; }
+.up-row button.tg.on { background: #e74c3c88; }
+.up-row button.tg:not(.on) { background: #2ecc7188; }

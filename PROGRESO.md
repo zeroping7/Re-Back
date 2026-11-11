@@ -9,6 +9,11 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Garaje desde las tarjetas + quitar/poner mejoras ✅ (UX-22, UX-23)
+- Cada coche de preparar carrera/campeonato tiene un botón 🔧 que abre el garaje en ese coche; «←» vuelve al menú.
+- En el Taller, cada mejora comprada tiene «Quitar»/«Poner» (guardado en `profile.off`); lo quitado no cuenta en medidores ni en carrera. Prueba: `node tests/garagebtn.mjs http://localhost:4173/?test`.
+- **Pendiente:** probar en el móvil el tamaño del botón 🔧 y la fila del Taller.
+
 ### Rendimiento coherente con los medidores ✅ (COC-06, COC-07, DRI-17)
 - Carrera: Pulga arranca más fuerte; Flecha y Fórmula más rápidas. Drift: cada coche tiene su potencia y giro (`dk`). Obstáculos intacto.
 - Medidores (tarjetas y garaje) calculados de medidas reales (`src/carperf.js`, `node tests/carprobe.mjs <race|drift> --check`), con decimales y mejoras incluidas.

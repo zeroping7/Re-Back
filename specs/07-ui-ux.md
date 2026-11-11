@@ -56,6 +56,8 @@ Inicio (toca para empezar)
 | UX-19 | **Coche libre en preparar carrera, campeonato y garaje**: paneles en el 58 % izquierdo de la pantalla; la cámara del taller desplaza la imagen para centrar el coche en el 42 % derecho, sin que lo tape ninguna lista. Cada coche nuevo arranca la peana mostrando el frente en 3/4 | ✅ (falta probar en el móvil) |
 | UX-20 | **Versión en la pantalla de inicio y en el menú principal** (abajo a la derecha, p. ej. `v1.0.123`): la pone el CI (`1.0.<nº de ejecución>`, la misma que el APK); en local sale `dev` | ✅ |
 | UX-21 | **«Más coches» vuelve a su sitio**: si el garaje se abre desde «Más coches» (preparar carrera o campeonato), «Usar este» devuelve al menú de origen con el coche elegido y «←» también vuelve ahí (no al menú principal) | ✅ |
+| UX-22 | **Botón 🔧 Garaje en cada coche** de preparar carrera y campeonato: abre el garaje directamente en ese coche (lo deja seleccionado); «←» y «Usar este» vuelven al menú de origen | ✅ |
+| UX-23 | **Quitar / poner mejoras compradas** desde el Taller (lista de mejoras del garaje): botón «Quitar»/«Poner» por mejora, sin perder lo pagado ni el nivel; las mejoras quitadas no cuentan en medidores ni en carrera; al volver a mejorar se montan de nuevo; vender el coche borra el estado | ✅ |
 
 ## Marcador en carrera
 

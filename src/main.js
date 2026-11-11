@@ -9,7 +9,7 @@ import { ARENA } from './battle.js';
 import { CARS, carById, UPGRADES, MAX_LEVEL, carTuning, tractionName } from './cars.js';
 import { carStats } from './carstats.js';
 import {
-  profile, isOwned, upgradesOf, upgradeCost, sellValue, buyCar, sellCar, buyUpgrade, selectCar, raceReward, addMoney,
+  profile, isOwned, upgradesOf, ownedUpgrades, upgradeOn, toggleUpgrade, upgradeCost, sellValue, buyCar, sellCar, buyUpgrade, selectCar, raceReward, addMoney,
   onProfileChange, setCupResult, takeStar, STAR_PRIZE, checkSecret, starsGot, useDisc, grantStarters, awardMedal,
 } from './profile.js';
 import { CUPS, cupById, cupUnlocked, cupPrize, addPoints, standings, POINTS, cupsFor } from './cups.js';
@@ -226,6 +226,16 @@ async function init() {
       c.innerHTML = `${carPv(d)}<b>${d.name}</b><small>${d.clase} · ${d.motor}</small>` +
         bar('Vel', st.vel) + bar('Ace', st.acel) + bar('Man', st.manejo);
       c.addEventListener('click', () => { selectCar(d.id, disc); sfx.play('click'); room.showCar(d.id); rebuild(); });
+      // UX-22: botón para abrir el garaje directamente en este coche
+      const g = document.createElement('span');
+      g.className = 'gbtn'; g.textContent = '🔧'; g.title = 'Garaje';
+      g.addEventListener('click', (e) => {
+        e.stopPropagation(); sfx.play('click');
+        selectCar(d.id, disc);
+        garageReturn = { screen: screens.find((x) => !$(x).classList.contains('hidden')) || 'm-setup', rebuild };
+        gDisc = disc; gSel = d.id; showScreen('m-garage');
+      });
+      c.append(g);
       el.append(c);
     }
     if (CARS.some((x) => !isOwned(x.id) && carAllowed(x, disc) && !x.secret)) {
@@ -372,7 +382,7 @@ async function init() {
       c.addEventListener('click', () => { gSel = d.id; sfx.play('click'); room.showCar(d.id); buildGarage(); });
       list.append(c);
     }
-    const d = carById(gSel), own = isOwned(gSel), up = upgradesOf(gSel);
+    const d = carById(gSel), own = isOwned(gSel), up = upgradesOf(gSel), raw = ownedUpgrades(gSel); // up = activas, raw = compradas
     $('g-name').textContent = d.name;
     $('g-desc').textContent = d.desc;
     $('g-spec').innerHTML = [
@@ -403,9 +413,16 @@ async function init() {
     }
     const ups = $('g-ups'); ups.innerHTML = '';
     for (const u of UPGRADES) {
-      const lvl = up[u.id] || 0, cost = upgradeCost(d.id, u.id);
-      const row = document.createElement('div'); row.className = 'up-row';
+      const lvl = raw[u.id] || 0, cost = upgradeCost(d.id, u.id), on = upgradeOn(d.id, u.id);
+      const row = document.createElement('div'); row.className = 'up-row' + (lvl && !on ? ' off' : '');
       row.innerHTML = `<div class="nm">${u.icon} ${u.name}<small>${u.desc}</small></div><div class="pips">${'●'.repeat(lvl)}${'○'.repeat(MAX_LEVEL - lvl)}</div>`;
+      if (own && lvl) { // UX-23: quitar / poner la mejora ya comprada
+        const t = document.createElement('button');
+        t.className = 'tg' + (on ? ' on' : '');
+        t.textContent = on ? 'Quitar' : 'Poner';
+        t.onclick = () => { toggleUpgrade(d.id, u.id); sfx.play('click'); buildGarage(); };
+        row.append(t);
+      }
       const b = document.createElement('button');
       b.textContent = cost === null ? 'MÁX' : `🪙 ${coins(cost)}`;
       b.disabled = !own || cost === null || profile.money < cost;
