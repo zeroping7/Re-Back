@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { room, mat, BARRIER_GROUPS, trackRibbon, bannerTexture } from './common.js';
 import { mulberry } from './kit.js';
+import { fillTextM } from '../textures.js';
 
 // Pista de drift RC de verdad (DRI-09): suelo de losetas de plástico, pista pintada con líneas y goma,
 // zonas de "clip" en el exterior de las curvas, conos que se pueden tirar, pilas de neumáticos,
@@ -61,7 +62,7 @@ function signTexture(text, bg, fg) {
   return canvas(256, 128, (g, w, h) => {
     g.fillStyle = bg; g.fillRect(0, 0, w, h);
     g.fillStyle = fg; g.font = 'bold 64px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(text, w / 2, h / 2 + 4);
+    fillTextM(g, text, w / 2, h / 2 + 4);
   });
 }
 

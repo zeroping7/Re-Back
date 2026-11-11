@@ -10,6 +10,7 @@ import { Particles, SkidMarks, Ripples } from './effects.js';
 import { setupBattle, battleStep, battlePlaces, battleRender, dropStar, BattleDriver } from './battle.js';
 import { discTuning, carAllowed, fmtPts } from './disciplines.js';
 import { loadGhost, saveGhost, ghostModel, poseAt, poseLerp, ReplayRecorder, Director, GHOST_HZ } from './replay.js';
+import { setMirrorText } from './textures.js';
 
 export const FIXED = 1 / 60;
 const RIVAL_COLORS = ['#ff7a00', '#00b8a9', '#ff4f9a', '#7cb342', '#5c6bc0', '#fdd835', '#8d6e63'];
@@ -41,7 +42,9 @@ export class Race {
     root.scale.set(mirror ? -S : S, S, S);
     scene.add(root);
     const B = createBuilder(root, this.world, RAPIER, S, { mirror, reverse: !!trackDef.reverse });
+    setMirrorText(mirror);
     const T = (this.T = trackDef.build(B));
+    setMirrorText(false);
     this.dynamics = B.dynamics;
     scaleTrack(T, S, mirror);
     this.trackKey = trackDef.key || trackDef.id;

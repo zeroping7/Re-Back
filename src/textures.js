@@ -13,6 +13,18 @@ function canvasTex(w, h, draw, { repeat = [1, 1], srgb = true } = {}) {
   return t;
 }
 
+
+// Espejo (CIR-23): la escena se refleja con escala X negativa y el texto saldría al revés.
+// Con el circuito en espejo, el texto se dibuja ya invertido para que se lea bien en pantalla.
+let MIRROR_TEXT = false;
+export const setMirrorText = (v) => { MIRROR_TEXT = !!v; };
+export function fillTextM(g, text, x, y) {
+  if (!MIRROR_TEXT) { g.fillText(text, x, y); return; }
+  const w = g.measureText(text).width, al = g.textAlign;
+  const cx = al === 'center' ? x : al === 'end' || al === 'right' ? x - w / 2 : x + w / 2;
+  g.save(); g.translate(cx, y); g.scale(-1, 1); g.textAlign = 'center'; g.fillText(text, 0, 0); g.restore();
+}
+
 function rnd(seed) {
   let s = seed >>> 0;
   return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
@@ -97,7 +109,7 @@ export function bookCoverTexture(title, color) {
     g.fillStyle = color; g.fillRect(0, 0, w, h);
     g.strokeStyle = '#ffffffaa'; g.lineWidth = 6; g.strokeRect(16, 16, w - 32, h - 32);
     g.fillStyle = '#fff'; g.font = 'bold 34px sans-serif'; g.textAlign = 'center';
-    g.fillText(title, w / 2, h / 2 + 12);
+    fillTextM(g, title, w / 2, h / 2 + 12);
   });
 }
 
@@ -107,7 +119,7 @@ export function canTexture() {
     g.fillStyle = '#fff';
     g.beginPath(); g.moveTo(0, 80); g.bezierCurveTo(80, 40, 160, 110, 256, 60); g.lineTo(256, 75);
     g.bezierCurveTo(160, 125, 80, 55, 0, 95); g.fill();
-    g.font = 'italic bold 40px sans-serif'; g.fillText('FIZZ', 70, 50);
+    g.font = 'italic bold 40px sans-serif'; fillTextM(g, 'FIZZ', 70, 50);
   });
 }
 
@@ -155,8 +167,8 @@ export function labelTexture(lines, bg, fg = '#fff') {
     g.fillStyle = bg; g.fillRect(0, 0, w, h);
     g.fillStyle = '#ffffff33'; g.fillRect(0, h * 0.68, w, h * 0.12);
     g.fillStyle = fg; g.textAlign = 'center'; g.font = 'bold 40px sans-serif';
-    g.fillText(lines[0], w / 2, 56);
-    if (lines[1]) { g.font = 'bold 22px sans-serif'; g.fillText(lines[1], w / 2, 100); }
+    fillTextM(g, lines[0], w / 2, 56);
+    if (lines[1]) { g.font = 'bold 22px sans-serif'; fillTextM(g, lines[1], w / 2, 100); }
   });
 }
 
@@ -321,7 +333,7 @@ export function groundTex(kind, repeat = [1, 1]) {
       g.fillStyle = '#c69c62'; g.fillRect(0, 0, S, S);
       for (let i = 0; i < S; i += 8) { g.fillStyle = i % 16 ? '#bf9358' : '#cda46b'; g.fillRect(0, i, S, 4); h.fillStyle = i % 16 ? '#909090' : '#707070'; h.fillRect(0, i, S, 4); }
       g.fillStyle = '#00000022'; g.fillRect(S * 0.45, 0, 6, S);
-      g.fillStyle = '#7a4a1a'; g.font = 'bold 40px sans-serif'; g.textAlign = 'center'; g.fillText('↑ FRÁGIL', S / 2, S / 2);
+      g.fillStyle = '#7a4a1a'; g.font = 'bold 40px sans-serif'; g.textAlign = 'center'; fillTextM(g, '↑ FRÁGIL', S / 2, S / 2);
     }, repeat, 2);
     case 'plank': return pair(256, (g, h, S) => {
       for (let i = 0; i < 4; i++) {

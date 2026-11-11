@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { checkerTexture } from '../textures.js';
+import { checkerTexture, fillTextM } from '../textures.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 // Grupos de colisión (membresía << 16 | filtro)
@@ -425,7 +425,7 @@ export function bannerTexture(text, bg = '#ff6a00', fg = '#ffffff') {
   g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle';
   let size = 64;
   do { g.font = `italic 900 ${size}px sans-serif`; size -= 2; } while (g.measureText(text).width > 480 && size > 20);
-  g.fillText(text, 256, 52);
+  fillTextM(g, text, 256, 52);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
@@ -498,6 +498,16 @@ export function room(B, { x, z, h, floor, wall, ceil = '#f4f1ea', baseboard = '#
 }
 
 // Fusiona las mallas estáticas de la escena por material (muchas menos llamadas de dibujo)
+// Cambia el sentido de los triángulos (geometría no indexada): intercambia los vértices 2 y 3 de cada uno
+function flipWinding(geo) {
+  for (const a of Object.values(geo.attributes)) {
+    const n = a.itemSize, arr = a.array;
+    for (let t = 0; t < a.count * n; t += 3 * n) {
+      for (let k = 0; k < n; k++) { const x = arr[t + n + k]; arr[t + n + k] = arr[t + 2 * n + k]; arr[t + 2 * n + k] = x; }
+    }
+    a.needsUpdate = true;
+  }
+}
 export function mergeStatic(scene) {
   scene.updateMatrixWorld(true);
   const groups = new Map();
@@ -516,6 +526,7 @@ export function mergeStatic(scene) {
     for (const o of g.list) {
       let geo = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
       geo.applyMatrix4(o.matrixWorld);
+      if (o.matrixWorld.determinant() < 0) flipWinding(geo); // espejo (escala X negativa): al fusionar hay que girar las caras o se culean al revés
       for (const k of Object.keys(geo.attributes)) if (!['position', 'normal', 'uv'].includes(k)) geo.deleteAttribute(k);
       if (!keepUV) geo.deleteAttribute('uv');
       else if (!geo.attributes.uv) geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 2), 2));

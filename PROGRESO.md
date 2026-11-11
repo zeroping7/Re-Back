@@ -9,6 +9,10 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Espejo sin fallos de textura ✅ (CIR-28)
+- Causa: la escala X negativa del espejo + `mergeStatic` dejaba las caras al revés (suelo, paredes y carteles desaparecían). Ahora se gira el sentido de las caras al fusionar; el texto de carteles, latas, cajas y libros sale legible. Revisados los 8 circuitos con `tests/mirror.mjs`.
+- **Pendiente:** probar en el móvil (sobre todo Copa Platino, que usa espejo).
+
 ### Garaje desde las tarjetas + quitar/poner mejoras ✅ (UX-22, UX-23)
 - Cada coche de preparar carrera/campeonato tiene un botón 🔧 que abre el garaje en ese coche; «←» vuelve al menú.
 - En el Taller, cada mejora comprada se puede quitar o poner **nivel a nivel** con «−»/«+» (guardado en `profile.inst`); solo cuentan los niveles montados en medidores y en carrera. Prueba: `node tests/garagebtn.mjs http://localhost:4173/?test`.
