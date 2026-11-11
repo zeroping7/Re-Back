@@ -167,6 +167,7 @@ table.table td.pts { font-family: var(--title); text-align: right; color: #7dff8
 #g-stats .bar { display: flex; align-items: center; gap: 8px; font-size: 12px; margin: 3px 0; }
 #g-stats .bar span { width: 70px; opacity: .8; }
 #g-stats .bar i { flex: 1; height: 7px; border-radius: 4px; background: #ffffff22; position: relative; overflow: hidden; }
+#g-stats .bar em { width: 28px; text-align: right; font-style: normal; font-size: 11px; opacity: .85; }
 #g-stats .bar i::before { content: ''; position: absolute; inset: 0; width: var(--b); background: #ffd166; }
 #g-stats .bar i::after { content: ''; position: absolute; top: 0; bottom: 0; left: var(--b); width: var(--u); background: #7dff8a; }
 #g-actions { display: flex; gap: 8px; margin: 8px 0; }

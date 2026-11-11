@@ -9,6 +9,11 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Rendimiento coherente con los medidores ✅ (COC-06, COC-07, DRI-17)
+- Carrera: Pulga arranca más fuerte; Flecha y Fórmula más rápidas. Drift: cada coche tiene su potencia y giro (`dk`). Obstáculos intacto.
+- Medidores (tarjetas y garaje) calculados de medidas reales (`src/carperf.js`, `node tests/carprobe.mjs <race|drift> --check`), con decimales y mejoras incluidas.
+- **Volver atrás**: rama `backup-v1.0.56-antes-rendimiento` (y release/APK v1.0.56).
+
 ### Motores RC realistas, uno por coche ✅ (AUD-13)
 - 8 sonidos base (4 eléctricos, 4 nitro) en bucles por régimen de vueltas y gas/sin gas (`src/assets/engines.bin`, 2,9 MB; generador en `tools/engines/make_engines.py`). Cada coche tiene `sound: [base, tono]` en `cars.js` y los 18 son distintos (tabla en `specs/08-audio.md`); los rivales cercanos suenan con el suyo. Si las muestras no cargan, vuelve el motor sintetizado de antes.
 - Pruebas: `node tests/sounds.mjs`, `tests/engine.mjs` (nivel y clics) y `tests/engine-game.mjs`. **Pendiente:** oído en el móvil (nivel del motor, tonos entre coches parecidos como Patín/Flecha/Trompo).

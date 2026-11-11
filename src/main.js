@@ -7,6 +7,7 @@ import { TRACKS, trackById, trackFromKey, VARIANTS, variantUnlocked, tracksFor }
 import { DISCS, discById, discUnlocked, carAllowed, MODES, MEDALS, medalLevel, fmtPts } from './disciplines.js';
 import { ARENA } from './battle.js';
 import { CARS, carById, UPGRADES, MAX_LEVEL, carTuning, tractionName } from './cars.js';
+import { carStats } from './carstats.js';
 import {
   profile, isOwned, upgradesOf, upgradeCost, sellValue, buyCar, sellCar, buyUpgrade, selectCar, raceReward, addMoney,
   onProfileChange, setCupResult, takeStar, STAR_PRIZE, checkSecret, starsGot, useDisc, grantStarters, awardMedal,
@@ -221,8 +222,9 @@ async function init() {
       const c = document.createElement('button');
       c.className = 'card' + (profile.selected === d.id ? ' sel' : '');
       const bar = (n, v) => `<div class="bar">${n}<i style="--v:${v * 20}%"></i></div>`;
+      const st = carStats(d, disc, upgradesOf(d.id)); // COC-07: medidas reales, con mejoras
       c.innerHTML = `${carPv(d)}<b>${d.name}</b><small>${d.clase} · ${d.motor}</small>` +
-        bar('Vel', d.stats.vel) + bar('Ace', d.stats.acel) + bar('Man', d.stats.manejo);
+        bar('Vel', st.vel) + bar('Ace', st.acel) + bar('Man', st.manejo);
       c.addEventListener('click', () => { selectCar(d.id, disc); sfx.play('click'); room.showCar(d.id); rebuild(); });
       el.append(c);
     }
@@ -337,9 +339,9 @@ async function init() {
 
   // ---------- Garaje ----------
   let gSel = null, gDisc = 'race';
-  const statVals = (def, up) => {
-    const t = carTuning({ engine: 1, maxSpeed: 1, gripFront: 1, gripRear: 1, steerMax: 1, steerSpeed: 1, suspStiff: 1, rearBias: 90 }, def, 1, up);
-    return [['Velocidad', t.maxSpeed, 0.85, 1.25], ['Aceleración', t.engine, 0.9, 1.6], ['Agarre', t.gripFront, 0.9, 1.4], ['Giro', t.steerMax, 0.85, 1.4]];
+  const statVals = (def, up) => { // COC-07: igual que las tarjetas (medidas reales, 1-5 con decimales)
+    const st = carStats(def, gDisc, up);
+    return [['Velocidad', st.vel], ['Aceleración', st.acel], ['Manejo', st.manejo]];
   };
   function buildGarage() {
     // DIS-03: pestañas por disciplina
@@ -378,10 +380,11 @@ async function init() {
       ['⚖', `${(d.mass * 0.2).toFixed(1).replace('.', ',')} kg`],
     ].map(([i, t]) => `<span>${i} ${t}</span>`).join('');
     const base = statVals(d, {}), now = statVals(d, up);
-    $('g-stats').innerHTML = base.map(([n, v, lo, hi], i) => {
-      const b = Math.max(4, Math.min(100, ((v - lo) / (hi - lo)) * 100));
-      const u = Math.max(0, Math.min(100 - b, ((now[i][1] - v) / (hi - lo)) * 100));
-      return `<div class="bar"><span>${n}</span><i style="--b:${b}%;--u:${u}%"></i></div>`;
+    $('g-stats').innerHTML = base.map(([n, v], i) => {
+      const b = Math.max(2, Math.min(100, v * 20));
+      const u = Math.max(0, Math.min(100 - b, (now[i][1] - v) * 20));
+      const num = now[i][1].toFixed(1).replace('.', ',');
+      return `<div class="bar"><span>${n}</span><i style="--b:${b}%;--u:${u}%"></i><em>${num}</em></div>`;
     }).join('');
     const act = $('g-actions'); act.innerHTML = '';
     const btn = (label, cls, ok, fn) => { const b = document.createElement('button'); b.innerHTML = label; b.className = cls; b.disabled = !ok; b.onclick = fn; act.append(b); };

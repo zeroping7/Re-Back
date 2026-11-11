@@ -22,6 +22,8 @@ ajuste base. Nombres y diseños originales.
 | COC-03 | Motor nitro con sonido distinto (más grave y rasposo) | ✅ |
 | COC-04 | 3 coches nuevos: **Saeta** (turismo nitro Pro), **Morsa** (camión eléctrico pesado Avanzado), **Grillo** (buggy semi-pro de giro rápido) | ✅ |
 | COC-05 | **Coche secreto «Cometa»** (estilo cohete): se regala al conseguir todas las estrellas ocultas | ✅ |
+| COC-06 | **Rendimiento de carrera coherente con los medidores**: Pulga motor 1,32 (arranca como un rayo), Flecha motor 1,14 y punta 1,17, Fórmula punta 1,16 (medidos con `tests/carprobe.mjs`). Obstáculos no se toca | ✅ |
+| COC-07 | **Medidores calculados de lo medido** (`src/carperf.js` ← `node tests/carprobe.mjs <disciplina> --write`): Velocidad = punta (u/s), Aceleración = 0→15 u/s (s), Manejo = giro a medio volante; escala fija 1-5 con decimales, igual en tarjetas y garaje; las mejoras desplazan la barra con la misma fórmula. Cada coche tiene valores por disciplina (Carrera y Drift); Obstáculos y los coches solo de Obstáculos siguen con su ficha `stats`. `node tests/carprobe.mjs <disc> --check` falla si los medidores ya no coinciden con la física | ✅ |
 
 ## Modelos 3D (hechos por código)
 

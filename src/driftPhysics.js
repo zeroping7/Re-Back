@@ -47,7 +47,18 @@ const sm = (a, b, x) => { const t = THREE.MathUtils.clamp((x - a) / (b - a), 0, 
 function pac(a, B, C) { const x = B * a; return Math.sin(C * Math.atan(x)); }
 
 export function driftForces(car, dt, input, c) {
-  const D = globalThis.__DP || DRIFT;
+  const D0 = globalThis.__DP || DRIFT;
+  // DRI-17: cada coche (y sus mejoras) escala potencia/empuje, giro del volante y agarre; sin ficha = valores de siempre
+  let D = D0;
+  const K = car.t?.drift;
+  if (K) {
+    if (car._D0 !== D0 || car._DK !== K) {
+      car._D0 = D0; car._DK = K;
+      car._D = { ...D0, power: D0.power * K.p, slideDrive: D0.slideDrive * K.p, muF: D0.muF * K.s * K.g, muR: D0.muR * K.g,
+        lock0: D0.lock0 * K.s, lockMin: D0.lockMin * K.s, steerRate: D0.steerRate * K.s };
+    }
+    D = car._D;
+  }
   const b = car.body, m = car.mass, W = car.W, lv = car.localVel, fx = car.fx;
   const g = -car.world.gravity.y;
   const st = THREE.MathUtils.clamp(input.steer, -1, 1);

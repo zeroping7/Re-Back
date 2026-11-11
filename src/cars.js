@@ -11,8 +11,9 @@ export const CARS = [
     id: 'flecha', disc: ['race', 'drift'], price: 7500, name: 'Flecha', desc: 'Turismo bajo y rapidísimo', color: '#f5c518', style: 'touring', number: '1',
     clase: 'Semi-pro', motor: 'Eléctrico', sound: ['e1', 1.00], mass: 8, rearBias: 70,
     wheelR: 0.32, wheelX: 0.62, wheelZf: 0.78, wheelZr: -0.76,
-    mods: { engine: 1.06, maxSpeed: 1.12, grip: 1.1, steer: 0.95, susp: 1.35 },
+    mods: { engine: 1.14, maxSpeed: 1.17, grip: 1.1, steer: 0.95, susp: 1.35 },
     stats: { vel: 5, acel: 3, manejo: 3 },
+    dk: { p: 0.94, s: 0.96 }, // DRI-17: potencia y giro en Drift (1 = el de siempre)
   },
   {
     id: 'tanque', disc: ['race', 'obst'], price: 3000, name: 'Tanque', desc: 'Monster truck: salta y aguanta', color: '#2e9e44', style: 'truck', number: '9', pattern: 'flames',
@@ -25,7 +26,7 @@ export const CARS = [
     id: 'formula', price: 10000, name: 'Fórmula', desc: 'Monoplaza: se pega en curva', color: '#d50000', style: 'f1', number: '1', rimColor: '#ffd400',
     clase: 'Pro', motor: 'Nitro', sound: ['n4', 1.00], mass: 7.5, rearBias: 100,
     wheelR: 0.34, wheelX: 0.64, wheelZf: 0.9, wheelZr: -0.68,
-    mods: { engine: 1.05, maxSpeed: 1.1, grip: 1.22, steer: 1.0, susp: 1.5 },
+    mods: { engine: 1.08, maxSpeed: 1.16, grip: 1.22, steer: 1.0, susp: 1.5 },
     stats: { vel: 5, acel: 3, manejo: 5 },
   },
   {
@@ -46,7 +47,7 @@ export const CARS = [
     id: 'pulga', price: 600, name: 'Pulga', desc: 'Bichito redondo, acelera como un rayo', color: '#ff4081', style: 'bubble', number: '2', pattern: 'dots', rimColor: '#ffffff',
     clase: 'Novato', motor: 'Eléctrico', sound: ['e3', 1.20], mass: 6.5,
     wheelR: 0.3, wheelX: 0.52, wheelZf: 0.56, wheelZr: -0.56,
-    mods: { engine: 1.1, maxSpeed: 0.88, grip: 1.0, steer: 1.1, susp: 1 },
+    mods: { engine: 1.32, maxSpeed: 0.88, grip: 1.0, steer: 1.1, susp: 1 },
     stats: { vel: 1, acel: 4, manejo: 4 },
   },
   // COC-04: coches nuevos
@@ -63,6 +64,7 @@ export const CARS = [
     wheelR: 0.33, wheelX: 0.62, wheelZf: 0.78, wheelZr: -0.76,
     mods: { engine: 1.1, maxSpeed: 1.16, grip: 1.12, steer: 1.0, susp: 1.35 },
     stats: { vel: 5, acel: 4, manejo: 4 },
+    dk: { p: 1.00, s: 1.00 }, // DRI-17: potencia y giro en Drift (1 = el de siempre)
   },
   // COC-05: coche secreto, se regala al conseguir todas las estrellas ocultas
   {
@@ -79,6 +81,7 @@ export const CARS = [
     wheelR: 0.31, wheelX: 0.6, wheelZf: 0.66, wheelZr: -0.64,
     mods: { engine: 1.18, maxSpeed: 0.92, grip: 1.0, steer: 1.12, susp: 1.3, rest: 0.7 },
     stats: { vel: 2, acel: 4, manejo: 3 },
+    dk: { p: 1.00, s: 0.95 }, // DRI-17: potencia y giro en Drift (1 = el de siempre)
   },
   {
     id: 'humo', disc: ['drift'], price: 3500, name: 'Humo', desc: 'Berlina cuadrada de los 80 con aletas anchas', color: '#1f3b73', style: 'sedan', number: '21', pattern: 'livery', rimColor: '#d7dde2', spokes: 14, camber: 0.08,
@@ -86,6 +89,7 @@ export const CARS = [
     wheelR: 0.32, wheelX: 0.66, wheelZf: 0.76, wheelZr: -0.74,
     mods: { engine: 1.28, maxSpeed: 0.98, grip: 1.0, steer: 1.2, susp: 1.3, rest: 0.7 },
     stats: { vel: 3, acel: 4, manejo: 4 },
+    dk: { p: 1.00, s: 1.00 }, // DRI-17: potencia y giro en Drift (1 = el de siempre)
   },
   {
     id: 'trompo', disc: ['drift'], price: 6000, name: 'Trompo', desc: 'Compacto de portón bicolor: cambia de lado en un parpadeo', color: '#f2f2f2', style: 'hatch', number: '86', pattern: 'twotone', rimColor: '#2b2b2b', spokes: 6, camber: 0.07,
@@ -93,6 +97,7 @@ export const CARS = [
     wheelR: 0.31, wheelX: 0.61, wheelZf: 0.72, wheelZr: -0.7,
     mods: { engine: 1.34, maxSpeed: 1.0, grip: 0.96, steer: 1.32, susp: 1.1, rest: 0.7 },
     stats: { vel: 3, acel: 5, manejo: 5 },
+    dk: { p: 1.05, s: 1.10 }, // DRI-17: potencia y giro en Drift (1 = el de siempre)
   },
   {
     id: 'bisonte', disc: ['drift'], price: 8500, name: 'Bisonte', desc: 'Deportivo americano con compresor: potencia bruta', color: '#26282c', style: 'muscle', number: '8', pattern: 'yellow', rimColor: '#141414', spokes: 10, camber: 0.06,
@@ -100,6 +105,7 @@ export const CARS = [
     wheelR: 0.33, wheelX: 0.65, wheelZf: 0.78, wheelZr: -0.76,
     mods: { engine: 1.45, maxSpeed: 1.06, grip: 1.0, steer: 1.18, susp: 1.3, rest: 0.7 },
     stats: { vel: 4, acel: 5, manejo: 3 },
+    dk: { p: 1.14, s: 0.96 }, // DRI-17: potencia y giro en Drift (1 = el de siempre)
   },
   {
     id: 'katana', disc: ['drift'], price: 11000, name: 'Katana', desc: 'Cupé de los 90 con alerón: el rey del derrape', color: '#1e4fd8', style: 'coupe', number: '34', pattern: 'carbon', rimColor: '#e6e6e6', spokes: 5, camber: 0.08,
@@ -107,6 +113,7 @@ export const CARS = [
     wheelR: 0.33, wheelX: 0.65, wheelZf: 0.8, wheelZr: -0.77,
     mods: { engine: 1.42, maxSpeed: 1.08, grip: 1.05, steer: 1.36, susp: 1.35, rest: 0.7 },
     stats: { vel: 5, acel: 5, manejo: 5 },
+    dk: { p: 1.10, s: 1.12 }, // DRI-17: potencia y giro en Drift (1 = el de siempre)
   },
   // DCO-03: coches de Obstáculos (camiones lentos, ruedas grandes, mucha suspensión y agarre)
   {
@@ -173,5 +180,7 @@ export function carTuning(base, def, skill = 1, up = {}) {
     suspRest: base.suspRest * (m.rest || 1),
     // tracción propia del modelo, relativa al ajuste base (90 % por defecto)
     rearBias: def.rearBias === undefined ? base.rearBias : Math.max(0, Math.min(100, base.rearBias + def.rearBias - 90)),
+    // DRI-17: en Drift mandan estos (los lee driftPhysics.js): potencia/empuje, giro del volante y agarre, con las mejoras
+    drift: { p: (def.dk?.p ?? 1) * (1 + 0.07 * L('motor')), s: (def.dk?.s ?? 1) * (1 + 0.05 * L('direccion')), g: 1 + 0.05 * L('ruedas') },
   };
 }
