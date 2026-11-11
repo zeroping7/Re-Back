@@ -30,7 +30,7 @@ export const CARS = [
     stats: { vel: 5, acel: 3, manejo: 5 },
   },
   {
-    id: 'rally', disc: ['race'], price: 4000, name: 'Rally', desc: 'Compacto, ágil en tierra', color: '#0d47a1', style: 'rally', number: '4', pattern: 'rally', rimColor: '#ffffff',
+    id: 'rally', noArches: true, disc: ['race'], price: 4000, name: 'Rally', desc: 'Compacto, ágil en tierra', color: '#0d47a1', style: 'rally', number: '4', pattern: 'rally', rimColor: '#ffffff',
     clase: 'Avanzado', motor: 'Nitro', sound: ['n1', 1.10], mass: 8.5, rearBias: 60,
     wheelR: 0.35, wheelX: 0.6, wheelZf: 0.74, wheelZr: -0.72,
     mods: { engine: 1.1, maxSpeed: 1.0, grip: 1.0, steer: 1.1, susp: 0.9 },

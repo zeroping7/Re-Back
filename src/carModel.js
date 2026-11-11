@@ -319,7 +319,7 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
     roof.castShadow = true;
   }
   // pasos de rueda (aletas) en carrocerías cerradas
-  if (S.flatArches) {
+  if (S.flatArches && !def.noArches) {
     // aletas planas de rally: banda de sección rectangular (no tubo) desde el costado de la carrocería hasta cubrir todo el ancho del neumático, con labio exterior
     const hubY = CONN_Y - 0.26;
     const Ro = WHEEL_R + 0.075, Ri = WHEEL_R + 0.045, Rl = WHEEL_R + 0.115;

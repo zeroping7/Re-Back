@@ -44,6 +44,8 @@ ajuste base. Nombres y diseños originales.
 | COC-22 | **Saeta retirada del juego** (petición del usuario): se quita de `src/cars.js` y `src/carperf.js`; si un perfil guardado la tenía, se borra al cargar (`profile.js`, junto a Rayo, Bólido y Grillo). Criterio: no aparece en garage ni tienda ni en rivales y el juego carga con perfiles antiguos | ✅ |
 | COC-23 | **Humo de escape en los coches nitro, según las revoluciones** (`src/exhaust.js`). Sale por la boca de cada escape (`userData.exhausts` del modelo: Tanque 2 chimeneas, Yeti 2 chimeneas, Fórmula 2 tubos, Rally, Bisonte, Katana y Cometa 1 cada uno). Con las vueltas del motor `r` (0 ralentí … 1 tope, misma fórmula que el sonido): **a ralentí sale algo de humo; al subir `r` sale menos humo pero con más fuerza (más velocidad de salida); a partir de `r = 1/3` no sale nada; al volver a caer por debajo de 1/3 empieza el ciclo otra vez.** Solo `motor: 'Nitro'`; los eléctricos nunca. Sin humo con el motor muerto (pulso). Criterio: `node tests/exhaust.mjs` (curva monótona, 0 por encima de 1/3, todos los nitro con ≥1 escape y ningún eléctrico) y partida real con humo en la salida de la parrilla (capturas `tests/exhaustshot.mjs`) | ✅ (pendiente de probar en móvil) |
 
+| COC-24 | **Rally sin guardabarros** (`noArches` en `cars.js`; las aletas planas `flatArches` no se montan si el coche lo tiene). Criterio: el Rally no muestra aletas | ✅ (pendiente de probar en móvil) |
+
 ## Mejoras (desviación DES-02)
 
 Motor (+7 % potencia/nivel), Velocidad punta (+4,5 %), Neumáticos (+5 % agarre), Dirección (+5 % giro y respuesta).

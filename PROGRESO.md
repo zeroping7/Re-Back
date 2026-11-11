@@ -9,6 +9,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Rally sin guardabarros ✅ (COC-24)
+- `noArches` en el Rally. **Pendiente:** verlo en el móvil.
+
 ### Humo de escape en los coches nitro ✅ (COC-23)
 - Sale por la boca de cada escape (Tanque y Yeti 2 chimeneas, Fórmula 2 tubos, Rally, Bisonte, Katana y Cometa 1). Según las vueltas del motor (misma fórmula que el sonido): a ralentí algo de humo; al subir, menos humo pero con más fuerza; desde 1/3 de vueltas nada; al bajar de 1/3 vuelve a empezar. Los eléctricos no sacan.
 - Código en `src/exhaust.js` (curva y emisión), bocas en `userData.exhausts` de `carModel.js`, sistema de partículas propio `effects.exhaust`. Pruebas: `node tests/exhaust.mjs`; capturas: `node tests/exhaustshot.mjs http://localhost:4173/ tests/shots rally,tanque`.

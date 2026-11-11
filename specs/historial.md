@@ -70,3 +70,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 57 | Más retoques desde el visor 3D: Saeta, Katana, Patín y Trompo sin guardabarros; guardabarros del Yeti curvados y más bajos; alerón delantero de la Fórmula adelantado; escape solo en los coches nitro y no en los eléctricos | COC-20, COC-21 ✅ |
 | 58 | Eliminar la Saeta del juego, no la queremos | COC-22 ✅ |
 | 59 | Humo de escape realista en los coches nitro: a ralentí algo de humo, al subir revoluciones menos humo pero con más fuerza, desde 1/3 de revoluciones nada, y al bajar de 1/3 vuelve a empezar; por todos los escapes de cada coche | COC-23 ✅ |
+| 60 | Quitar los guardabarros del Rally y subirlo | COC-24 ✅ |
