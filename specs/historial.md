@@ -65,3 +65,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 52 | Las mejoras se deben poder quitar/poner una a una (nivel a nivel) como al comprarlas, y el coche debe comportarse según las montadas | UX-23 ✅ |
 | 53 | El marcador de dinero no debe animarse al quitar/poner mejoras, solo al comprar o vender | UX-23 ✅ |
 | 54 | El modo espejo tiene muchos fallos de textura: arreglarlos todos | CIR-28 ✅ |
+| 55 | Retocar la Furgo en el visor 3D: quitar los guardabarros (aletas), añadir parabrisas y arreglar el parpadeo del cristal lateral; luego subirlo al juego | COC-17 ✅ |

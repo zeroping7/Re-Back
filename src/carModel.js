@@ -86,8 +86,8 @@ const STYLES = {
     cab: null,
     tailX: 0.45, tailY: 0.45, tailZ: -1.1, headX: 0.42, headY: 0.4, headZ: 1.1,
     wing: null,
-    decal: { x: 0.625, y: 0.5, z: 0.25, size: 0.3 }, slick: true,
-    arches: true, archX: 0.01, plate: { y: 0.22, zf: 1.12, zr: -1.08 }, mirrors: { x: 0.64, y: 0.62, z: 0.6 }, doors: { z: [0.55, -0.05], y: 0.4, h: 0.55 },
+    decal: { x: 0.625, y: 0.42, z: 0.25, size: 0.3 }, slick: true,
+    arches: false, archX: 0.01, plate: { y: 0.22, zf: 1.12, zr: -1.08 }, mirrors: { x: 0.64, y: 0.62, z: 0.6 }, doors: { z: [0.55, -0.05], y: 0.4, h: 0.55 },
   },
   // DCO-02: carrocerías de drift (turismos RC 1:10 con kit ancho, sin marcas reales)
   coupe: { // cupé japonés de los 90 con alerón grande
@@ -948,9 +948,13 @@ const EXTRAS = {
   },
   van({ add, paint, P, S }) {
     // ventanas laterales y parabrisas
-    for (const sx of [1, -1]) add(new THREE.BoxGeometry(0.02, 0.22, 1.05), M.glass, sx * 0.62, P + S.y + 0.48, -0.25, undefined, false);
-    const ws = add(new THREE.BoxGeometry(1.0, 0.3, 0.02), M.glass, 0, P + S.y + 0.52, 0.66, undefined, false);
-    ws.rotation.x = -0.85;
+    // cristal lateral con su propio material y polygonOffset: gana siempre a la carrocería, juntas y calcomanías (sin parpadeo)
+    const sideGlass = M.glass.clone();
+    sideGlass.polygonOffset = true; sideGlass.polygonOffsetFactor = -3; sideGlass.polygonOffsetUnits = -3;
+    for (const sx of [1, -1]) add(new THREE.BoxGeometry(0.02, 0.22, 1.05), sideGlass, sx * 0.62, P + S.y + 0.48, -0.25, undefined, false);
+    // parabrisas: panel pegado a la pendiente del capó (z 0.45→0.78, y 0.7→0.36), sobresale 1,2 cm
+    const ws = add(new THREE.BoxGeometry(0.84, 0.36, 0.02), M.glass, 0, P + S.y + 0.565, 0.675, undefined, false);
+    ws.rotation.x = -0.77;
     // cartel de pizza en el techo
     const sign = add(new THREE.BoxGeometry(0.7, 0.3, 0.12), [M.plastic, M.plastic, M.plastic, M.plastic, pizzaMat(), pizzaMat()], 0, P + S.y + 0.9, 0.0);
     sign.castShadow = true;

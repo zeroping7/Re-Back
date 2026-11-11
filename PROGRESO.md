@@ -9,6 +9,10 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Furgo: sin aletas, con parabrisas y sin parpadeo ✅ (COC-17)
+- Retocada primero en el visor 3D (artefacto de Claude) y subida después. Quitados los arcos negros de las ruedas, parabrisas visible en la pendiente del capó, cristal lateral sin parpadeo (`polygonOffset`) y dorsal más bajo.
+- **Pendiente:** verlo en el móvil.
+
 ### Espejo sin fallos de textura ✅ (CIR-28)
 - Causa: la escala X negativa del espejo + `mergeStatic` dejaba las caras al revés (suelo, paredes y carteles desaparecían). Ahora se gira el sentido de las caras al fusionar; el texto de carteles, latas, cajas y libros sale legible. Revisados los 8 circuitos con `tests/mirror.mjs`.
 - **Pendiente:** probar en el móvil (sobre todo Copa Platino, que usa espejo).

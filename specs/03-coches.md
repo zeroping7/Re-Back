@@ -36,6 +36,7 @@ ajuste base. Nombres y diseños originales.
 | COC-14 | Decoraciones: franjas, rally, llamas, lunares, pizza; dorsal y calcomanías | ✅ |
 | COC-15 | Piezas fijas fusionadas por material (pocas llamadas de dibujo); menos detalle en coches lejanos | ✅ |
 | COC-16 | Abolladuras y desgaste (ver FIS-31..34) | ✅ |
+| COC-17 | **Furgo: sin aletas de rueda y con parabrisas visible**: se quitan los arcos negros de los pasos de rueda; el parabrisas (que quedaba oculto dentro de la carrocería) pasa a ser un panel de cristal pegado a la pendiente del capó; el cristal lateral usa `polygonOffset` y la calcomanía del dorsal baja para no solaparse con él. Criterio: se ve el parabrisas desde delante y sin parpadeo en las ventanas laterales | ✅ |
 
 ## Mejoras (desviación DES-02)
 
