@@ -41,6 +41,7 @@ ajuste base. Nombres y diseños originales.
 | COC-19 | **Neumáticos con talón y flanco proporcionales a la rueda**: antes tenían medidas fijas (para radio 0,37) y en ruedas pequeñas el flanco sobresalía del taco (centro hundido) y quedaba un hueco con la llanta. Ahora se escalan con `R / 0.37`. Criterio: sin hueco entre llanta y neumático ni centro hundido en ningún coche | ✅ |
 | COC-20 | **Más retoques desde el visor 3D**: Saeta, Katana, Patín y Trompo sin aletas (`noArches`); aletines del Yeti curvados siguiendo la rueda y 5 cm más bajos; alerón delantero de la Fórmula 0,30 más adelante, con dos soportes al morro (antes quedaba dentro de los neumáticos). Criterio: se ve cada cambio en el visor y en el juego | ✅ |
 | COC-21 | **Escape solo en coches de motor nitro** (`motor: 'Nitro'` en `cars.js`): Rally y Saeta con tubo trasero nuevo, Yeti con dos chimeneas verticales; Tanque, Bisonte, Katana, Fórmula y Cometa conservan el suyo. Los eléctricos no llevan: se quitan los de Patín, Humo, Trompo y Morsa. Criterio: ningún eléctrico tiene escape y todos los nitro sí | ✅ |
+| COC-22 | **Saeta retirada del juego** (petición del usuario): se quita de `src/cars.js` y `src/carperf.js`; si un perfil guardado la tenía, se borra al cargar (`profile.js`, junto a Rayo, Bólido y Grillo). Criterio: no aparece en garage ni tienda ni en rivales y el juego carga con perfiles antiguos | ✅ |
 
 ## Mejoras (desviación DES-02)
 

@@ -14,7 +14,7 @@ function load() {
   return JSON.parse(JSON.stringify(START));
 }
 export const profile = load();
-for (const id of ['rayo', 'bolido', 'grillo']) delete profile.owned[id]; // coches retirados
+for (const id of ['rayo', 'bolido', 'grillo', 'saeta']) delete profile.owned[id]; // coches retirados
 if (!Object.keys(profile.owned).length) profile.owned.pulga = {};
 if (!profile.owned[profile.selected]) profile.selected = Object.keys(profile.owned)[0];
 profile.cups ??= {}; // mejor puesto final en cada copa

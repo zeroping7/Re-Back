@@ -27,7 +27,7 @@ Todo el sonido se **sintetiza por código** (Web Audio): no hay archivos de audi
 | `e3` | Escobillas 540: zumbido clásico | Furgo (0,95) · Pulga (1,20) |
 | `e4` | Crawler/monster: lento, grave, con gruñido de engranaje | Cabra (1,12) · Oruga (0,95) · Morsa (0,80) |
 | `n1` | Nitro buggy .21: grave y con cuerpo | Rally (1,10) · Bisonte (0,88) |
-| `n2` | Nitro on-road .12: agudo y chillón | Saeta (1,00) · Katana (0,90) |
+| `n2` | Nitro on-road .12: agudo y chillón | Katana (0,90) |
 | `n3` | Nitro truck grande: el más grave y bruto | Tanque (1,05) · Yeti (0,85) |
 | `n4` | Nitro con pipa racing: muy agudo y limpio | Fórmula (1,00) · Cometa (1,14) |
 

@@ -58,14 +58,6 @@ export const CARS = [
     mods: { engine: 1.04, maxSpeed: 0.96, grip: 1.08, steer: 0.9, susp: 0.72 },
     stats: { vel: 2, acel: 3, manejo: 3 },
   },
-  {
-    id: 'saeta', noArches: true, disc: ['race', 'drift'], price: 12500, name: 'Saeta', desc: 'Turismo de nitro: el más rápido en recta', color: '#00b8d4', style: 'touring', number: '11', pattern: 'rally', rimColor: '#212121',
-    clase: 'Pro', motor: 'Nitro', sound: ['n2', 1.00], mass: 8, rearBias: 80,
-    wheelR: 0.33, wheelX: 0.62, wheelZf: 0.78, wheelZr: -0.76,
-    mods: { engine: 1.1, maxSpeed: 1.16, grip: 1.12, steer: 1.0, susp: 1.35 },
-    stats: { vel: 5, acel: 4, manejo: 4 },
-    dk: { p: 1.00, s: 1.00 }, // DRI-17: potencia y giro en Drift (1 = el de siempre)
-  },
   // COC-05: coche secreto, se regala al conseguir todas las estrellas ocultas
   {
     id: 'cometa', price: 20000, secret: true, name: 'Cometa', desc: 'Cohete secreto: se gana con todas las estrellas', color: '#3d5afe', style: 'rocket', number: '0', pattern: 'flames', rimColor: '#ffd400',

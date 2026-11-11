@@ -9,6 +9,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Saeta retirada del juego ✅ (COC-22)
+- Quitada de `cars.js`, `carperf.js` y de los perfiles guardados. Quedan 17 coches.
+
 ### Más retoques de coches desde el visor 3D ✅ (COC-20, COC-21)
 - Saeta, Katana, Patín y Trompo sin aletas; aletines del Yeti curvados y más bajos; alerón delantero de la Fórmula adelantado.
 - Escape solo en los coches nitro (Rally, Saeta y Yeti nuevos; se quita en Patín, Humo, Trompo y Morsa).

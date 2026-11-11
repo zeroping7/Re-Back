@@ -87,7 +87,7 @@ troncos y roca. Decidido el 10-11-2026.
 | DCO-01 | Cada coche indica en qué disciplinas corre (`disc`). Los de siempre son de Carrera | ✅ |
 | DCO-02 | Coches de **Drift** con aspecto de turismo RC de drift real (carrocerías bajas, kit ancho, caída negativa, llantas de radios, sin antena, sin marcas reales): **Patín** (descapotable, gratis al abrir), **Humo** (berlina cuadrada de los 80 con aletas anchas), **Trompo** (compacto bicolor de portón), **Bisonte** (deportivo americano con compresor) y **Katana** (cupé de los 90 con alerón) | ✅ |
 | DCO-03 | Coches de **Obstáculos**: Cabra (gratis al abrir), Oruga, Yeti. Camiones lentos con ruedas grandes, suspensión larga y mucho agarre | ✅ |
-| DCO-04 | Coches de Carrera que también valen: **Bólido, Flecha y Saeta** en Drift; **Tanque, Morsa y Rally** en Obstáculos | ✅ |
+| DCO-04 | Coches de Carrera que también valen: **Bólido y Flecha** en Drift (la Saeta se retiró, COC-22); **Tanque, Morsa y Rally** en Obstáculos | ✅ |
 | DCO-05 | Los rivales de Drift y Obstáculos salen de los coches de esa disciplina | ✅ |
 
 ## Economía
