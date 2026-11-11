@@ -188,7 +188,7 @@ async function init() {
   function updateMoney(bump) {
     $('money-n').textContent = profile.money.toLocaleString('es-ES');
     const changed = profile.money !== lastMoney; lastMoney = profile.money;
-    if (bump && changed) { // solo anima si el dinero cambia (no al quitar/poner mejoras) $('money').classList.remove('bump'); void $('money').offsetWidth; $('money').classList.add('bump'); }
+    if (bump && changed) { $('money').classList.remove('bump'); void $('money').offsetWidth; $('money').classList.add('bump'); }
   }
   onProfileChange(() => updateMoney(true));
   checkSecret();
