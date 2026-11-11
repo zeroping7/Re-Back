@@ -54,3 +54,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 41 | Salón: la rampa seguía parpadeando y quedaba un escalón en la curva por dentro; Jardín: la primera rampa pasó a ser de madera (debe ser como antes) y una textura del borde parpadea | CIR-26, CIR-27 ✅ |
 | 42 | Parque infantil: mantener la textura de rampa de antes (caucho, no la del tobogán) | CIR-26 ✅ |
 | 43 | Pista de Drift algo más ancha (5,5 → 6,6) para derrapar sin chocar; sonidos de tierra y agua más realistas (sonaba como un chasquido); anotar que siempre se diga el número de versión | DRI-08, AUD-12, CLAUDE.md ✅ |
+| 44 | Jardín: la puerta marrón oscuro de la fachada de la casa parpadea (solapada con una ventana): quitarla | CIR-26 ✅ |

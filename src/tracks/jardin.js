@@ -61,7 +61,6 @@ function build(B) {
   box(90, 40, 4, -10, 20, -AREA.z - 6, '#f0d9b5', { solid: false });
   box(96, 3, 8, -10, 41, -AREA.z - 6, '#8d4e3a', { solid: false });
   for (const x of [-40, -20, 0, 20]) box(10, 12, 0.5, x, 22, -AREA.z - 3.8, '#9fd3f5', { solid: false, shadow: false });
-  box(12, 18, 0.5, 26, 9, -AREA.z - 3.8, '#6d4c41', { solid: false, shadow: false });
 
   // ---------- Trazado ----------
   const dirt = groundTex('dirt', [1, 1]);

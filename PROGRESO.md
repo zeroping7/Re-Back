@@ -9,6 +9,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Jardín: puerta de la casa quitada ✅
+- Parpadeaba al solaparse con una ventana en la fachada; eliminada.
+
 ### Drift más ancho, sonidos de tierra/agua, parque ✅ (DRI-08, AUD-12)
 - Drift: pista 6,6 (antes 5,5); Cocina y Garaje siguen terminando sin atascos. **Pendiente:** recalibrar medallas con pruebas reales (más ancho = más puntos fáciles).
 - Agua/barro/arena: sonidos de entrada con ataque suave (sin chasquido), burbujas y capa continua al rodar. **Pendiente:** oído en el móvil.
