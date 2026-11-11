@@ -251,7 +251,7 @@ export function buildCircuit(B, def) {
   // ---------- Superficies elevadas (malla visible + colisión triangular sin aristas internas) ----------
   for (const e of elev) {
     const hw = width / 2 + blockT + 0.25;
-    const LIFT = 0.012; // el dibujo sube un pelo sobre la física: así no compite con el suelo (z-fighting) donde la rampa muere en y=0
+    const LIFT = 0.03; // el dibujo sube un pelo sobre la física: así no compite con el suelo (z-fighting) donde la rampa muere en y=0
     const sub = 3; // subdivisiones entre muestras para que sea suave
     const rows = [];
     for (let i = e.i0; i < e.i1; i++) {
@@ -293,7 +293,7 @@ export function buildCircuit(B, def) {
     g.computeVertexNormals();
     const material = e.def.material || (e.kind === 'ramp' ? def.rampMaterial : def.hillMaterial) ||
       new THREE.MeshStandardMaterial({ color: e.def.color || def.hillColor || '#c8a165', roughness: 0.8 });
-    if (e.kind === 'ramp' && !material.polygonOffset) { material.polygonOffset = true; material.polygonOffsetFactor = -2; material.polygonOffsetUnits = -2; }
+    if (e.kind === 'ramp') { material.polygonOffset = true; material.polygonOffsetFactor = -4; material.polygonOffsetUnits = -16; } // fuerte: en móviles con depth de 16 bits -2 no basta
     const mesh = new THREE.Mesh(g, material);
     mesh.receiveShadow = true; mesh.castShadow = true;
     scene.add(mesh);

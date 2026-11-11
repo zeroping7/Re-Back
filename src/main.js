@@ -469,7 +469,9 @@ async function init() {
       if (params.has('auto')) r.autoPlayer = true;
       r.resize(innerWidth, innerHeight, pixelRatio);
       // compilar los shaders aquí y no a mitad de carrera
+      r.items.warm(true);
       try { await Promise.race([renderer.compileAsync(r.scene, r.camera), wait(4000)]); } catch { /* nada */ }
+      r.items.warm(false);
       await wait(Math.max(0, (params.has('test') ? 0 : 1400) - (performance.now() - t0)));
       if (token !== loadToken) { r.dispose(); return; }
       race = r;

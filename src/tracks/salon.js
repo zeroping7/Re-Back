@@ -80,7 +80,7 @@ function build(B) {
   // ---------- Trazado ----------
   // copia del parqué con desplazamiento de profundidad: la cuesta gana siempre al suelo en sus extremos (sin parpadeo)
   const hillMat = floorMat.clone();
-  hillMat.polygonOffset = true; hillMat.polygonOffsetFactor = -2; hillMat.polygonOffsetUnits = -2;
+  hillMat.polygonOffset = true; hillMat.polygonOffsetFactor = -4; hillMat.polygonOffsetUnits = -16;
   const bookTex = bookCoverTexture('FÍSICA', '#1f4e8c');
   bookTex.wrapS = bookTex.wrapT = THREE.RepeatWrapping;
   const circuit = buildCircuit(B, {

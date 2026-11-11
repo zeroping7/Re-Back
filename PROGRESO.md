@@ -9,6 +9,11 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Súper: rampa sin parpadeo + armas sin tirones ✅ (CIR-26, OBJ-TIRON)
+- Rampas de todos los circuitos con más margen de profundidad; cámara con plano cercano 0,25.
+- Shaders de armas precompilados antes de la carrera; agua sin `transmission`.
+- **Pendiente:** probar en el móvil el salto del súper y disparar todas las armas.
+
 ### El salón: rampa y segunda curva ✅ (CIR-25)
 - Rampa de salida: sin parpadeo azul (desplazamiento de profundidad + dibujo 1,2 cm sobre el suelo, en todos los circuitos).
 - Segunda curva: la S era casi una horquilla (radio ≈ 3,5) con la cuesta encima; trazado más abierto, cuesta movida a la recta anterior y bordes inclinados con la pendiente.

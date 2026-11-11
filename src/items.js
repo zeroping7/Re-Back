@@ -46,10 +46,20 @@ export class Items {
     this.steelMat = new THREE.MeshStandardMaterial({ color: '#cfd6dc', metalness: 1, roughness: 0.15 });
     this.rocketMesh = makeRocket();
     this.waterGeo = new THREE.IcosahedronGeometry(0.5, 1);
-    this.waterMat = new THREE.MeshPhysicalMaterial({ color: '#4fc3f7', roughness: 0.05, transmission: 0.3, transparent: true, opacity: 0.85, emissive: '#0b5c8a', emissiveIntensity: 0.3 });
+    this.waterMat = new THREE.MeshStandardMaterial({ color: '#4fc3f7', roughness: 0.05, transparent: true, opacity: 0.85, emissive: '#0b5c8a', emissiveIntensity: 0.3 });
     this.oilGeo = new THREE.CircleGeometry(1, 18).rotateX(-Math.PI / 2);
     this.oilMat = new THREE.MeshStandardMaterial({ color: '#0b0b0d', roughness: 0.05, metalness: 0.6, transparent: true, opacity: 0.92, polygonOffset: true, polygonOffsetFactor: -2 });
     this.bombMesh = makeBomb();
+  }
+
+  // Pone (true) y quita (false) una copia de cada arma en la escena para compilar sus shaders antes de la carrera:
+  // si no, el primer disparo de cada arma congelaba el juego un instante.
+  warm(on) {
+    if (on) {
+      this._warm = [this.rocketMesh.clone(), new THREE.Mesh(this.waterGeo, this.waterMat), new THREE.Mesh(this.oilGeo, this.oilMat),
+        new THREE.Mesh(this.pulseGeo, this.pulseMat), new THREE.Mesh(this.steelGeo, this.steelMat), this.bombMesh.clone()];
+      for (const m of this._warm) { m.position.set(0, -50, 0); m.frustumCulled = false; this.scene.add(m); }
+    } else if (this._warm) { for (const m of this._warm) this.scene.remove(m); this._warm = null; }
   }
 
   // Cajas repartidas en varios puntos de la vuelta (fracciones 0..1)

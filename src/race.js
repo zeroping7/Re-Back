@@ -50,7 +50,7 @@ export class Race {
     this.setupLights(T.lights);
     mergeStatic(scene);
 
-    this.camera = new THREE.PerspectiveCamera(62, 1, 0.1, 1400);
+    this.camera = new THREE.PerspectiveCamera(62, 1, 0.25, 1400);
 
     // ---------- Efectos ----------
     this.effects = {

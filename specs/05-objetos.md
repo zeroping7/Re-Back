@@ -34,3 +34,4 @@ Como en Re-Volt: cajas de energía brillantes en la pista; al pasar por una se r
 | ID | Requisito | Estado |
 |---|---|---|
 | OBJ-20 | **Cohete**: apunta solo a rivales que están por delante (en batalla, primero al que lleva la estrella); si el objetivo se queda detrás lo suelta y sigue recto/por la pista; explota contra paredes y decorado; **nunca daña a quien lo lanza** | ✅ |
+| OBJ-TIRON | **Sin tirones al disparar**: los shaders de todas las armas se compilan antes de la carrera (`Items.warm`) y la bola de agua ya no usa `transmission` (obligaba a renderizar la escena dos veces) | ✅ |

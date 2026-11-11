@@ -19,7 +19,7 @@ const battle = trackId === 'arena';
 const { ARENA } = await import('../src/battle.js');
 const race = new Race({ renderer: null, envMap: null, sfx, controls, hud, battle, trackDef: battle ? ARENA : trackById(trackId), carDef: carById(carId), laps, rivals, difficulty: +(process.env.DIFF || 0.94), baseTuning: tuning, onFinish: (r) => { done = r; },
   practice, star: practice ? { taken: false } : null, onStar: () => { starAt = race.time; return 500; } });
-race.autoPlayer = true;
+race.items.warm(true); race.items.warm(false); race.autoPlayer = true;
 // el jugador usa objetos automáticamente
 const used = {}; const origFire = race.items.fire.bind(race.items);
 race.items.fire = (car) => { used[car.item] = (used[car.item] || 0) + 1; origFire(car); };
