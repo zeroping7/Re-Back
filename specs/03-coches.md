@@ -37,6 +37,8 @@ ajuste base. Nombres y diseños originales.
 | COC-15 | Piezas fijas fusionadas por material (pocas llamadas de dibujo); menos detalle en coches lejanos | ✅ |
 | COC-16 | Abolladuras y desgaste (ver FIS-31..34) | ✅ |
 | COC-17 | **Furgo: sin aletas de rueda y con parabrisas visible**: se quitan los arcos negros de los pasos de rueda; el parabrisas (que quedaba oculto dentro de la carrocería) pasa a ser un panel de cristal pegado a la pendiente del capó; el cristal lateral usa `polygonOffset` y la calcomanía del dorsal baja para no solaparse con él. Criterio: se ve el parabrisas desde delante y sin parpadeo en las ventanas laterales | ✅ |
+| COC-18 | **Retoques de carrocería hechos en el visor 3D**: Rally con aletas planas (`flatArches`: banda rectangular que cubre todo el ancho del neumático, con labio, del color de la carrocería); Flecha y Bisonte sin aletas (`noArches` en `cars.js`; la Saeta las conserva); Bisonte con el alerón 4 cm más alto (`wing.y` 0,54); Yeti con la barra de focos apoyada en el techo de la cabina. Criterio: se ve cada cambio en el visor y en el juego | ✅ |
+| COC-19 | **Neumáticos con talón y flanco proporcionales a la rueda**: antes tenían medidas fijas (para radio 0,37) y en ruedas pequeñas el flanco sobresalía del taco (centro hundido) y quedaba un hueco con la llanta. Ahora se escalan con `R / 0.37`. Criterio: sin hueco entre llanta y neumático ni centro hundido en ningún coche | ✅ |
 
 ## Mejoras (desviación DES-02)
 

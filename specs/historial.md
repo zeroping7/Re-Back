@@ -66,3 +66,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 53 | El marcador de dinero no debe animarse al quitar/poner mejoras, solo al comprar o vender | UX-23 ✅ |
 | 54 | El modo espejo tiene muchos fallos de textura: arreglarlos todos | CIR-28 ✅ |
 | 55 | Retocar la Furgo en el visor 3D: quitar los guardabarros (aletas), añadir parabrisas y arreglar el parpadeo del cristal lateral; luego subirlo al juego | COC-17 ✅ |
+| 56 | Retoques desde el visor 3D: Rally con aletas planas, Flecha y Bisonte sin aletas, alerón del Bisonte más alto, barra de focos del Yeti pegada al techo, y neumáticos sin hueco con la llanta ni centro hundido (afecta a casi todos los coches) | COC-18, COC-19 ✅ |

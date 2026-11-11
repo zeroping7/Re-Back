@@ -8,7 +8,7 @@ export const CARS = [
     stats: { vel: 2, acel: 5, manejo: 4 },
   },
   {
-    id: 'flecha', disc: ['race', 'drift'], price: 7500, name: 'Flecha', desc: 'Turismo bajo y rapidísimo', color: '#f5c518', style: 'touring', number: '1',
+    id: 'flecha', noArches: true, disc: ['race', 'drift'], price: 7500, name: 'Flecha', desc: 'Turismo bajo y rapidísimo', color: '#f5c518', style: 'touring', number: '1',
     clase: 'Semi-pro', motor: 'Eléctrico', sound: ['e1', 1.00], mass: 8, rearBias: 70,
     wheelR: 0.32, wheelX: 0.62, wheelZf: 0.78, wheelZr: -0.76,
     mods: { engine: 1.14, maxSpeed: 1.17, grip: 1.1, steer: 0.95, susp: 1.35 },
@@ -100,7 +100,7 @@ export const CARS = [
     dk: { p: 1.05, s: 1.10 }, // DRI-17: potencia y giro en Drift (1 = el de siempre)
   },
   {
-    id: 'bisonte', disc: ['drift'], price: 8500, name: 'Bisonte', desc: 'Deportivo americano con compresor: potencia bruta', color: '#26282c', style: 'muscle', number: '8', pattern: 'yellow', rimColor: '#141414', spokes: 10, camber: 0.06,
+    id: 'bisonte', noArches: true, disc: ['drift'], price: 8500, name: 'Bisonte', desc: 'Deportivo americano con compresor: potencia bruta', color: '#26282c', style: 'muscle', number: '8', pattern: 'yellow', rimColor: '#141414', spokes: 10, camber: 0.06,
     clase: 'Drift', motor: 'Nitro', sound: ['n1', 0.88], mass: 8.5, rearBias: 100,
     wheelR: 0.33, wheelX: 0.65, wheelZf: 0.78, wheelZr: -0.76,
     mods: { engine: 1.45, maxSpeed: 1.06, grip: 1.0, steer: 1.18, susp: 1.3, rest: 0.7 },

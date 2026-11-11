@@ -9,6 +9,11 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Retoques de coches desde el visor 3D ✅ (COC-18, COC-19)
+- Rally: aletas planas. Flecha y Bisonte: sin aletas. Bisonte: alerón más alto. Yeti: barra de focos en el techo.
+- Neumáticos: talón y flanco proporcionales a la rueda (sin hueco con la llanta ni centro hundido); cambia el aspecto de casi todos los coches.
+- **Pendiente:** revisarlos en el móvil.
+
 ### Furgo: sin aletas, con parabrisas y sin parpadeo ✅ (COC-17)
 - Retocada primero en el visor 3D (artefacto de Claude) y subida después. Quitados los arcos negros de las ruedas, parabrisas visible en la pendiente del capó, cristal lateral sin parpadeo (`polygonOffset`) y dorsal más bajo.
 - **Pendiente:** verlo en el móvil.

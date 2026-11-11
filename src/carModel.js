@@ -78,7 +78,7 @@ const STYLES = {
     tailX: 0.45, tailY: 0.36, tailZ: -1.04, headX: 0.42, headY: 0.32, headZ: 1.03,
     wing: { y: 0.85, z: -0.92, w: 0.95, strut: 0.12, d: 0.22, tilt: 0.05 },
     decal: { x: 0.62, y: 0.27, z: 0.1, size: 0.3 },
-    arches: true, archX: 0.0, plate: { y: 0.2, zf: 1.08, zr: -1.06 }, mirrors: { x: 0.6, y: 0.62, z: 0.3 }, doors: { z: [0.32, -0.38], y: 0.22, h: 0.26 },
+    flatArches: true, plate: { y: 0.2, zf: 1.08, zr: -1.06 }, mirrors: { x: 0.6, y: 0.62, z: 0.3 }, doors: { z: [0.32, -0.38], y: 0.22, h: 0.26 },
   },
   van: {
     profile: [[-1.0, -0.12], [-1.02, 0.62], [-0.95, 0.7], [0.45, 0.7], [0.78, 0.36], [1.02, 0.26], [1.04, -0.06], [0.96, -0.13]],
@@ -135,7 +135,7 @@ const STYLES = {
     width: 1.3, y: 0.22, noseStart: 0.8, noseTaper: 0.05, topStart: 0.12, topTaper: 0.06,
     cab: [[-0.56, 0.0], [-0.4, 0.2], [-0.06, 0.21], [0.26, 0.0]], cabWidth: 0.96, cabY: 0.44, cabZ: -0.26,
     tailX: 0.45, tailY: 0.33, tailZ: -1.06, headX: 0.46, headY: 0.29, headZ: 1.07,
-    wing: { y: 0.5, z: -0.97, w: 1.25, strut: 0.04, d: 0.16, tilt: 0.25 },
+    wing: { y: 0.54, z: -0.97, w: 1.25, strut: 0.08, d: 0.16, tilt: 0.25 },
     decal: { x: 0.71, y: 0.27, z: -0.1, size: 0.28 }, slick: true,
     arches: true, archX: -0.02, plate: { y: 0.16, zf: 1.09, zr: -1.08 }, mirrors: { x: 0.66, y: 0.52, z: 0.08 }, doors: { z: [0.12, -0.45], y: 0.18, h: 0.22 },
     drift: true, drop: 0.2,
@@ -316,7 +316,29 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
     roof.castShadow = true;
   }
   // pasos de rueda (aletas) en carrocerías cerradas
-  if (S.arches) {
+  if (S.flatArches) {
+    // aletas planas de rally: banda de sección rectangular (no tubo) desde el costado de la carrocería hasta cubrir todo el ancho del neumático, con labio exterior
+    const hubY = CONN_Y - 0.26;
+    const Ro = WHEEL_R + 0.075, Ri = WHEEL_R + 0.045, Rl = WHEEL_R + 0.115;
+    const body0 = S.width / 2 - 0.03, tireOut = Math.abs(WHEELS[0].x) + 0.16 + 0.015;
+    const L = tireOut - body0, xc = (body0 + tireOut) / 2;
+    const arc = (r1, r0) => {
+      const sh = new THREE.Shape();
+      sh.absarc(0, 0, r1, 0, Math.PI, false);
+      sh.absarc(0, 0, r0, Math.PI, 0, true);
+      sh.closePath();
+      return sh;
+    };
+    const band = new THREE.ExtrudeGeometry(arc(Ro, Ri), { depth: L, bevelEnabled: false, curveSegments: 20 }).translate(0, 0, -L / 2);
+    const lip = new THREE.ExtrudeGeometry(arc(Rl, Ri), { depth: 0.014, bevelEnabled: false, curveSegments: 20 }).translate(0, 0, L / 2 - 0.014);
+    for (const w of WHEELS) {
+      const sx = Math.sign(w.x);
+      for (const [geo, mat] of [[band, paint], [lip, paint]]) {
+        const a = add(geo.clone().toNonIndexed(), mat, sx * xc, hubY, w.z, g, false);
+        a.rotation.y = sx > 0 ? Math.PI / 2 : -Math.PI / 2;
+      }
+    }
+  } else if (S.arches && !def.noArches) {
     const hubY = CONN_Y - 0.26;
     for (const w of WHEELS) {
       const sx = Math.sign(w.x);
@@ -404,7 +426,7 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
   for (const w of WHEELS) {
     const pivot = new THREE.Group();
     const spin = new THREE.Group();
-    const wheel = new THREE.Mesh(wheelGeometry(WHEEL_R, w.x > 0 ? 1 : -1, !!S.slick, def.rimColor, def.spokes), M.wheel);
+    const wheel = new THREE.Mesh(wheelGeometry(WHEEL_R, w.x > 0 ? 1 : -1, !!(def.slickWheels ?? S.slick), def.rimColor, def.spokes), M.wheel);
     wheel.castShadow = true; wheel.receiveShadow = true;
     spin.add(wheel);
     pivot.add(spin);
@@ -512,7 +534,8 @@ function wheelGeometry(R, side, slick = false, rimColor = '#eeeeee', spokes) {
 // Neumático de tacos: perfil torneado + tacos en dos filas alternas
 function makeTire(R, slick = false) {
   const r0 = R - 0.025;
-  const prof = [[0.2, -0.15], [0.29, -0.155], [r0 - 0.015, -0.135], [r0, -0.1], [r0, 0.1], [r0 - 0.015, 0.135], [0.29, 0.155], [0.2, 0.15]]
+  const k = R / 0.37; // el talón y el flanco se escalan con la rueda (antes eran fijos y sobresalían del taco en ruedas pequeñas)
+  const prof = [[0.2 * k, -0.15], [0.29 * k, -0.155], [r0 - 0.015, -0.135], [r0, -0.1], [r0, 0.1], [r0 - 0.015, 0.135], [0.29 * k, 0.155], [0.2 * k, 0.15]]
     .map(([x, y]) => new THREE.Vector2(x, y));
   const base = new THREE.LatheGeometry(prof, 28);
   base.rotateZ(Math.PI / 2);
@@ -897,9 +920,9 @@ const EXTRAS = {
   },
   bigfoot({ add, paint, P, S }) {
     const y0 = P + S.y;
-    // barra de focos
-    add(new THREE.BoxGeometry(0.96, 0.08, 0.08), M.carbon, 0, y0 + 0.72, 0.28, undefined, false);
-    for (let k = -3; k <= 3; k++) add(new THREE.CylinderGeometry(0.05, 0.05, 0.05, 8).rotateX(Math.PI / 2), M.head, k * 0.14, y0 + 0.72, 0.33, undefined, false);
+    // barra de focos pegada al techo de la cabina (antes quedaba en el aire sobre el parabrisas y más ancha que el techo)
+    add(new THREE.BoxGeometry(0.74, 0.08, 0.08), M.carbon, 0, y0 + 0.705, 0.0, undefined, false);
+    for (let k = -3; k <= 3; k++) add(new THREE.CylinderGeometry(0.045, 0.045, 0.05, 8).rotateX(Math.PI / 2), M.head, k * 0.11, y0 + 0.705, 0.05, undefined, false);
     // cuernos de hielo
     for (const sx of [1, -1]) {
       const h = add(new THREE.ConeGeometry(0.07, 0.4, 6), M.lens, sx * 0.36, y0 + 0.62, -0.3, undefined, false);
