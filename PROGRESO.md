@@ -9,7 +9,11 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
-### Drift: nuevos valores de fábrica ✅ (DRI-13)
+### Drift rediseñado: derrape por ángulo ✅ (DRI-14)
+- El volante elige el ángulo (hasta ~69º), el gas lo abre, soltar gas o contravolante lo cierra. Más ángulo = curva más cerrada pero menos velocidad. Volante a tope + gas a fondo = se descontrola. Ruedas delanteras en contravolante.
+- Panel «Ajustar derrape» con parámetros nuevos (clave de guardado v3). Medallas de Cocina/Garaje: 4000/9000/14000 (la IA hace 13-18 mil en 2 vueltas). **Pendiente:** probar en el móvil y ajustar con el panel; recalibrar medallas con partidas reales.
+
+### Drift: valores de fábrica anteriores ✅ (DRI-13)
 - Agarre trasero 0.08, delantero 0.12, derrapando 0.15, lateral 0.01; gas 0.65; giroscopio 0.2; ángulo antes de trompo 1.85; anti-trompo 0; baile 4 Hz. Clave de guardado v2.
 
 ### Jardín: puerta de la casa quitada ✅

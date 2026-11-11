@@ -44,6 +44,10 @@ while (t < 16) {
     }
   }
   else if (script === 'launch') { input = { steer: 0, throttle: 1, brake: 0, human: true }; globalThis.h0 ??= Math.atan2(car.forward.x, car.forward.z); { const d = (Math.atan2(car.forward.x, car.forward.z) - globalThis.h0) * 57.3; globalThis.hmin = Math.min(globalThis.hmin ?? 0, d); globalThis.hmax = Math.max(globalThis.hmax ?? 0, d); globalThis.bmax = Math.max(globalThis.bmax ?? 0, Math.abs(Math.atan2(car.localVel.x, Math.max(1, car.fwdSpeed)) * 57.3)); } for (const v of [10, 15, 20]) if (car.fwdSpeed >= v && !(globalThis['t' + v])) globalThis['t' + v] = u; if (u > 3) { console.log(`${carId} 0→10: ${globalThis.t10?.toFixed(2)} s · 0→15: ${globalThis.t15?.toFixed(2)} s · 0→20: ${globalThis.t20?.toFixed(2)} s · cola ${globalThis.hmin.toFixed(0)}º/${globalThis.hmax.toFixed(0)}º deriva máx ${globalThis.bmax.toFixed(0)}º`); process.exit(0); } }
+  else if (/^s[\d.]+$/.test(script)) input = { steer: +script.slice(1), throttle: 1, brake: 0, human: true };
+  else if (script === 'hb') input = { steer: 1, throttle: u < 2.8 ? 0 : 1, brake: u < 2.8 ? 1 : 0, human: true };
+  else if (script === 'hb2') input = { steer: 0.7, throttle: u < 3.2 ? 0 : 1, brake: u < 3.2 ? 1 : 0, human: true };
+  else if (script === 'sw') input = { steer: Math.floor((u - 2.2) / 1.6) % 2 === 0 ? 1 : -1, throttle: 1, brake: 0, human: true };
   else if (script === 'spin') input = { steer: 1, throttle: 1, brake: u > 2.2 && u < 3.4 ? 1 : 0, human: true };
   else if (script === 'half') input = { steer: u < 2.8 ? 1 : 0.4, throttle: 1, brake: 0, human: true };
   else if (script === 'straight') input = { steer: u < 3.0 ? 1 : 0, throttle: 1, brake: 0, human: true };
@@ -51,7 +55,7 @@ while (t < 16) {
   else if (script === 'hold') input = { steer: u < 3.2 ? 1 : 0.35, throttle: 1, brake: u < 2.6 ? 1 : 0, human: true };
   else if (script === 'counter') { const b = Math.atan2(car.localVel.x, Math.max(1, car.fwdSpeed)); input = { steer: u < 2.7 ? 1 : Math.max(-1, Math.min(1, (b + 0.7) * 2.5)), throttle: 1, brake: 0, human: true }; }
   const beta = Math.atan2(car.localVel.x, Math.max(0.01, car.fwdSpeed)) * 57.3;
-  if (process.env.V && Math.abs((u * 2) % 1) < FIXED * 2) console.log(`u=${u.toFixed(2)} v=${car.speed.toFixed(1)} fwd=${car.fwdSpeed.toFixed(1)} beta=${beta.toFixed(0)}º yaw=${car.body.angvel().y.toFixed(2)} combo=${st.combo.toFixed(0)}x${st.mult}`);
+  if (process.env.V && u > (+process.env.V0 || 0) && u < (+process.env.V1 || 9) && (globalThis.vc = (globalThis.vc || 0) + 1) % (+process.env.VN || 12) === 0) console.log(`u=${u.toFixed(2)} v=${car.speed.toFixed(1)} fwd=${car.fwdSpeed.toFixed(1)} beta=${beta.toFixed(0)}º yaw=${car.body.angvel().y.toFixed(2)} combo=${st.combo.toFixed(0)}x${st.mult}`);
   if (u > 2.2 && u < 3.6) { globalThis.minV = Math.min(globalThis.minV ?? 99, car.speed); globalThis.maxB = Math.max(globalThis.maxB ?? 0, Math.abs(beta)); }
   if (u > 5) { const a = (globalThis.acc ??= { n: 0, v: 0, b: 0, y: 0, b2: 0 }); a.n++; a.v += car.speed; a.b += beta; a.y += car.body.angvel().y; a.b2 += beta * beta; }
   if (u > 8) break;

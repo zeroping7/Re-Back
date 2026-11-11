@@ -13,7 +13,7 @@ export default {
   name: 'El garaje nocturno', short: 'Garaje',
   desc: 'Pista de drift de noche con neones y calle en miniatura',
   color: '#ff1f8e',
-  medals: [2000, 4500, 8000],
+  medals: [4000, 9000, 14000],
   music: 'museo', ambient: 'salon',
   build,
 };

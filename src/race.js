@@ -86,7 +86,6 @@ export class Race {
       car.driftMode = disc === 'drift';
       car.crawl = disc === 'obst';
       if (car.crawl) car.collider.setCollisionGroups((0x0004 << 16) | 0xfffb); // CRW-04: sin choques entre coches
-      car.gyro = isPlayer ? undefined : 1; // la IA lleva el giroscopio a tope
       if (disc !== 'race') car.damageK = disc === 'obst' ? 0.3 : 0.5;
       this.cars.push(car);
       this.states.set(car, { idx: slot.idx, progress: slot.idx - this.circuit.N, laps: 0, finished: false, finishTime: 0, lapStart: 0, lastLap: 0, bestLap: 0, wrongT: 0, place: 0, score: 0, combo: 0, mult: 1, driftT: 0, grace: 0 });
