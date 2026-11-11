@@ -49,3 +49,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 36 | Vado mucho más profundo; puente tibetano más estrecho, largo, alto y sin barandillas | ✅ |
 | 37 | Al elegir coche con «Más coches» desde la carrera, «Usar este» debe volver al menú de la carrera y «atrás» no debe ir al principal | UX-21 ✅ |
 | 38 | Clips en todas las curvas de los circuitos de drift; explicar el handling de drift actual y añadir un botón para ajustarlo solo en Drift | DRI-12, DRI-13 ✅ |
+| 39 | Salón: parpadeo azul de textura en el salto y aterrizaje de la rampa de salida; la segunda curva tiene un escalón y, tomada por dentro, el coche se queda clavado | CIR-25 ✅ |

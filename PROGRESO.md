@@ -9,6 +9,11 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### El salón: rampa y segunda curva ✅ (CIR-25)
+- Rampa de salida: sin parpadeo azul (desplazamiento de profundidad + dibujo 1,2 cm sobre el suelo, en todos los circuitos).
+- Segunda curva: la S era casi una horquilla (radio ≈ 3,5) con la cuesta encima; trazado más abierto, cuesta movida a la recta anterior y bordes inclinados con la pendiente.
+- **Pendiente:** probar en el móvil la S y la rampa de salida.
+
 ### Menús: coche siempre visible ✅ (UX-19)
 - Preparar carrera, campeonato y garaje: paneles a la izquierda (58 %) y coche entero en la zona libre de la derecha; cada coche arranca la peana de frente en 3/4.
 - **Pendiente:** probar en el móvil el encuadre (`src/showroom.js`: `off` de la vista `car`, `FRONT_34`; `src/style.css`: bloque UX-19).

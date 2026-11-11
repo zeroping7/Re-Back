@@ -230,15 +230,15 @@ export function buildCircuit(B, def) {
       const dir = pb.clone().sub(pa).setY(0);
       const len = dir.length();
       if (len < 0.2) continue;
-      segs.push({ mid, yaw: Math.atan2(dir.x, dir.z), len: len + 0.12, h: Math.max(a.h, b.h) });
+      segs.push({ mid, yaw: Math.atan2(dir.x, dir.z), len: len + 0.12, h: (a.h + b.h) / 2, pitch: -Math.atan2(b.h - a.h, len) });
     }
   }
   const geo = st.round ? new THREE.CylinderGeometry(blockT / 2, blockT / 2, 1, 8).rotateX(Math.PI / 2) : new THREE.BoxGeometry(blockT, blockH, 1);
   const blockMesh = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ roughness: st.roughness ?? 0.45, flatShading: true }), segs.length);
   blockMesh.castShadow = true; blockMesh.receiveShadow = true;
-  const m4 = new THREE.Matrix4(), col = new THREE.Color(), q = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0);
+  const m4 = new THREE.Matrix4(), col = new THREE.Color(), q = new THREE.Quaternion(), qp = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0), X = new THREE.Vector3(1, 0, 0);
   segs.forEach((sg, i) => {
-    q.setFromAxisAngle(Y, sg.yaw);
+    q.setFromAxisAngle(Y, sg.yaw).multiply(qp.setFromAxisAngle(X, sg.pitch)); // el borde sigue la pendiente: sin escalones entre bloques
     const y = st.round ? blockT / 2 : blockH / 2;
     m4.compose(new THREE.Vector3(sg.mid.x, y + sg.h, sg.mid.z), q, new THREE.Vector3(1, 1, sg.len - 0.08));
     blockMesh.setMatrixAt(i, m4);
@@ -251,6 +251,7 @@ export function buildCircuit(B, def) {
   // ---------- Superficies elevadas (malla visible + colisión triangular sin aristas internas) ----------
   for (const e of elev) {
     const hw = width / 2 + blockT + 0.25;
+    const LIFT = 0.012; // el dibujo sube un pelo sobre la física: así no compite con el suelo (z-fighting) donde la rampa muere en y=0
     const sub = 3; // subdivisiones entre muestras para que sea suave
     const rows = [];
     for (let i = e.i0; i < e.i1; i++) {
@@ -273,7 +274,7 @@ export function buildCircuit(B, def) {
       const gl = def.groundUV ? def.groundUV(l.x, l.z) : [0, along / (hw * 2)];
       const gr = def.groundUV ? def.groundUV(rr.x, rr.z) : [1, along / (hw * 2)];
       // superficie (0,1) y faldones (2,3)
-      pos.push(l.x, r.h, l.z, rr.x, r.h, rr.z, l.x, 0, l.z, rr.x, 0, rr.z);
+      pos.push(l.x, r.h + LIFT, l.z, rr.x, r.h + LIFT, rr.z, l.x, 0, l.z, rr.x, 0, rr.z);
       uv.push(...gl, ...gr, ...gl, ...gr);
       phys.push(l.x * B.S, r.h * B.S, l.z * B.S, rr.x * B.S, r.h * B.S, rr.z * B.S);
       if (k < rows.length - 1) {
@@ -292,6 +293,7 @@ export function buildCircuit(B, def) {
     g.computeVertexNormals();
     const material = e.def.material || (e.kind === 'ramp' ? def.rampMaterial : def.hillMaterial) ||
       new THREE.MeshStandardMaterial({ color: e.def.color || def.hillColor || '#c8a165', roughness: 0.8 });
+    if (e.kind === 'ramp' && !material.polygonOffset) { material.polygonOffset = true; material.polygonOffsetFactor = -2; material.polygonOffsetUnits = -2; }
     const mesh = new THREE.Mesh(g, material);
     mesh.receiveShadow = true; mesh.castShadow = true;
     scene.add(mesh);

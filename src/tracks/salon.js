@@ -78,21 +78,24 @@ function build(B) {
 
 
   // ---------- Trazado ----------
+  // copia del parqué con desplazamiento de profundidad: la cuesta gana siempre al suelo en sus extremos (sin parpadeo)
+  const hillMat = floorMat.clone();
+  hillMat.polygonOffset = true; hillMat.polygonOffsetFactor = -2; hillMat.polygonOffsetUnits = -2;
   const bookTex = bookCoverTexture('FÍSICA', '#1f4e8c');
   bookTex.wrapS = bookTex.wrapT = THREE.RepeatWrapping;
   const circuit = buildCircuit(B, {
     points: [
-      [-40, 38], [-15, 39], [10, 38], [30, 36], [46, 30], [56, 19], [47, 7], [52, -4], [58, -18], [50, -32], [36, -38], [20, -38],
+      [-40, 38], [-15, 39], [10, 38], [30, 36], [44, 31], [53, 29], [58, 22], [57, 13], [53, 6], [52, -4], [58, -18], [50, -32], [36, -38], [20, -38],
       [6, -36], [-6, -30], [-10, -18], [0, -8], [14, -14], [26, -6], [22, 8], [8, 14], [-8, 8], [-18, -4], [-30, -14], [-44, -26],
       [-56, -20], [-58, -4], [-50, 8], [-56, 22], [-52, 34],
     ],
     start: [-30, 38.5],
     width: 7,
     limits: [ROOM.x - 1, ROOM.z - 1],
-    hills: [{ frac: 0.82, len: 30, h: 1.6 }, { frac: 0.22, len: 22, h: 1.2 }, { frac: 0.5, len: 40, h: 1.0, double: true }],
+    hills: [{ frac: 0.82, len: 30, h: 1.6 }, { frac: 0.145, len: 22, h: 1.2 }, { frac: 0.5, len: 40, h: 1.0, double: true }],
     ramps: [{ frac: 0.07, len: 9, h: 1.8 }],
-    hillMaterial: floorMat,
-    rampMaterial: new THREE.MeshStandardMaterial({ map: bookTex, roughness: 0.55 }),
+    hillMaterial: hillMat,
+    rampMaterial: new THREE.MeshStandardMaterial({ map: bookTex, roughness: 0.55, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
     groundUV,
     barrier: { colors: ['#c62828', '#f5f5f5'] },
     chevrons: { bg: '#c62828', fg: '#ffffff' },
