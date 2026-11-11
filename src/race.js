@@ -396,7 +396,7 @@ export class Race {
       E.ripples.emit(p.x, y, p.z, { r0: 0.3, r1: 3.5, life: 1.1, alpha: 0.5 });
     }
     if ((surf === 'mud' || surf === 'sand') && car.speed > 6) {
-      this.sound('splash', car.currPos);
+      this.sound(surf, car.currPos);
       if (car.isPlayer) this.trauma = Math.min(1, this.trauma + 0.08);
     }
   }
@@ -711,6 +711,7 @@ export class Race {
     }
     if (car.isPlayer) {
       this.sfx.update(car.speed || 0, car.throttle, Math.max(0, maxSlip - 3) + (car.braking && car.speed > 8 ? 4 : 0) + (car.launch || 0) * 5, { max: car.t.maxSpeed, air: car.contacts === 0 });
+      this.sfx.setSurface?.(car.surface, car.speed || 0, car.contacts === 0);
       if (car.fx.boost > 0) this.trauma = Math.max(this.trauma, 0.12);
     }
 
@@ -953,6 +954,7 @@ export class Race {
     const P = this.player;
     r.idx = this.circuit.nearestFrom(r.idx, P.model.position.x, P.model.position.z, 10, 30);
     this.sfx.update(Math.min(P.speed, 40), 0.7, 0, { max: P.t.maxSpeed });
+    this.sfx.setSurface?.(null);
   }
 
   renderReplay(dt) {

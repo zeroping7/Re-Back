@@ -52,3 +52,5 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 39 | Salón: parpadeo azul de textura en el salto y aterrizaje de la rampa de salida; la segunda curva tiene un escalón y, tomada por dentro, el coche se queda clavado | CIR-25 ✅ |
 | 40 | Súper: el primer salto parpadea de textura al despegar y aterrizar; a veces el juego se para un instante al usar un arma | CIR-26, OBJ-TIRON ✅ |
 | 41 | Salón: la rampa seguía parpadeando y quedaba un escalón en la curva por dentro; Jardín: la primera rampa pasó a ser de madera (debe ser como antes) y una textura del borde parpadea | CIR-26, CIR-27 ✅ |
+| 42 | Parque infantil: mantener la textura de rampa de antes (caucho, no la del tobogán) | CIR-26 ✅ |
+| 43 | Pista de Drift algo más ancha (5,5 → 6,6) para derrapar sin chocar; sonidos de tierra y agua más realistas (sonaba como un chasquido); anotar que siempre se diga el número de versión | DRI-08, AUD-12, CLAUDE.md ✅ |

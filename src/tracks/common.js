@@ -264,9 +264,9 @@ export function buildCircuit(B, def) {
   // ---------- Superficies elevadas (malla visible + colisión triangular sin aristas internas) ----------
   for (const e of elev) {
     const hw = width / 2 + blockT + 0.25;
-    // la malla sube hasta 1,5 cm (de diseño) sobre la física SOLO donde casi toca el suelo (extremos de rampas y cuestas): ahí compite con el suelo en
+    // la malla sube hasta 1 cm (de diseño) sobre la física SOLO donde casi toca el suelo (extremos de rampas y cuestas): ahí compite con el suelo en
     // la misma altura (z-fighting, parpadeo). Sin polygonOffset, para no tapar marcas de derrape, manchas ni la cinta de tierra que van encima.
-    const lift = (h) => 0.015 * Math.max(0, 1 - h / 0.3);
+    const lift = (h) => 0.01 * Math.max(0, 1 - h / 0.3);
     const sub = 3; // subdivisiones entre muestras para que sea suave
     const rows = [];
     for (let i = e.i0; i < e.i1; i++) {

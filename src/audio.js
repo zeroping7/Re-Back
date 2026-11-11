@@ -101,6 +101,13 @@ function carPitch(def) {
   return (0.9 + (h % 1000) / 1000 * 0.2) * Math.pow(8 / (def.mass || 8), 0.35);
 }
 
+const SURF = {
+  water: { type: 'bandpass', f: 1100, fs: 40, q: 0.6, vol: 0.2, lfo: 6.5, depth: 0.4 },   // chapoteo: siseo medio con olas
+  mud: { type: 'lowpass', f: 360, fs: 12, q: 0.9, vol: 0.28, lfo: 3.2, depth: 0.55 },     // barro: murmullo grave y pegajoso
+  sand: { type: 'bandpass', f: 2600, fs: 35, q: 0.5, vol: 0.12, lfo: 9, depth: 0.3 },     // arena: siseo fino rasposo
+  wet: { type: 'highpass', f: 3200, fs: 30, q: 0.5, vol: 0.07, lfo: 0, depth: 0 },        // suelo mojado: pulverizado suave
+};
+
 export class Sfx {
   constructor() {
     this.ctx = null;
@@ -137,6 +144,33 @@ export class Sfx {
     this.skidGain = ctx.createGain(); this.skidGain.gain.value = 0;
     n.connect(this.skidFilter).connect(this.skidGain).connect(this.master);
     n.start();
+
+    // capa continua de superficie (agua chapoteando, barro chapoteante, arena rasposa): ruido filtrado con trémolo irregular
+    const sn = ctx.createBufferSource(); sn.buffer = buf; sn.loop = true;
+    this.surfFilter = ctx.createBiquadFilter(); this.surfFilter.type = 'bandpass'; this.surfFilter.frequency.value = 1000; this.surfFilter.Q.value = 0.6;
+    this.surfAM = ctx.createGain(); this.surfAM.gain.value = 0.7;
+    this.surfGain = ctx.createGain(); this.surfGain.gain.value = 0;
+    this.surfLfo = ctx.createOscillator(); this.surfLfo.frequency.value = 5;
+    this.surfLfoDepth = ctx.createGain(); this.surfLfoDepth.gain.value = 0;
+    this.surfLfo.connect(this.surfLfoDepth).connect(this.surfAM.gain);
+    sn.connect(this.surfFilter).connect(this.surfAM).connect(this.surfGain).connect(this.master);
+    sn.start(0, Math.random()); this.surfLfo.start();
+    this._surf = null;
+  }
+
+  // Sonido continuo de la superficie bajo el coche del jugador. surf: 'water' | 'mud' | 'sand' | 'wet' | null
+  setSurface(surf, speed = 0, air = false) {
+    if (!this.ctx || !this.surfGain) return;
+    const t = this.ctx.currentTime, P = SURF[surf];
+    const k = P && !air ? Math.min(1, Math.max(0, speed - 1.5) / 14) : 0;
+    if (surf !== this._surf && P) {
+      this._surf = surf;
+      this.surfFilter.type = P.type; this.surfFilter.Q.setTargetAtTime(P.q, t, 0.05);
+      this.surfLfo.frequency.setTargetAtTime(P.lfo, t, 0.1);
+      this.surfLfoDepth.gain.setTargetAtTime(P.depth, t, 0.1);
+    }
+    if (P) this.surfFilter.frequency.setTargetAtTime(P.f + speed * P.fs, t, 0.08);
+    this.surfGain.gain.setTargetAtTime(P ? P.vol * Math.pow(k, 0.8) : 0, t, k > 0 ? 0.12 : 0.25); // sube y baja despacio: nada de chasquidos
   }
 
   setMuted(m) {
@@ -210,17 +244,29 @@ export class Sfx {
     o.start(t); o.stop(t + dur + 0.02);
   }
 
-  noise(dur, { vol = 0.4, freq = 1000, q = 1, type = 'lowpass', slideTo = 0, delay = 0 } = {}) {
+  noise(dur, { vol = 0.4, freq = 1000, q = 1, type = 'lowpass', slideTo = 0, delay = 0, attack = 0 } = {}) {
     if (!this.ctx) return;
     const ctx = this.ctx, t = ctx.currentTime + delay;
     const s = ctx.createBufferSource(); s.buffer = this.noiseBuf;
     const f = ctx.createBiquadFilter(); f.type = type; f.frequency.setValueAtTime(freq, t); f.Q.value = q;
     if (slideTo) f.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
     const g = ctx.createGain();
-    g.gain.setValueAtTime(vol, t);
+    if (attack > 0) { g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + attack); } // ataque suave: sin chasquido al empezar
+    else g.gain.setValueAtTime(vol, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + dur);
     s.connect(f).connect(g).connect(this.master);
     s.start(t, Math.random()); s.stop(t + dur + 0.05);
+  }
+
+  // burbuja de agua/barro: seno que sube de tono rápido y se apaga
+  bubble(freq, dur, vol, delay = 0) {
+    if (!this.ctx) return;
+    const ctx = this.ctx, t = ctx.currentTime + delay;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(freq, t); o.frequency.exponentialRampToValueAtTime(freq * 1.9, t + dur * 0.8);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0005, t + dur);
+    o.connect(g).connect(this.master);
+    o.start(t); o.stop(t + dur + 0.02);
   }
 
   play(name, vol = 1) {
@@ -235,7 +281,23 @@ export class Sfx {
       case 'turbo': this.noise(0.9, { vol: 0.5 * v, freq: 400, slideTo: 3000, type: 'bandpass', q: 1.5 }); this.tone(120, 0.8, { type: 'sawtooth', vol: 0.12 * v, slide: 3 }); break;
       case 'rocket': this.noise(1.2, { vol: 0.45 * v, freq: 2500, slideTo: 600, type: 'bandpass', q: 0.8 }); break;
       case 'throw': this.tone(300, 0.25, { type: 'sine', vol: 0.25 * v, slide: 2.5 }); break;
-      case 'splash': this.noise(0.6, { vol: 0.6 * v, freq: 3000, slideTo: 400, type: 'bandpass', q: 0.7 }); break;
+      case 'splash': { // entrar en agua: golpe grave, cuerpo de agua, rocío y burbujas
+        this.tone(150, 0.16, { type: 'sine', vol: 0.22 * v, slide: 0.4 });
+        this.noise(0.6, { vol: 0.42 * v, freq: 1500, slideTo: 260, type: 'lowpass', q: 0.8, attack: 0.02 });
+        this.noise(0.4, { vol: 0.11 * v, freq: 5000, slideTo: 2600, type: 'highpass', q: 0.5, attack: 0.012, delay: 0.02 });
+        for (let k = 0; k < 6; k++) this.bubble(250 + Math.random() * 650, 0.06 + Math.random() * 0.07, (0.05 + Math.random() * 0.07) * v, 0.05 + Math.random() * 0.5);
+        break;
+      }
+      case 'mud': { // entrar en barro: chof pegajoso y burbujas graves
+        this.tone(95, 0.22, { type: 'sine', vol: 0.3 * v, slide: 0.5 });
+        this.noise(0.5, { vol: 0.5 * v, freq: 800, slideTo: 170, type: 'lowpass', q: 0.9, attack: 0.025 });
+        for (let k = 0; k < 3; k++) this.bubble(110 + Math.random() * 140, 0.09 + Math.random() * 0.08, (0.06 + Math.random() * 0.05) * v, 0.1 + Math.random() * 0.35);
+        break;
+      }
+      case 'sand': // entrar en arena: roce suave y golpe sordo
+        this.noise(0.4, { vol: 0.3 * v, freq: 3200, slideTo: 1400, type: 'bandpass', q: 0.5, attack: 0.04 });
+        this.noise(0.14, { vol: 0.2 * v, freq: 700, type: 'lowpass', attack: 0.012 });
+        break;
       case 'oil': this.tone(180, 0.35, { type: 'sine', vol: 0.3 * v, slide: 0.4 }); break;
       case 'slip': this.tone(900, 0.4, { type: 'triangle', vol: 0.12 * v, slide: 0.5 }); break;
       case 'fuse': this.noise(0.5, { vol: 0.2 * v, freq: 5000, type: 'highpass' }); break;
@@ -262,6 +324,7 @@ export class Sfx {
     const t = this.ctx.currentTime;
     this.engine.silence();
     this.skidGain.gain.setTargetAtTime(0, t, 0.05);
+    this.surfGain?.gain.setTargetAtTime(0, t, 0.05);
     for (const v of this.rivalVoices) v.silence();
   }
 

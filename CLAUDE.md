@@ -17,6 +17,9 @@ logotipos, música, sonidos, texturas ni modelos de Re-Volt, y no mencionarlo de
 
 - Trabaja **solo desde el móvil**: Claude escribe todo el código, lo sube y le dice qué probar.
 - Respuestas **breves y en español**.
+- **Cada vez que publiques una versión nueva, dile siempre el número de versión** (`v1.0.N`, el mismo que sale en la pantalla de inicio y en el APK)
+  junto con los links de la web y del APK. `N` = número de ejecución del workflow *Build*: tras el push, `gh run list -R zeroping7/re-back -L 1 --json number,headSha`
+  (comprueba que `headSha` es tu commit). La compilación tarda ~2 min; avísale de que hasta entonces verá la versión anterior.
 
 ## Notas técnicas rápidas
 

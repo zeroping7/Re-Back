@@ -9,6 +9,12 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Drift más ancho, sonidos de tierra/agua, parque ✅ (DRI-08, AUD-12)
+- Drift: pista 6,6 (antes 5,5); Cocina y Garaje siguen terminando sin atascos. **Pendiente:** recalibrar medallas con pruebas reales (más ancho = más puntos fáciles).
+- Agua/barro/arena: sonidos de entrada con ataque suave (sin chasquido), burbujas y capa continua al rodar. **Pendiente:** oído en el móvil.
+- Parque: la rampa vuelve a verse con el caucho (sin textura del tobogán).
+- Regla en `CLAUDE.md`: decir siempre el número de versión al publicar.
+
 ### Rampas, cuestas y bordes sin parpadeo ni escalones ✅ (CIR-26, CIR-27, OBJ-TIRON)
 - Sin `polygonOffset` fuerte en rampas (tapaba la tierra del jardín: rampa de madera); realce de 1,5 cm solo en los extremos; las mallas no proyectan sombra; el sol se ajusta a la rejilla de sombras.
 - Bordes partidos en trozos de ≤ 5° en curvas cerradas (sin escalones por el interior). Jardín: rampa de tierra como antes.
