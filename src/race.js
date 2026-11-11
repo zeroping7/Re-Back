@@ -464,7 +464,7 @@ export class Race {
     if (!this.started || st.finished) return;
     const fwd = car.fwdSpeed, beta = Math.atan2(Math.abs(car.localVel.x), fwd); // 0..π (de lado, cruzado o de culo)
     const yr = car.body.angvel().y;
-    for (const e of car.events) if (e.type === 'hit' && e.strength > 0.24) return this.loseCombo(car, st, 'golpe');
+    for (const e of car.events) if (e.type === 'hit') return this.loseCombo(car, st, 'golpe');
     // derrape: va de lado (o girando sobre sí mismo), no marcha atrás recto
     const sliding = (car.speed > 5 || (car.speed > 1 && Math.abs(yr) > 2)) && car.contacts >= 2 && beta > 0.21 && !car.reversing && !(fwd < -2 && Math.abs(yr) < 1);
     if (sliding) {
@@ -510,6 +510,7 @@ export class Race {
   }
 
   loseCombo(car, st, why) {
+    if (car.isPlayer && st.combo * st.mult > 20) st.lost = { pts: st.combo * st.mult, mult: st.mult, why }; // DRI-16: animación del marcador rompiéndose
     if (st.combo > 30 && car.isPlayer) { st.flash = { t: this.clock, text: why === 'trompo' ? '¡Trompo!' : why === 'golpe' ? '¡Golpe!' : 'Combo perdido', ok: false }; this.sfx.play('wrong'); }
     st.combo = 0; st.driftT = 0; st.mult = 1; st.grace = 0; st.rot = 0;
   }

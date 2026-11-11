@@ -58,3 +58,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 45 | Valores de drift probados por el usuario pasan a ser los de fábrica (rear 0.08, front 0.12, hb 0.15, latGrip 0.01, power 0.65, gyro 0.2, spinP 1.85, spinK 0, wobHz 4) | DRI-13 ✅ |
 | 46 | No consigo un buen manejo de drift: que se pueda derrapar con mucho ángulo, divertido pero con algo de dificultad. Rediseño completo por ángulo | DRI-14 ✅ |
 | 47 | No gusta el manejo del drift: rehacerlo desde cero, parecido a un coche real (como Assetto Corsa) pero más fácil y divertido | DRI-15 ✅ |
+| 48 | Drift: al chocar (aunque sean golpes pequeños, no el roce) la puntuación pendiente se pierde; animación de la puntuación rompiéndose en rojo | DRI-16 ✅ |

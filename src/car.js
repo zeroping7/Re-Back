@@ -311,7 +311,7 @@ export class Car {
       this.airTime = 0;
     }
     const horiz = this.rail ? 0 : Math.hypot(dv.x, dv.z); // en el looping no hay golpes
-    if (horiz > 5) {
+    if (horiz > (this.driftMode ? 2.4 : 5)) { // en drift cuentan hasta los golpes pequeños (el roce no)
       const dir = new THREE.Vector3(-dv.x, 0, -dv.z).normalize();
       const pos = this.currPos.clone().addScaledVector(dir, 1.0); pos.y += 0.2;
       // punto exacto del golpe en coordenadas del coche (para abollar la carrocería)

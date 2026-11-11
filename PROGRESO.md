@@ -9,9 +9,12 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Drift: los golpes anulan el combo ✅ (DRI-16)
+- Cualquier golpe (también pequeño; el roce no) pone el combo a 0 y la puntuación pendiente se rompe en rojo en el marcador. Medallas Cocina/Garaje 2000/4000/6500 (la IA pierde combos al tocar bordes). **Pendiente:** probar en el móvil si el umbral de golpe (2,4 u/s) es el justo.
+
 ### Drift: física de coche realista pero fácil ✅ (DRI-15)
 - Nuevo `src/driftPhysics.js`: neumáticos por rueda, transferencia de peso, tracción trasera, contravolante automático, freno de mano y donut. El modelo por ángulo (DRI-14) se descartó.
-- Panel «Ajustar derrape» con parámetros nuevos (clave de guardado v4). Medallas Cocina/Garaje 2500/5500/9000. **Pendiente:** probar en el móvil y ajustar con el panel; recalibrar medallas con partidas reales.
+- Panel «Ajustar derrape» con parámetros nuevos (clave de guardado v4). **Pendiente:** probar en el móvil y ajustar con el panel; recalibrar medallas con partidas reales.
 
 ### Drift: valores de fábrica anteriores ✅ (DRI-13)
 - Agarre trasero 0.08, delantero 0.12, derrapando 0.15, lateral 0.01; gas 0.65; giroscopio 0.2; ángulo antes de trompo 1.85; anti-trompo 0; baile 4 Hz. Clave de guardado v2.

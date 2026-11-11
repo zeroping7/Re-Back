@@ -111,6 +111,19 @@ export class Hud {
       this.set('dmult', this.dMult, '×' + st.mult);
       if (this.last.dm !== st.mult) { this.last.dm = st.mult; this.dCombo.dataset.m = st.mult; this.dMult.classList.remove('pop'); void this.dMult.offsetWidth; this.dMult.classList.add('pop'); }
     }
+    // DRI-16: al perder el combo, la puntuación pendiente se rompe en rojo
+    if (st.lost && st.lost !== this.lastLost) {
+      this.lastLost = st.lost;
+      const t = `+${fmtPts(st.lost.pts)} ×${st.lost.mult}`;
+      const el = document.createElement('div'); el.className = 'brk';
+      let h = `<span class="h l">${t}</span><span class="h r">${t}</span><i class="crack"></i>`;
+      for (let i = 0; i < 9; i++) {
+        const a = (i / 9) * 6.283 + Math.random() * 0.5, d = 40 + Math.random() * 60;
+        h += `<b style="--dx:${(Math.cos(a) * d).toFixed(0)}px;--dy:${(Math.sin(a) * d * 0.7 + 30).toFixed(0)}px;--r:${(Math.random() * 360 - 180).toFixed(0)}deg"></b>`;
+      }
+      el.innerHTML = h; this.dEl.append(el);
+      setTimeout(() => el.remove(), 1400);
+    }
     const f = st.flash;
     if (f && f !== this.lastFlash) {
       this.lastFlash = f;
