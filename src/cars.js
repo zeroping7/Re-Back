@@ -59,7 +59,7 @@ export const CARS = [
     stats: { vel: 2, acel: 3, manejo: 3 },
   },
   {
-    id: 'saeta', disc: ['race', 'drift'], price: 12500, name: 'Saeta', desc: 'Turismo de nitro: el más rápido en recta', color: '#00b8d4', style: 'touring', number: '11', pattern: 'rally', rimColor: '#212121',
+    id: 'saeta', noArches: true, disc: ['race', 'drift'], price: 12500, name: 'Saeta', desc: 'Turismo de nitro: el más rápido en recta', color: '#00b8d4', style: 'touring', number: '11', pattern: 'rally', rimColor: '#212121',
     clase: 'Pro', motor: 'Nitro', sound: ['n2', 1.00], mass: 8, rearBias: 80,
     wheelR: 0.33, wheelX: 0.62, wheelZf: 0.78, wheelZr: -0.76,
     mods: { engine: 1.1, maxSpeed: 1.16, grip: 1.12, steer: 1.0, susp: 1.35 },
@@ -76,7 +76,7 @@ export const CARS = [
   },
   // DCO-02: coches de Drift: turismos RC 1:10 de tracción trasera, kit ancho, caída negativa y ruedas duras
   {
-    id: 'patin', disc: ['drift'], starter: true, price: 1200, name: 'Patín', desc: 'Descapotable ligero: tu primer coche de drift', color: '#9aa4ae', style: 'roadster', number: '13', pattern: 'carbon', rimColor: '#1b1b1b', spokes: 12, camber: 0.07,
+    id: 'patin', noArches: true, disc: ['drift'], starter: true, price: 1200, name: 'Patín', desc: 'Descapotable ligero: tu primer coche de drift', color: '#9aa4ae', style: 'roadster', number: '13', pattern: 'carbon', rimColor: '#1b1b1b', spokes: 12, camber: 0.07,
     clase: 'Drift', motor: 'Eléctrico', sound: ['e1', 0.90], mass: 7, rearBias: 100,
     wheelR: 0.31, wheelX: 0.6, wheelZf: 0.66, wheelZr: -0.64,
     mods: { engine: 1.18, maxSpeed: 0.92, grip: 1.0, steer: 1.12, susp: 1.3, rest: 0.7 },
@@ -92,7 +92,7 @@ export const CARS = [
     dk: { p: 1.00, s: 1.00 }, // DRI-17: potencia y giro en Drift (1 = el de siempre)
   },
   {
-    id: 'trompo', disc: ['drift'], price: 6000, name: 'Trompo', desc: 'Compacto de portón bicolor: cambia de lado en un parpadeo', color: '#f2f2f2', style: 'hatch', number: '86', pattern: 'twotone', rimColor: '#2b2b2b', spokes: 6, camber: 0.07,
+    id: 'trompo', noArches: true, disc: ['drift'], price: 6000, name: 'Trompo', desc: 'Compacto de portón bicolor: cambia de lado en un parpadeo', color: '#f2f2f2', style: 'hatch', number: '86', pattern: 'twotone', rimColor: '#2b2b2b', spokes: 6, camber: 0.07,
     clase: 'Drift', motor: 'Eléctrico', sound: ['e1', 1.10], mass: 7.5, rearBias: 100,
     wheelR: 0.31, wheelX: 0.61, wheelZf: 0.72, wheelZr: -0.7,
     mods: { engine: 1.34, maxSpeed: 1.0, grip: 0.96, steer: 1.32, susp: 1.1, rest: 0.7 },
@@ -108,7 +108,7 @@ export const CARS = [
     dk: { p: 1.14, s: 0.96 }, // DRI-17: potencia y giro en Drift (1 = el de siempre)
   },
   {
-    id: 'katana', disc: ['drift'], price: 11000, name: 'Katana', desc: 'Cupé de los 90 con alerón: el rey del derrape', color: '#1e4fd8', style: 'coupe', number: '34', pattern: 'carbon', rimColor: '#e6e6e6', spokes: 5, camber: 0.08,
+    id: 'katana', noArches: true, disc: ['drift'], price: 11000, name: 'Katana', desc: 'Cupé de los 90 con alerón: el rey del derrape', color: '#1e4fd8', style: 'coupe', number: '34', pattern: 'carbon', rimColor: '#e6e6e6', spokes: 5, camber: 0.08,
     clase: 'Drift', motor: 'Nitro', sound: ['n2', 0.90], mass: 8, rearBias: 100,
     wheelR: 0.33, wheelX: 0.65, wheelZf: 0.8, wheelZr: -0.77,
     mods: { engine: 1.42, maxSpeed: 1.08, grip: 1.05, steer: 1.36, susp: 1.35, rest: 0.7 },

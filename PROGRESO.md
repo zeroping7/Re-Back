@@ -9,6 +9,11 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Más retoques de coches desde el visor 3D ✅ (COC-20, COC-21)
+- Saeta, Katana, Patín y Trompo sin aletas; aletines del Yeti curvados y más bajos; alerón delantero de la Fórmula adelantado.
+- Escape solo en los coches nitro (Rally, Saeta y Yeti nuevos; se quita en Patín, Humo, Trompo y Morsa).
+- **Pendiente:** revisarlos en el móvil.
+
 ### Retoques de coches desde el visor 3D ✅ (COC-18, COC-19)
 - Rally: aletas planas. Flecha y Bisonte: sin aletas. Bisonte: alerón más alto. Yeti: barra de focos en el techo.
 - Neumáticos: talón y flanco proporcionales a la rueda (sin hueco con la llanta ni centro hundido); cambia el aspecto de casi todos los coches.

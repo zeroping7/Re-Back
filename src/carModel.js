@@ -308,7 +308,7 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
     shape(cabGeo, (v) => { if (v.y > S.cab[1][1] * 0.5) v.x *= S.cabTaper ?? 0.84; });
     add(smooth(cabGeo), M.glass, 0, PB + S.cabY, S.cabZ);
   }
-  EXTRAS[style]?.({ add, paint, P: PB, S, g, def, color, W: WHEELS, R: WHEEL_R });
+  EXTRAS[style]?.({ add, paint, P: PB, S, g, def, color, W: WHEELS, R: WHEEL_R, CONN_Y });
   // techo pintado sobre el cristal (drift)
   if (S.drift && S.cab) {
     const c0 = S.cab[1], c1 = S.cab[2], tw = S.cabWidth * (S.cabTaper ?? 0.84);
@@ -808,13 +808,17 @@ function decalMat(number) {
 }
 
 // Kit de drift común: faldón delantero, taloneras, gancho de remolque y escape grande
-function driftKit({ add, paint, P, S }, { lipZ = 1.04, skirt = 0.9, exhaust = -1.04 } = {}) {
+function driftKit({ add, paint, P, S, def }, { lipZ = 1.04, skirt = 0.9, exhaust = -1.04 } = {}) {
   const lip = add(new THREE.BoxGeometry(S.width + 0.06, 0.035, 0.22), M.carbon, 0, P + 0.03, lipZ, undefined, false);
   lip.castShadow = true;
   for (const sx of [1, -1]) add(new THREE.BoxGeometry(0.06, 0.06, skirt * 2 - 0.5), M.carbon, sx * (S.width / 2 + 0.05), P + 0.05, -0.02, undefined, false);
   add(new THREE.BoxGeometry(0.06, 0.06, 0.1), M.caliper, -0.32, P + 0.08, lipZ + 0.08, undefined, false); // gancho
-  add(new THREE.CylinderGeometry(0.06, 0.06, 0.16, 10).rotateX(Math.PI / 2), M.chrome, -0.36, P + 0.06, exhaust, undefined, false);
-  add(new THREE.CylinderGeometry(0.042, 0.042, 0.02, 10).rotateX(Math.PI / 2), M.carbon, -0.36, P + 0.06, exhaust - 0.08, undefined, false);
+  if (def?.motor === 'Nitro') rearExhaust(add, -0.36, P + 0.06, exhaust); // los eléctricos no llevan escape
+}
+// Tubo de escape trasero cromado con boca oscura (solo coches de motor nitro)
+function rearExhaust(add, x, y, z) {
+  add(new THREE.CylinderGeometry(0.06, 0.06, 0.16, 10).rotateX(Math.PI / 2), M.chrome, x, y, z, undefined, false);
+  add(new THREE.CylinderGeometry(0.042, 0.042, 0.02, 10).rotateX(Math.PI / 2), M.carbon, x, y, z - 0.08, undefined, false);
 }
 function roundLights({ add, P, S }, n = 2, r = 0.075) {
   const red = new THREE.MeshStandardMaterial({ color: '#7a0000', emissive: '#ff2020', emissiveIntensity: 0.9 });
@@ -918,8 +922,13 @@ const EXTRAS = {
     add(new THREE.BoxGeometry(0.22, 0.26, 0.14), M.shock, -0.22, y0 + 0.4, -0.78, undefined, false);
     for (const sx of [1, -1]) add(new THREE.CylinderGeometry(0.075, 0.075, 0.06, 10).rotateX(Math.PI / 2), M.head, sx * 0.4, y0 + 0.12, 1.12, undefined, false);
   },
-  bigfoot({ add, paint, P, S }) {
+  bigfoot({ add, paint, P, S, W, CONN_Y, def }) {
     const y0 = P + S.y;
+    // chimeneas de escape verticales detrás de la cabina (motor nitro)
+    if (def.motor === 'Nitro') for (const sx of [1, -1]) {
+      add(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8), M.chrome, sx * 0.38, y0 + 0.58, -0.74, undefined, false);
+      add(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 8), M.carbon, sx * 0.38, y0 + 0.84, -0.74, undefined, false);
+    }
     // barra de focos pegada al techo de la cabina (antes quedaba en el aire sobre el parabrisas y más ancha que el techo)
     add(new THREE.BoxGeometry(0.74, 0.08, 0.08), M.carbon, 0, y0 + 0.705, 0.0, undefined, false);
     for (let k = -3; k <= 3; k++) add(new THREE.CylinderGeometry(0.045, 0.045, 0.05, 8).rotateX(Math.PI / 2), M.head, k * 0.11, y0 + 0.705, 0.05, undefined, false);
@@ -928,14 +937,29 @@ const EXTRAS = {
       const h = add(new THREE.ConeGeometry(0.07, 0.4, 6), M.lens, sx * 0.36, y0 + 0.62, -0.3, undefined, false);
       h.rotation.z = -sx * 0.35;
     }
-    // aletines anchos sobre las ruedas
-    for (const sx of [1, -1]) for (const z of [0.78, -0.76]) add(new THREE.BoxGeometry(0.16, 0.05, 0.62), paint, sx * 0.62, y0 + 0.12, z, undefined, false);
+    // aletines anchos sobre las ruedas: mismo tamaño que antes (0,16 de ancho, 0,62 de largo) pero curvados siguiendo la rueda y 5 cm más bajos
+    {
+      const hubY = CONN_Y - 0.26;
+      const Ri = y0 + 0.045 - hubY, Ro = Ri + 0.05;            // radios (desde el eje) de la cara interior y exterior
+      const half = Math.asin(0.31 / ((Ri + Ro) / 2));          // medio largo 0,31 → ángulo
+      const a0 = Math.PI / 2 - half, a1 = Math.PI / 2 + half;
+      const sh = new THREE.Shape();
+      sh.absarc(0, 0, Ro, a0, a1, false);
+      sh.absarc(0, 0, Ri, a1, a0, true);
+      sh.closePath();
+      const fg = new THREE.ExtrudeGeometry(sh, { depth: 0.16, bevelEnabled: false, curveSegments: 12 }).translate(0, 0, -0.08);
+      for (const w of W) {
+        const sx = Math.sign(w.x);
+        const f = add(fg.clone().toNonIndexed(), paint, sx * 0.62, hubY, w.z, undefined, false);
+        f.rotation.y = sx > 0 ? Math.PI / 2 : -Math.PI / 2;
+      }
+    }
     // parrilla y defensa
     add(new THREE.BoxGeometry(0.76, 0.18, 0.03), M.chrome, 0, y0 + 0.1, 1.06, undefined, false);
     add(new THREE.BoxGeometry(1.0, 0.08, 0.1), M.carbon, 0, y0 - 0.03, 1.1, undefined, false);
     add(new THREE.BoxGeometry(0.9, 0.02, 0.6), M.carbon, 0, y0 + 0.33, -0.65, undefined, false);
   },
-  hauler({ add, paint, P, S }) {
+  hauler({ add, paint, P, S, def }) {
     const y0 = P + S.y;
     // colmillos de morsa
     for (const sx of [1, -1]) {
@@ -950,16 +974,18 @@ const EXTRAS = {
     add(new THREE.BoxGeometry(1.0, 0.22, 0.05), paint, 0, y0 + 0.38, bedZ - 0.45);
     add(new THREE.BoxGeometry(1.0, 0.22, 0.05), paint, 0, y0 + 0.38, bedZ + 0.45);
     // chimeneas de escape
-    for (const sx of [1, -1]) add(new THREE.CylinderGeometry(0.04, 0.04, 0.55, 8), M.chrome, sx * 0.55, y0 + 0.6, 0.0, undefined, false);
+    if (def.motor === 'Nitro') for (const sx of [1, -1]) add(new THREE.CylinderGeometry(0.04, 0.04, 0.55, 8), M.chrome, sx * 0.55, y0 + 0.6, 0.0, undefined, false);
     // faros y parrilla
     for (const sx of [1, -1]) add(new THREE.CylinderGeometry(0.075, 0.075, 0.05, 10).rotateX(Math.PI / 2), M.head, sx * 0.38, y0 + 0.16, 1.09, undefined, false);
   },
-  touring({ add, paint, P, S }) {
+  touring({ add, paint, P, S, def }) {
+    if (def.motor === 'Nitro') rearExhaust(add, -0.36, P + S.y - 0.06, -1.0);
     add(new THREE.BoxGeometry(1.35, 0.03, 0.2), M.carbon, 0, P + 0.02, 1.0, undefined, false);
     for (const s2 of [1, -1]) add(new THREE.BoxGeometry(0.1, 0.06, 0.06), paint, s2 * 0.62, P + S.y + 0.24, 0.32, undefined, false);
     add(new THREE.BoxGeometry(0.5, 0.08, 0.03), M.carbon, 0, P + S.y + 0.0, 1.06, undefined, false);
   },
-  rally({ add, paint, P, S }) {
+  rally({ add, paint, P, S, def }) {
+    if (def.motor === 'Nitro') rearExhaust(add, -0.36, P + S.y - 0.06, -0.98);
     // techo pintado, toma de aire, faros auxiliares y faldillas
     add(new THREE.BoxGeometry(0.86, 0.04, 0.82), paint, 0, P + S.cabY + 0.34, -0.25);
     add(new THREE.BoxGeometry(0.22, 0.08, 0.26), M.carbon, 0, P + S.cabY + 0.39, -0.05, undefined, false);
@@ -1003,9 +1029,11 @@ const EXTRAS = {
     add(new THREE.BoxGeometry(0.2, 0.06, 0.06), M.glass, 0, P + 0.49, 0.06, undefined, false);
     add(new THREE.BoxGeometry(0.04, 0.03, 0.2), paint, 0, P + 0.6, -0.05, undefined, false);
     // alerón delantero
-    add(new THREE.BoxGeometry(1.35, 0.025, 0.24), paint, 0, P + 0.03, 1.1);
-    add(new THREE.BoxGeometry(1.25, 0.02, 0.12), M.carbon, 0, P + 0.07, 1.04, undefined, false);
-    for (const sx of [1, -1]) add(new THREE.BoxGeometry(0.02, 0.14, 0.28), M.carbon, sx * 0.67, P + 0.08, 1.1, undefined, false);
+    // adelantado 0,30 para que las placas laterales no queden dentro de los neumáticos delanteros, con dos soportes al morro
+    add(new THREE.BoxGeometry(1.35, 0.025, 0.24), paint, 0, P + 0.03, 1.4);
+    add(new THREE.BoxGeometry(1.25, 0.02, 0.12), M.carbon, 0, P + 0.07, 1.34, undefined, false);
+    for (const sx of [1, -1]) add(new THREE.BoxGeometry(0.02, 0.14, 0.28), M.carbon, sx * 0.67, P + 0.08, 1.4, undefined, false);
+    for (const sx of [1, -1]) add(new THREE.BoxGeometry(0.04, 0.025, 0.34), M.carbon, sx * 0.1, P + 0.1, 1.25, undefined, false);
     // número en el morro
     add(new THREE.PlaneGeometry(0.2, 0.2).rotateX(-Math.PI / 2), decalMat(def.number || '1'), 0, P + 0.29, 0.55, undefined, false);
   },
