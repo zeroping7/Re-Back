@@ -24,6 +24,12 @@ for (const k in profile.sel) if (!profile.owned[profile.sel[k]]) profile.sel[k] 
 profile.medals ??= {}; // mejor medalla por circuito en los modos en solitario (DEC-01)
 profile.granted ??= {}; // disciplinas cuyo coche básico ya se regaló (DIS-04)
 
+profile.inst ??= {}; // niveles montados por coche y mejora (si falta, todos los comprados)
+if (profile.off) { // migración de la versión anterior (mejora entera quitada)
+  for (const id in profile.off) for (const u in profile.off[id]) (profile.inst[id] ??= {})[u] = 0;
+  delete profile.off;
+}
+
 const listeners = new Set();
 export function onProfileChange(fn) { listeners.add(fn); }
 export function saveProfile() {
@@ -32,23 +38,32 @@ export function saveProfile() {
 }
 
 export const isOwned = (id) => !!profile.owned[id];
-// Mejoras compradas (todos los niveles) y mejoras activas (las que no se han quitado)
+// Mejoras compradas (niveles) y montadas (niveles puestos en el coche, 0..comprados)
 export const ownedUpgrades = (id) => profile.owned[id] || {};
-export const upgradeOn = (id, upId) => !profile.off?.[id]?.[upId];
+export function installedLevel(id, upId) {
+  const own = ownedUpgrades(id)[upId] || 0, v = profile.inst?.[id]?.[upId];
+  return v === undefined ? own : Math.max(0, Math.min(own, v));
+}
 export function upgradesOf(id) {
   const out = {};
-  for (const [k, v] of Object.entries(ownedUpgrades(id))) if (upgradeOn(id, k)) out[k] = v;
+  for (const k of Object.keys(ownedUpgrades(id))) { const l = installedLevel(id, k); if (l) out[k] = l; }
   return out;
 }
-// Quita o pone una mejora ya comprada, sin perder lo pagado
-export function toggleUpgrade(id, upId) {
-  if (!(ownedUpgrades(id)[upId] > 0)) return false;
-  profile.off ??= {};
-  const o = (profile.off[id] ??= {});
-  if (o[upId]) delete o[upId]; else o[upId] = true;
-  if (!Object.keys(o).length) delete profile.off[id];
+function setInstalled(id, upId, lvl) {
+  const own = ownedUpgrades(id)[upId] || 0;
+  lvl = Math.max(0, Math.min(own, lvl));
+  profile.inst ??= {};
+  const o = (profile.inst[id] ??= {});
+  if (lvl >= own) delete o[upId]; else o[upId] = lvl;
+  if (!Object.keys(o).length) delete profile.inst[id];
+}
+// Quita (-1) o pone (+1) un nivel de una mejora ya comprada, sin perder lo pagado
+export function stepUpgrade(id, upId, d) {
+  const cur = installedLevel(id, upId), next = cur + d;
+  if (next < 0 || next > (ownedUpgrades(id)[upId] || 0)) return false;
+  setInstalled(id, upId, next);
   saveProfile();
-  return upgradeOn(id, upId);
+  return true;
 }
 
 export function upgradeCost(id, upId) {
@@ -83,7 +98,7 @@ export function sellCar(id) {
   if (!isOwned(id) || Object.keys(profile.owned).length <= 1 || carById(id).starter) return false;
   profile.money += sellValue(id);
   delete profile.owned[id];
-  if (profile.off) delete profile.off[id];
+  if (profile.inst) delete profile.inst[id];
   if (profile.selected === id) profile.selected = Object.keys(profile.owned)[0];
   saveProfile();
   return true;
@@ -93,8 +108,9 @@ export function buyUpgrade(id, upId) {
   const cost = upgradeCost(id, upId);
   if (cost === null || !isOwned(id) || profile.money < cost) return false;
   profile.money -= cost;
+  const inst = installedLevel(id, upId);
   profile.owned[id][upId] = (profile.owned[id][upId] || 0) + 1;
-  if (profile.off?.[id]) { delete profile.off[id][upId]; if (!Object.keys(profile.off[id]).length) delete profile.off[id]; } // al mejorar, se vuelve a montar
+  setInstalled(id, upId, inst + 1); // el nivel nuevo se monta
   saveProfile();
   return true;
 }

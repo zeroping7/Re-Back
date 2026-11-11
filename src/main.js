@@ -9,7 +9,7 @@ import { ARENA } from './battle.js';
 import { CARS, carById, UPGRADES, MAX_LEVEL, carTuning, tractionName } from './cars.js';
 import { carStats } from './carstats.js';
 import {
-  profile, isOwned, upgradesOf, ownedUpgrades, upgradeOn, toggleUpgrade, upgradeCost, sellValue, buyCar, sellCar, buyUpgrade, selectCar, raceReward, addMoney,
+  profile, isOwned, upgradesOf, ownedUpgrades, installedLevel, stepUpgrade, upgradeCost, sellValue, buyCar, sellCar, buyUpgrade, selectCar, raceReward, addMoney,
   onProfileChange, setCupResult, takeStar, STAR_PRIZE, checkSecret, starsGot, useDisc, grantStarters, awardMedal,
 } from './profile.js';
 import { CUPS, cupById, cupUnlocked, cupPrize, addPoints, standings, POINTS, cupsFor } from './cups.js';
@@ -413,15 +413,17 @@ async function init() {
     }
     const ups = $('g-ups'); ups.innerHTML = '';
     for (const u of UPGRADES) {
-      const lvl = raw[u.id] || 0, cost = upgradeCost(d.id, u.id), on = upgradeOn(d.id, u.id);
-      const row = document.createElement('div'); row.className = 'up-row' + (lvl && !on ? ' off' : '');
-      row.innerHTML = `<div class="nm">${u.icon} ${u.name}<small>${u.desc}</small></div><div class="pips">${'●'.repeat(lvl)}${'○'.repeat(MAX_LEVEL - lvl)}</div>`;
-      if (own && lvl) { // UX-23: quitar / poner la mejora ya comprada
-        const t = document.createElement('button');
-        t.className = 'tg' + (on ? ' on' : '');
-        t.textContent = on ? 'Quitar' : 'Poner';
-        t.onclick = () => { toggleUpgrade(d.id, u.id); sfx.play('click'); buildGarage(); };
-        row.append(t);
+      const lvl = raw[u.id] || 0, cost = upgradeCost(d.id, u.id), ins = installedLevel(d.id, u.id);
+      const row = document.createElement('div'); row.className = 'up-row' + (lvl && !ins ? ' off' : '');
+      // ● montado · ◌ comprado pero quitado · ○ sin comprar
+      row.innerHTML = `<div class="nm">${u.icon} ${u.name}<small>${u.desc}</small></div><div class="pips">${'●'.repeat(ins)}${'◌'.repeat(lvl - ins)}${'○'.repeat(MAX_LEVEL - lvl)}</div>`;
+      if (own && lvl) { // UX-23: quitar / poner un nivel de la mejora ya comprada
+        const mk = (txt, d2, ok) => {
+          const t = document.createElement('button'); t.className = 'tg'; t.textContent = txt; t.disabled = !ok;
+          t.onclick = () => { if (stepUpgrade(d.id, u.id, d2)) { sfx.play('click'); buildGarage(); } };
+          row.append(t);
+        };
+        mk('−', -1, ins > 0); mk('+', 1, ins < lvl);
       }
       const b = document.createElement('button');
       b.textContent = cost === null ? 'MÁX' : `🪙 ${coins(cost)}`;
