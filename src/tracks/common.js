@@ -220,17 +220,30 @@ export function buildCircuit(B, def) {
   const blockH = st.height ?? 0.6, blockT = st.thick ?? 0.6;
   const wallHalf = st.wallHalf ?? 1.1; // media altura del muro invisible de colisión (CRW-09: más bajo para no encajonar la cámara)
   const segs = [];
+  const off = width / 2 + blockT / 2;
   for (const side of noBarrier ? [] : [1, -1]) {
+    let ci = 0;
     for (let i = 0; i < N; i++) {
       const a = samples[i], b = samples[(i + 1) % N];
       if (gaps && gaps.some(([from, to, sd]) => (sd === undefined || sd === side) && inRange(i, from, to, N))) continue;
-      const pa = a.p.clone().addScaledVector(a.n, side * (width / 2 + blockT / 2));
-      const pb = b.p.clone().addScaledVector(b.n, side * (width / 2 + blockT / 2));
-      const mid = pa.clone().add(pb).multiplyScalar(0.5);
-      const dir = pb.clone().sub(pa).setY(0);
-      const len = dir.length();
-      if (len < 0.2) continue;
-      segs.push({ mid, yaw: Math.atan2(dir.x, dir.z), len: len + 0.12, h: (a.h + b.h) / 2, pitch: -Math.atan2(b.h - a.h, len) });
+      // en curvas cerradas (sobre todo por dentro) un bloque por muestra gira ~30° respecto al siguiente y deja escalones:
+      // se parte cada tramo en trozos de ≤ ~5° (mismo color, mismo bloque a la vista)
+      const ang = Math.acos(THREE.MathUtils.clamp(a.t.dot(b.t), -1, 1));
+      const k = THREE.MathUtils.clamp(Math.ceil(ang / 0.09), 1, 8);
+      let any = false;
+      for (let j = 0; j < k; j++) {
+        const u0 = j / k, u1 = (j + 1) / k;
+        const edge = (u) => a.p.clone().lerp(b.p, u).addScaledVector(a.n.clone().lerp(b.n, u).normalize(), side * off);
+        const pa = edge(u0), pb = edge(u1);
+        const ha = a.h + (b.h - a.h) * u0, hb = a.h + (b.h - a.h) * u1;
+        pa.y = 0; pb.y = 0;
+        const dir = pb.clone().sub(pa);
+        const len = dir.length();
+        if (len < 0.05) continue;
+        segs.push({ mid: pa.clone().add(pb).multiplyScalar(0.5), yaw: Math.atan2(dir.x, dir.z), len: len + 0.12, h: (ha + hb) / 2, pitch: -Math.atan2(hb - ha, len), ci });
+        any = true;
+      }
+      if (any) ci++;
     }
   }
   const geo = st.round ? new THREE.CylinderGeometry(blockT / 2, blockT / 2, 1, 8).rotateX(Math.PI / 2) : new THREE.BoxGeometry(blockT, blockH, 1);
@@ -242,7 +255,7 @@ export function buildCircuit(B, def) {
     const y = st.round ? blockT / 2 : blockH / 2;
     m4.compose(new THREE.Vector3(sg.mid.x, y + sg.h, sg.mid.z), q, new THREE.Vector3(1, 1, sg.len - 0.08));
     blockMesh.setMatrixAt(i, m4);
-    blockMesh.setColorAt(i, col.set(st.colors[i % st.colors.length]));
+    blockMesh.setColorAt(i, col.set(st.colors[sg.ci % st.colors.length]));
     B.collider(RAPIER.ColliderDesc.cuboid(blockT / 2, wallHalf, sg.len / 2), { x: sg.mid.x, y: wallHalf + sg.h, z: sg.mid.z }, q,
       { friction: 0.05, restitution: 0.5, groups: BARRIER_GROUPS });
   });
@@ -251,7 +264,9 @@ export function buildCircuit(B, def) {
   // ---------- Superficies elevadas (malla visible + colisión triangular sin aristas internas) ----------
   for (const e of elev) {
     const hw = width / 2 + blockT + 0.25;
-    const LIFT = 0.03; // el dibujo sube un pelo sobre la física: así no compite con el suelo (z-fighting) donde la rampa muere en y=0
+    // la malla sube hasta 1,5 cm (de diseño) sobre la física SOLO donde casi toca el suelo (extremos de rampas y cuestas): ahí compite con el suelo en
+    // la misma altura (z-fighting, parpadeo). Sin polygonOffset, para no tapar marcas de derrape, manchas ni la cinta de tierra que van encima.
+    const lift = (h) => 0.015 * Math.max(0, 1 - h / 0.3);
     const sub = 3; // subdivisiones entre muestras para que sea suave
     const rows = [];
     for (let i = e.i0; i < e.i1; i++) {
@@ -274,7 +289,7 @@ export function buildCircuit(B, def) {
       const gl = def.groundUV ? def.groundUV(l.x, l.z) : [0, along / (hw * 2)];
       const gr = def.groundUV ? def.groundUV(rr.x, rr.z) : [1, along / (hw * 2)];
       // superficie (0,1) y faldones (2,3)
-      pos.push(l.x, r.h + LIFT, l.z, rr.x, r.h + LIFT, rr.z, l.x, 0, l.z, rr.x, 0, rr.z);
+      pos.push(l.x, r.h + lift(r.h), l.z, rr.x, r.h + lift(r.h), rr.z, l.x, 0, l.z, rr.x, 0, rr.z);
       uv.push(...gl, ...gr, ...gl, ...gr);
       phys.push(l.x * B.S, r.h * B.S, l.z * B.S, rr.x * B.S, r.h * B.S, rr.z * B.S);
       if (k < rows.length - 1) {
@@ -293,9 +308,8 @@ export function buildCircuit(B, def) {
     g.computeVertexNormals();
     const material = e.def.material || (e.kind === 'ramp' ? def.rampMaterial : def.hillMaterial) ||
       new THREE.MeshStandardMaterial({ color: e.def.color || def.hillColor || '#c8a165', roughness: 0.8 });
-    if (e.kind === 'ramp') { material.polygonOffset = true; material.polygonOffsetFactor = -4; material.polygonOffsetUnits = -16; } // fuerte: en móviles con depth de 16 bits -2 no basta
     const mesh = new THREE.Mesh(g, material);
-    mesh.receiveShadow = true; mesh.castShadow = true;
+    mesh.receiveShadow = true; mesh.castShadow = false; // sin castShadow: evita el moteado de auto-sombra (acné) al conducir sobre la malla
     scene.add(mesh);
     if (B.mirror) { // espejo: x negada y triángulos al revés
       for (let k = 0; k < phys.length; k += 3) phys[k] = -phys[k];

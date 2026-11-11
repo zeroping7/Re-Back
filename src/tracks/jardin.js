@@ -66,7 +66,6 @@ function build(B) {
   // ---------- Trazado ----------
   const dirt = groundTex('dirt', [1, 1]);
   const dirtMat = new THREE.MeshStandardMaterial({ map: dirt.map, normalMap: dirt.normalMap, roughness: 1 });
-  const pl = groundTex('plank', [1, 1]);
   const circuit = buildCircuit(B, {
     points: [[-60, 52], [-36, 58], [-10, 50], [10, 58], [34, 52], [56, 60], [78, 50], [84, 32], [72, 20], [80, 4], [66, -8], [52, 2], [38, -8], [46, -24], [64, -30],
       [76, -44], [60, -58], [36, -52], [14, -58], [-6, -44], [0, -28], [-16, -18], [-34, -26], [-42, -44], [-62, -54], [-80, -42], [-84, -20], [-70, -6], [-56, 6], [-68, 20], [-82, 34], [-76, 48]],
@@ -76,7 +75,7 @@ function build(B) {
     hills: [{ frac: 0.33, len: 44, h: 1.4, double: true }, { frac: 0.58, len: 24, h: 1.8 }, { frac: 0.16, len: 24, h: 1.4 }, { frac: 0.8, len: 26, h: 1.6 }],
     ramps: [{ frac: 0.06, len: 10, h: 2.0 }],
     hillMaterial: dirtMat,
-    rampMaterial: new THREE.MeshStandardMaterial({ map: pl.map, normalMap: pl.normalMap, roughness: 0.8 }),
+    rampMaterial: dirtMat, // tierra, como la cinta que va encima (antes se veía madera o parpadeaba contra la tierra)
     barrier: { colors: ['#8d6e63', '#795548', '#a1887f', '#6d4c41'], thick: 0.6, round: true, roughness: 0.9 },
     chevrons: { bg: '#2e7d32', fg: '#ffffff' },
   });

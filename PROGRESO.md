@@ -9,10 +9,11 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
-### Súper: rampa sin parpadeo + armas sin tirones ✅ (CIR-26, OBJ-TIRON)
-- Rampas de todos los circuitos con más margen de profundidad; cámara con plano cercano 0,25.
-- Shaders de armas precompilados antes de la carrera; agua sin `transmission`.
-- **Pendiente:** probar en el móvil el salto del súper y disparar todas las armas.
+### Rampas, cuestas y bordes sin parpadeo ni escalones ✅ (CIR-26, CIR-27, OBJ-TIRON)
+- Sin `polygonOffset` fuerte en rampas (tapaba la tierra del jardín: rampa de madera); realce de 1,5 cm solo en los extremos; las mallas no proyectan sombra; el sol se ajusta a la rejilla de sombras.
+- Bordes partidos en trozos de ≤ 5° en curvas cerradas (sin escalones por el interior). Jardín: rampa de tierra como antes.
+- Armas: shaders precompilados antes de la carrera; agua sin `transmission`.
+- **Pendiente:** probar en el móvil salón (rampa de salida y S), súper (primer salto), jardín (primera rampa y cuestas) y disparar todas las armas.
 
 ### El salón: rampa y segunda curva ✅ (CIR-25)
 - Rampa de salida: sin parpadeo azul (desplazamiento de profundidad + dibujo 1,2 cm sobre el suelo, en todos los circuitos).

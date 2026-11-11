@@ -171,6 +171,23 @@ export class Race {
     }
   }
 
+  // El sol sigue al coche, pero ajustado a la rejilla de texels del mapa de sombras: si se mueve de forma continua,
+  // los bordes y el moteado de las sombras "hormiguean" (parpadeo) al conducir.
+  followSun(p) {
+    const sc = this.sun.shadow.camera, texel = (sc.right - sc.left) / this.sun.shadow.mapSize.x;
+    if (!this._sunAxes) {
+      const d = this.sunOffset.clone().normalize();
+      const right = new THREE.Vector3(0, 1, 0).cross(d).normalize();
+      this._sunAxes = [right, d.clone().cross(right).normalize(), new THREE.Vector3()];
+    }
+    const [r, u, t] = this._sunAxes;
+    t.copy(p);
+    t.addScaledVector(r, -(((p.dot(r) % texel) + texel) % texel));
+    t.addScaledVector(u, -(((p.dot(u) % texel) + texel) % texel));
+    this.sun.target.position.copy(t);
+    this.sun.position.copy(t).add(this.sunOffset);
+  }
+
   state(car) { return this.states.get(car); }
 
   // ---------- Bucle ----------
@@ -761,8 +778,7 @@ export class Race {
     }
     this.updateCamera(dt);
     const pp = this.player.model.position;
-    this.sun.target.position.copy(pp);
-    this.sun.position.copy(pp).add(this.sunOffset);
+    this.followSun(pp);
     this.renderer.render(this.scene, this.camera);
 
     // HUD
@@ -941,8 +957,7 @@ export class Race {
 
   renderReplay(dt) {
     const P = this.player.model.position;
-    this.sun.target.position.copy(P);
-    this.sun.position.copy(P).add(this.sunOffset);
+    this.followSun(P);
     this.director.update(dt, this.player, this.replay.idx);
     this.renderer.render(this.scene, this.camera);
   }

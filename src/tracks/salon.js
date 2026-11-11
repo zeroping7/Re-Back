@@ -78,9 +78,6 @@ function build(B) {
 
 
   // ---------- Trazado ----------
-  // copia del parqué con desplazamiento de profundidad: la cuesta gana siempre al suelo en sus extremos (sin parpadeo)
-  const hillMat = floorMat.clone();
-  hillMat.polygonOffset = true; hillMat.polygonOffsetFactor = -4; hillMat.polygonOffsetUnits = -16;
   const bookTex = bookCoverTexture('FÍSICA', '#1f4e8c');
   bookTex.wrapS = bookTex.wrapT = THREE.RepeatWrapping;
   const circuit = buildCircuit(B, {
@@ -94,8 +91,8 @@ function build(B) {
     limits: [ROOM.x - 1, ROOM.z - 1],
     hills: [{ frac: 0.82, len: 30, h: 1.6 }, { frac: 0.145, len: 22, h: 1.2 }, { frac: 0.5, len: 40, h: 1.0, double: true }],
     ramps: [{ frac: 0.07, len: 9, h: 1.8 }],
-    hillMaterial: hillMat,
-    rampMaterial: new THREE.MeshStandardMaterial({ map: bookTex, roughness: 0.55, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
+    hillMaterial: floorMat,
+    rampMaterial: new THREE.MeshStandardMaterial({ map: bookTex, roughness: 0.55 }),
     groundUV,
     barrier: { colors: ['#c62828', '#f5f5f5'] },
     chevrons: { bg: '#c62828', fg: '#ffffff' },

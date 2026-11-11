@@ -51,3 +51,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 38 | Clips en todas las curvas de los circuitos de drift; explicar el handling de drift actual y añadir un botón para ajustarlo solo en Drift | DRI-12, DRI-13 ✅ |
 | 39 | Salón: parpadeo azul de textura en el salto y aterrizaje de la rampa de salida; la segunda curva tiene un escalón y, tomada por dentro, el coche se queda clavado | CIR-25 ✅ |
 | 40 | Súper: el primer salto parpadea de textura al despegar y aterrizar; a veces el juego se para un instante al usar un arma | CIR-26, OBJ-TIRON ✅ |
+| 41 | Salón: la rampa seguía parpadeando y quedaba un escalón en la curva por dentro; Jardín: la primera rampa pasó a ser de madera (debe ser como antes) y una textura del borde parpadea | CIR-26, CIR-27 ✅ |
