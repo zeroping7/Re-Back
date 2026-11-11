@@ -3,9 +3,9 @@
 import { DRIFT } from './car.js';
 
 export const DRIFT_DEFS = [
-  { g: 'Agarre', key: 'rear',  label: 'Agarre trasero (×)',          min: 0.03, max: 0.6, step: 0.01, def: 0.13 },
-  { g: 'Agarre', key: 'front', label: 'Agarre delantero (×)',        min: 0.05, max: 0.8, step: 0.01, def: 0.2 },
-  { g: 'Agarre', key: 'hb',    label: 'Agarre trasero derrapando',   min: 0.1,  max: 1.5, step: 0.05, def: 0.8 },
+  { g: 'Agarre', key: 'rear',  label: 'Agarre trasero (×)',          min: 0.03, max: 0.6, step: 0.01, def: 0.08 },
+  { g: 'Agarre', key: 'front', label: 'Agarre delantero (×)',        min: 0.05, max: 0.8, step: 0.01, def: 0.12 },
+  { g: 'Agarre', key: 'hb',    label: 'Agarre trasero derrapando',   min: 0.1,  max: 1.5, step: 0.05, def: 0.15 },
   { g: 'Agarre', key: 'latGrip', label: 'Agarre lateral propio',     min: 0,    max: 0.6, step: 0.01, def: DRIFT.latGrip },
   { g: 'Dirección', key: 'steer', label: 'Giro de ruedas (×)',       min: 0.6,  max: 1.8, step: 0.05, def: 1.15 },
   { g: 'Dirección', key: 'wMax',  label: 'Giro del coche con volante', min: 0.4, max: 2.5, step: 0.02, def: DRIFT.wMax },
@@ -26,7 +26,7 @@ export const DRIFT_DEFS = [
   { g: 'Donut', key: 'donutV',       label: 'Velocidad máx. donut',  min: 2,    max: 15,  step: 0.5,  def: DRIFT.donutV },
 ];
 
-const KEY = 'reback.drifttune.v1';
+const KEY = 'reback.drifttune.v2';
 const saved = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } })();
 export const driftVals = {};
 for (const d of DRIFT_DEFS) driftVals[d.key] = saved[d.key] ?? d.def;

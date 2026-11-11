@@ -9,6 +9,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Drift: nuevos valores de fábrica ✅ (DRI-13)
+- Agarre trasero 0.08, delantero 0.12, derrapando 0.15, lateral 0.01; gas 0.65; giroscopio 0.2; ángulo antes de trompo 1.85; anti-trompo 0; baile 4 Hz. Clave de guardado v2.
+
 ### Jardín: puerta de la casa quitada ✅
 - Parpadeaba al solaparse con una ventana en la fachada; eliminada.
 

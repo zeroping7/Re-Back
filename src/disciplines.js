@@ -36,7 +36,7 @@ export function discTuning(t, disc) {
   if (disc === 'obst') return crawlTuning(t);
   if (disc !== 'drift') return t;
   const D = globalThis.__DP || {};
-  return { ...t, rearBias: 100, gripRear: t.gripRear * (D.rear ?? 0.13), gripFront: t.gripFront * (D.front ?? 0.2), steerMax: t.steerMax * (D.steer ?? 1.15), driftRear: D.hb ?? 0.8, downforce: t.downforce * 0.5 };
+  return { ...t, rearBias: 100, gripRear: t.gripRear * (D.rear ?? 0.08), gripFront: t.gripFront * (D.front ?? 0.12), steerMax: t.steerMax * (D.steer ?? 1.15), driftRear: D.hb ?? 0.15, downforce: t.downforce * 0.5 };
 }
 
 // CRW-01: física de crawler. Poca velocidad, mucho par y agarre, suspensión larga y blanda, dirección lenta y precisa

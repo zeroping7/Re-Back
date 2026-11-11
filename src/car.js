@@ -18,7 +18,7 @@ const MASS = 8; // masa de referencia: la potencia y el freno se escalan con la 
 const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q = new THREE.Quaternion(), _qi = new THREE.Quaternion();
 const UP = new THREE.Vector3(0, 1, 0);
 // DRI-04: ayudas del derrape (tope de giro, anti-trompo, empuje del gas y mando del volante)
-export const DRIFT = { launch: 17, fishtail: 8, wobHz: 7, launchV: 22, gyro: 0.55, power: 0.9, donut: 4.2, donutV: 7, spinP: 1.15, donutCut: 1, launchMax: 0.6, wMax: 1.16, yawGain: 12, align: 2.6, spin: 0.95, spinK: 6, yawMax: 5.5, latGrip: 0.15, thrust: 36, vmax: 0.85 };
+export const DRIFT = { launch: 17, fishtail: 8, wobHz: 4, launchV: 22, gyro: 0.2, power: 0.65, donut: 4.2, donutV: 7, spinP: 1.85, donutCut: 1, launchMax: 0.6, wMax: 1.16, yawGain: 12, align: 2.6, spin: 0.95, spinK: 0, yawMax: 5.5, latGrip: 0.01, thrust: 36, vmax: 0.85 };
 
 export class Car {
   constructor(scene, world, RAPIER, def, tuning, { color = def.color, index = 0, name = def.name } = {}) {

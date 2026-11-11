@@ -55,3 +55,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 42 | Parque infantil: mantener la textura de rampa de antes (caucho, no la del tobogán) | CIR-26 ✅ |
 | 43 | Pista de Drift algo más ancha (5,5 → 6,6) para derrapar sin chocar; sonidos de tierra y agua más realistas (sonaba como un chasquido); anotar que siempre se diga el número de versión | DRI-08, AUD-12, CLAUDE.md ✅ |
 | 44 | Jardín: la puerta marrón oscuro de la fachada de la casa parpadea (solapada con una ventana): quitarla | CIR-26 ✅ |
+| 45 | Valores de drift probados por el usuario pasan a ser los de fábrica (rear 0.08, front 0.12, hb 0.15, latGrip 0.01, power 0.65, gyro 0.2, spinP 1.85, spinK 0, wobHz 4) | DRI-13 ✅ |
