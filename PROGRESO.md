@@ -9,8 +9,8 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
-### La maqueta: subida de 20° ✅ (CRW-19)
-- Pendiente 20° y par de crawlers como antes. **Pendiente:** probarlo en el móvil.
+### La maqueta: subida de 15° ✅ (CRW-20)
+- Pendiente 15° (antes 20°), par de crawlers como antes. **Pendiente:** probarlo en el móvil.
 
 ### La maqueta: subida de 30° de A a B ✅ (CRW-18)
 - Montaña en zigzag, meta arriba, una sola pasada, obstáculos inclinados con la cuesta; crawlers con más par. IA: 180-220 s. **Pendiente:** probarlo en el móvil (el minimapa aún dibuja la vuelta oculta).

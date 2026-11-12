@@ -8,7 +8,7 @@ import { mulberry } from './kit.js';
 // Circuito 1 de Obstáculos · "La maqueta" (CRW-09..12): diorama de crawlers sobre mesa, con cortinas azules y luna.
 // Un solo camino estrecho (A→B, la meta está donde la salida) con nueve obstáculos obligatorios que ocupan todo el ancho.
 const R = { x: 112, z: 64 }; // al aire libre: una montaña con el camino en zigzag (CRW-18)
-const GRADE = Math.tan(20 * Math.PI / 180); // pendiente de 20° de la salida (A) a la meta (B)
+const GRADE = Math.tan(15 * Math.PI / 180); // pendiente de 15° de la salida (A) a la meta (B)
 const EXT = 18; // tramo plano antes de la salida y después de la meta (parrilla y frenada)
 // Óvalo corto: dos tramos rectos (y=±10) unidos por semicírculos de radio 10. Los obstáculos van casi seguidos (CRW-13).
 const XW = 50, RAD = 10;
