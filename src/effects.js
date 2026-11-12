@@ -87,6 +87,7 @@ export class SkidMarks {
     this.alpha = new Float32Array(maxQuads * 4);
     this.col = new Float32Array(maxQuads * 4 * 3);
     this.birth = new Float32Array(maxQuads * 4);
+    this.uv = new Float32Array(maxQuads * 4 * 2); // FIS-36: u = a lo ancho (0-1), v = metros recorridos
     const idx = new Uint32Array(maxQuads * 6);
     for (let i = 0; i < maxQuads; i++) {
       const v = i * 4;
@@ -97,17 +98,29 @@ export class SkidMarks {
     geo.setAttribute('aAlpha', new THREE.BufferAttribute(this.alpha, 1).setUsage(THREE.DynamicDrawUsage));
     geo.setAttribute('aCol', new THREE.BufferAttribute(this.col, 3).setUsage(THREE.DynamicDrawUsage));
     geo.setAttribute('aBirth', new THREE.BufferAttribute(this.birth, 1).setUsage(THREE.DynamicDrawUsage));
+    geo.setAttribute('aUv', new THREE.BufferAttribute(this.uv, 2).setUsage(THREE.DynamicDrawUsage));
     geo.setIndex(new THREE.BufferAttribute(idx, 1));
     geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e4);
     this.uNow = { value: 0 };
     const mat = new THREE.ShaderMaterial({
       transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4,
       uniforms: { uNow: this.uNow, uMax: { value: maxQuads } },
-      vertexShader: `attribute float aAlpha; attribute vec3 aCol; attribute float aBirth; uniform float uNow; uniform float uMax;
-        varying float vA; varying vec3 vC;
-        void main(){ float age = uNow - aBirth; vA = aAlpha * (1.0 - smoothstep(uMax * 0.6, uMax * 0.97, age)); vC = aCol;
+      vertexShader: `attribute float aAlpha; attribute vec3 aCol; attribute float aBirth; attribute vec2 aUv; uniform float uNow; uniform float uMax;
+        varying float vA; varying vec3 vC; varying vec2 vUv;
+        void main(){ float age = uNow - aBirth; vA = aAlpha * (1.0 - smoothstep(uMax * 0.6, uMax * 0.97, age)); vC = aCol; vUv = aUv;
           gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-      fragmentShader: `varying float vA; varying vec3 vC; void main(){ if (vA < 0.004) discard; gl_FragColor = vec4(vC, vA); }`,
+      // FIS-36: huella de neumático: bordes suaves, dibujo de surcos a lo largo, grano de goma y vetas irregulares
+      fragmentShader: `varying float vA; varying vec3 vC; varying vec2 vUv;
+        float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        void main(){
+          float u = vUv.x, v = vUv.y;
+          float edge = smoothstep(0.0, 0.16, u) * smoothstep(1.0, 0.84, u);
+          float tread = 0.62 + 0.38 * smoothstep(0.25, 0.75, abs(sin(u * 3.14159 * 4.0)));
+          float grain = 0.72 + 0.28 * h(floor(vec2(u * 9.0, v * 14.0)));
+          float streak = 0.8 + 0.2 * sin(v * 2.3 + u * 11.0 + h(vec2(floor(u * 5.0), 1.0)) * 6.0);
+          float a = vA * edge * tread * grain * streak;
+          if (a < 0.004) discard;
+          gl_FragColor = vec4(vC * (0.85 + 0.3 * (1.0 - tread)), a); }`,
     });
     this.mesh = new THREE.Mesh(geo, mat);
     this.mesh.frustumCulled = false;
@@ -123,16 +136,18 @@ export class SkidMarks {
     this.alpha.set([last.a, last.a, cur.a, cur.a], i * 4);
     this.birth.fill(this.count, i * 4, i * 4 + 4);
     for (let v = 0; v < 4; v++) this.col.set(color, (i * 4 + v) * 3);
+    this.uv.set([0, last.d, 1, last.d, 0, cur.d, 1, cur.d], i * 8);
     const g = this.mesh.geometry.attributes;
+    g.aUv.needsUpdate = true;
     g.position.needsUpdate = true; g.aAlpha.needsUpdate = true; g.aCol.needsUpdate = true; g.aBirth.needsUpdate = true;
     this.uNow.value = this.count;
   }
 
   // Llamar cada paso por rueda: punto de contacto, dirección lateral, intensidad (0 = sin marca)
   // color: [r,g,b] (por defecto goma), lift: altura extra (para pintar encima de parches)
-  add(wheel, point, side, strength, width = 0.28, color = TIRE, lift = 0) {
+  add(wheel, point, side, strength, width = 0.34, color = TIRE, lift = 0) {
     let last = this.last[wheel];
-    const a = Math.min(0.6, Math.max(0, strength));
+    const a = Math.min(0.75, Math.max(0, strength) * 1.15); // el dibujo aclara la tira: algo más de opacidad
     // salto grande (recolocar, otro sitio): empezar tira nueva
     if (last && (point.x - last.x) ** 2 + (point.z - last.z) ** 2 > 9) last = this.last[wheel] = null;
     if (a <= 0) {
@@ -142,6 +157,7 @@ export class SkidMarks {
       if (last.off < 6) return;
       if (last.a > 0) {
         const end = this.point(point, side, width, lift, 0);
+        end.d = last.d + Math.hypot(point.x - last.x, point.z - last.z);
         if ((point.x - last.x) ** 2 + (point.z - last.z) ** 2 > 0.01) this.quad(last, end, last.color || color);
       }
       this.last[wheel] = null;
@@ -149,9 +165,10 @@ export class SkidMarks {
     }
     const cur = this.point(point, side, width, lift, a);
     cur.color = color;
-    if (!last) { cur.a = 0; this.last[wheel] = cur; return; } // empieza difuminada
+    if (!last) { cur.a = 0; cur.d = Math.random() * 10; this.last[wheel] = cur; return; } // empieza difuminada
     const dx = point.x - last.x, dz = point.z - last.z;
     if (dx * dx + dz * dz < 0.09) { last.off = 0; return; } // espera a moverse
+    cur.d = last.d + Math.sqrt(dx * dx + dz * dz);
     // suavizar la intensidad entre tramos para que no haya escalones
     cur.a = last.a + (a - last.a) * 0.5;
     this.quad(last, cur, color);

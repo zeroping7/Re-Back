@@ -9,6 +9,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Chirrido de derrape y marcas realistas ✅ (AUD-14, FIS-36)
+- Chirrido de neumático en suelos duros (no Jardín ni Maqueta, ni agua/barro/arena/aceite). Marcas con dibujo de surcos y bordes suaves; en tierra, marrones. **Pendiente:** oído en el móvil (volumen y tono en `src/audio.js`: `squealBuffer`, `0.32 * …`).
+
 ### La maqueta: sin marcha atrás tras la meta ✅ (CRW-27)
 - Tras la meta el coche se sujeta parado (antes el freno metía marcha atrás). Prueba: `node tests/finishhold.mjs`.
 

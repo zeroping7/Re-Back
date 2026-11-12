@@ -672,13 +672,13 @@ export class Race {
       if (launching) mark = Math.max(mark, car.driftMode ? 0.5 * car.launch + 0.15 : 0.25);
       if (car.fx.oil > 0 && w.contact) mark = Math.max(mark, 0.4);
       const tr = car.trail;
-      let color, lift = car.surface && car.surface !== 'water' ? 0.11 : 0.01;
+      let color = this.trackDef.screech === false ? DIRT_MARK : undefined, lift = car.surface && car.surface !== 'water' ? 0.11 : 0.01; // FIS-36: en tierra, surco marrón
       if (tr && w.contact) {
         const k = tr.t / tr.max, m = tr.a * (0.25 + 0.75 * k) * (car.speed > 1.5 ? 1 : 0);
         if (m > mark * 0.6) { mark = Math.max(mark, m); color = tr.color; }
       }
       if (car.surface === 'wax' && w.contact && w.slip > 2) { mark = Math.max(mark, 0.12); color = WAX_MARK; }
-      E.skids.add(car.index * 4 + i, w.point, side, near ? mark : 0, 0.28, color, lift);
+      E.skids.add(car.index * 4 + i, w.point, side, near ? mark : 0, 0.34, color, lift);
       if (!near) continue;
       const amt = (w.contact ? Math.max(0, (w.slip - 4.5) / 8) : 0) + (launching ? (car.driftMode ? 0.9 * car.launch + 0.3 : 0.35) : 0) + (car.drifting && rear && w.contact ? 0.4 : 0);
       if (amt > 0 && Math.random() < amt * (car.isPlayer ? 1 : 0.5)) {
@@ -720,7 +720,9 @@ export class Race {
       }
     }
     if (car.isPlayer) {
-      this.sfx.update(car.speed || 0, car.throttle, Math.max(0, maxSlip - 3) + (car.braking && car.speed > 8 ? 4 : 0) + (car.launch || 0) * 5, { max: car.t.maxSpeed, air: car.contacts === 0 });
+      // AUD-14: chirrido solo en suelo duro (no en el jardín ni la maqueta, ni sobre agua, barro, arena, cera o aceite)
+      const screech = this.trackDef.screech !== false && !car.surface && !(car.fx.oil > 0) && !(car.fx.wet > 0) && !(car.fx.sand > 0);
+      this.sfx.update(car.speed || 0, car.throttle, Math.max(0, maxSlip - 3) + (car.braking && car.speed > 8 ? 4 : 0) + (car.launch || 0) * 5 + (car.drifting ? 4 : 0), { max: car.t.maxSpeed, air: car.contacts === 0, screech });
       this.sfx.setSurface?.(car.surface, car.speed || 0, car.contacts === 0);
       if (car.fx.boost > 0) this.trauma = Math.max(this.trauma, 0.12);
     }
@@ -1014,6 +1016,7 @@ const _Y = new THREE.Vector3(0, 1, 0);
 const WATER_DROP = [[0.78, 0.9, 1], [0.6, 0.8, 0.95], [0.9, 0.96, 1]];
 const MUD = [[0.22, 0.14, 0.08], [0.3, 0.2, 0.12], [0.17, 0.11, 0.06]];
 const WAX_MARK = [0.75, 0.72, 0.62];
+const DIRT_MARK = [0.2, 0.13, 0.07];
 const SAND = [[0.86, 0.74, 0.52], [0.78, 0.66, 0.45], [0.92, 0.82, 0.62]];
 const TRAILS = {
   mud: { color: [0.2, 0.13, 0.07], a: 0.6, time: 2.6 },

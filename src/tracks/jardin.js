@@ -7,6 +7,7 @@ const AREA = { x: 96, z: 70 };
 
 export default {
   id: 'jardin',
+  screech: false, // AUD-14: tierra y hierba, sin chirrido
   name: 'El jardín',
   short: 'Jardín',
   desc: 'Tierra, charcos, gnomos y un gran salto',

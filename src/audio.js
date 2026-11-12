@@ -218,6 +218,34 @@ const SURF = {
   wet: { type: 'highpass', f: 3200, fs: 30, q: 0.5, vol: 0.07, lfo: 0, depth: 0 },        // suelo mojado: pulverizado suave
 };
 
+// Bucle de chirrido de neumático (2 s, sin costura): tono principal ~1,2 kHz que deriva despacio, armónicos,
+// vibración de "pega-suelta" (stick-slip) a 35-70 Hz y un roce de ruido filtrado
+function squealBuffer(ctx) {
+  const sr = ctx.sampleRate, L = Math.floor(sr * 2), X = Math.floor(sr * 0.12);
+  const raw = new Float32Array(L + X);
+  let ph = 0, wander = 0, wv = 0, chat = 0, ch = 0, lp = 0, bp = 0;
+  for (let i = 0; i < L + X; i++) {
+    wv += (Math.random() - 0.5) * 0.004; wv *= 0.9995; wander += wv; wander *= 0.9999;
+    const f = 1180 + wander * 900 + Math.sin(i / sr * 2 * Math.PI * 5.3) * 25;
+    ph += (2 * Math.PI * f) / sr;
+    ch += (2 * Math.PI * (48 + Math.sin(i / sr * 3.1) * 18)) / sr;
+    chat = 0.55 + 0.45 * Math.abs(Math.sin(ch + Math.random() * 0.3));
+    const tone = Math.sin(ph) + 0.4 * Math.sin(2 * ph + 0.5) + 0.18 * Math.sin(3 * ph + 1.1) + 0.08 * Math.sin(5 * ph);
+    const w = Math.random() * 2 - 1;
+    lp += (w - lp) * 0.35; bp += (lp - bp) * 0.08; // ruido de banda media-alta
+    raw[i] = tone * chat * 0.55 + (lp - bp) * 0.5;
+  }
+  const buf = ctx.createBuffer(1, L, sr), d = buf.getChannelData(0);
+  let peak = 0;
+  for (let i = 0; i < L; i++) {
+    let v = raw[i];
+    if (i < X) { const k = i / X; v = raw[i] * k + raw[L + i] * (1 - k); } // fundido para que el bucle no se note
+    d[i] = v; peak = Math.max(peak, Math.abs(v));
+  }
+  for (let i = 0; i < L; i++) d[i] /= peak;
+  return buf;
+}
+
 export class Sfx {
   constructor() {
     this.ctx = null;
@@ -250,8 +278,10 @@ export class Sfx {
     this.rivalVoices = [0, 1, 2].map(() => new EngineVoice(ctx, this.master, waves, buf, { pan: true }));
     this._loadBank();
 
-    const n = ctx.createBufferSource(); n.buffer = buf; n.loop = true;
-    this.skidFilter = ctx.createBiquadFilter(); this.skidFilter.type = 'bandpass'; this.skidFilter.frequency.value = 1800; this.skidFilter.Q.value = 3;
+    // AUD-14: chirrido de neumático (bucle sintetizado: tono que vibra + roce) solo en suelos duros
+    const n = ctx.createBufferSource(); n.buffer = squealBuffer(ctx); n.loop = true;
+    this.skidSrc = n;
+    this.skidFilter = ctx.createBiquadFilter(); this.skidFilter.type = 'highpass'; this.skidFilter.frequency.value = 500; this.skidFilter.Q.value = 0.7;
     this.skidGain = ctx.createGain(); this.skidGain.gain.value = 0;
     n.connect(this.skidFilter).connect(this.skidGain).connect(this.master);
     n.start();
@@ -311,7 +341,7 @@ export class Sfx {
   }
 
   // speed en m/s · throttle -1…1 · slip: deslizamiento · opts.max: velocidad punta · opts.air: en el aire
-  update(speed, throttle, slip, { max = 30, air = false } = {}) {
+  update(speed, throttle, slip, { max = 30, air = false, screech = true } = {}) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
     const dt = Math.min(0.1, Math.max(0.001, t - (this._t || t)));
@@ -340,8 +370,10 @@ export class Sfx {
       }
     }
     this._lastThr = thr;
-    this.skidGain.gain.setTargetAtTime(Math.min(0.25, slip * 0.035), t, 0.05);
-    this.skidFilter.frequency.setTargetAtTime(1400 + slip * 60, t, 0.1);
+    // chirrido: entra a partir de un poco de deslizamiento y crece con él; calla en agua, tierra, aceite… y en el aire
+    const sq = screech && !air && speed > 2 ? Math.min(1, Math.max(0, slip - 1) / 9) : 0;
+    this.skidGain.gain.setTargetAtTime(0.32 * Math.pow(sq, 0.7), t, sq > 0 ? 0.04 : 0.09);
+    this.skidSrc.playbackRate.setTargetAtTime(0.88 + sq * 0.18 + Math.min(0.08, speed / 400), t, 0.1);
   }
 
   hit(strength) {

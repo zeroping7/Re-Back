@@ -52,6 +52,7 @@ Si cambian los valores por defecto se sube la clave de guardado para que se apli
 | FIS-24 | **Giro extra a baja velocidad**: en parado el ángulo de giro es ×1,6 y baja de forma lineal hasta ×1 a 6 u/s, para maniobrar mejor. Criterio: el radio de giro en parado es claramente menor y a velocidad de carrera no cambia | ✅ |
 | FIS-25 | **Dirección menos brusca** (todos los coches): los botones tardan ~0,24 s en llegar al giro completo (antes 0,14 s); inclinación con ±32º y curva suave en el centro; mando con curva más suave. Criterio: toques cortos corrigen poco, mantener pulsado sigue dando el giro completo | ✅ |
 | FIS-35 | **Marcas de derrape continuas**: tiras por rueda que no se cortan (aguantan parpadeos de 0,1 s, empiezan y acaban difuminadas, intensidad suavizada), van por encima de las cintas de pista y las más viejas se desvanecen poco a poco en vez de desaparecer de golpe. En drift marcan las cuatro ruedas al ir de lado y caben 7.000 tramos | ✅ |
+| FIS-36 | **Marcas de neumático realistas**: huella más ancha con bordes suaves, surcos del dibujo a lo largo, grano de goma y vetas irregulares (coordenadas de huella en la tira); en el Jardín y La maqueta son surcos marrones de tierra en vez de goma (`tests/skidshot.mjs`) | ✅ |
 | FIS-22 | Placas de turbo: empujón de 0,8 s | ✅ |
 | FIS-23 | Charco: frena (velocidad máx. ×0,7) y salpica | ✅ |
 

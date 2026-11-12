@@ -87,3 +87,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 73 | Batalla: al ir contra las paredes el coche desaparece hasta la mitad | UX-27 ✅ |
 | 74 | Batalla: rivales a elegir 5 o 10 (quitar 1 y 3) | UX-28 ✅ |
 | 75 | Obstáculos: al llegar a meta (subiendo y bajando) el coche da marcha atrás | CRW-27 ✅ |
+| 76 | Sonido de derrape en suelo duro (también caucho; no en jardín ni sobre agua, tierra o aceite) y marcas más realistas | AUD-14, FIS-36 ✅ |

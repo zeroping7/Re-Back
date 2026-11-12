@@ -32,6 +32,7 @@ const at = (list, n) => list.find((q) => q[0] === n)[1];
 
 export default {
   id: 'senda', disc: 'obst',
+  screech: false, // AUD-14
   name: 'La maqueta', short: 'Maqueta',
   desc: 'Subida de 15° de A a B con nueve obstáculos obligatorios',
   oneWay: true, // tramo A→B: una sola pasada (sin variantes en el menú)
