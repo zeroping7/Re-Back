@@ -9,6 +9,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### La maqueta: aspecto de maqueta ✅ (CRW-22)
+- Montaña pintada, árboles de espuma, base con marco y placa, fondo pintado, mesa de taller con objetos gigantes, habitación. Solo visual. **Pendiente:** ver rendimiento en el móvil.
+
 ### La maqueta: suelo sin parpadeo ✅ (CRW-21)
 - El prado estaba en el mismo plano que la base de la montaña. **Pendiente:** verlo en el móvil.
 

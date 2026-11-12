@@ -83,6 +83,7 @@ troncos y roca. Decidido el 10-11-2026.
 | CRW-19 | La maqueta: pendiente de **20°** (antes 30°) y par de los crawlers como antes de CRW-18 (motor ×1,15) (petición #63) | ✅ |
 | CRW-20 | La maqueta: pendiente de **15°** (antes 20°), resto igual (petición #64) | ✅ |
 | CRW-21 | La maqueta: el suelo de alrededor no parpadea (el prado se dibujaba en el mismo plano que la base de la montaña; ahora queda 0,6 por debajo) (petición #65) | ✅ |
+| CRW-22 | **La maqueta parece una maqueta** (petición #66), solo visual y sin tocar camino, obstáculos ni física: la montaña pintada como escayola (vetas, flocado de hierba, pincel seco, nieve en la cumbre), ~400 árboles de espuma, cabañas y lago de resina al pie, base con marco de madera y placa de latón, fondo pintado curvado detrás, mesa de taller con botes de pintura, pinceles, taza, regla, cola y cúter gigantes, habitación con ventana y estantería, luz cálida | ✅ |
 | CRW-08 | Orden: primero el circuito 1 hasta dejarlo fino con el usuario; después los escenarios 2 (naturaleza volcánica con arroyo) y 3 (jardín/garaje gigante). Cada circuito tiene una sola ambientación coherente | 🚧 |
 
 ## Coches
