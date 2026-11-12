@@ -37,7 +37,10 @@ export class Hud {
   }
 
   setupMinimap(circuit) {
-    const pts = circuit.samples.map((s) => s.p);
+    // CRW-24: en un tramo A→B solo se dibuja de la salida a la meta (sin la vuelta oculta)
+    const dr = circuit.drive, N = circuit.samples.length;
+    this.mapOpen = !!dr;
+    const pts = dr ? circuit.samples.slice(0, Math.min(N, dr[1] - 8) + 1).map((s) => s.p) : circuit.samples.map((s) => s.p);
     let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
     for (const p of pts) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minZ = Math.min(minZ, p.z); maxZ = Math.max(maxZ, p.z); }
     const W = this.map.width, H = this.map.height, pad = 10;
@@ -53,11 +56,12 @@ export class Hud {
     g.lineJoin = 'round';
     g.beginPath();
     this.mapPts.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
-    g.closePath();
+    if (!this.mapOpen) g.closePath();
     g.strokeStyle = '#0008'; g.lineWidth = 9; g.stroke();
     g.strokeStyle = '#ffffffcc'; g.lineWidth = 4; g.stroke();
     const [sx, sy] = this.mapPts[0];
     g.fillStyle = '#111'; g.fillRect(sx - 3, sy - 3, 6, 6);
+    if (this.mapOpen) { const [fx, fy] = this.mapPts[this.mapPts.length - 1]; g.fillStyle = '#2e7d32'; g.fillRect(fx - 4, fy - 4, 8, 8); } // meta
     for (const c of cars) {
       if (c === player) continue;
       const [x, y] = this.toMap(c.currPos.x, c.currPos.z);

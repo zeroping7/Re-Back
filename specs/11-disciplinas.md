@@ -85,6 +85,7 @@ troncos y roca. Decidido el 10-11-2026.
 | CRW-21 | La maqueta: el suelo de alrededor no parpadea (el prado se dibujaba en el mismo plano que la base de la montaña; ahora queda 0,6 por debajo) (petición #65) | ✅ |
 | CRW-22 | **La maqueta parece una maqueta** (petición #66), solo visual y sin tocar camino, obstáculos ni física: la montaña pintada como escayola (vetas, flocado de hierba, pincel seco, nieve en la cumbre), ~400 árboles de espuma, cabañas y lago de resina al pie, base con marco de madera y placa de latón, fondo pintado curvado detrás, mesa de taller con botes de pintura, pinceles, taza, regla, cola y cúter gigantes, habitación con ventana y estantería, luz cálida | ✅ |
 | CRW-23 | **La maqueta más realista vista desde el coche** (petición #67), solo visual: camino con textura de tierra compactada (roderas con taco, guijarros, grietas, bordes con hierba seca), rocas con relieve, grietas, líquenes y textura de granito (muros y obstáculos), guijarros sueltos y matas de hierba en el borde, ladera con grano y relieve fino, bruma suave para dar profundidad | ✅ |
+| CRW-24 | Minimapa de los tramos A→B: solo dibuja de la salida (cuadro negro) a la meta (cuadro verde), sin la vuelta oculta (petición #68) | ✅ |
 | CRW-08 | Orden: primero el circuito 1 hasta dejarlo fino con el usuario; después los escenarios 2 (naturaleza volcánica con arroyo) y 3 (jardín/garaje gigante). Cada circuito tiene una sola ambientación coherente | 🚧 |
 
 ## Coches

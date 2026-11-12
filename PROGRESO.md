@@ -9,6 +9,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Minimapa de tramos A→B ✅ (CRW-24)
+- Solo salida→meta.
+
 ### La maqueta: trayecto más realista ✅ (CRW-23)
 - Camino, rocas, guijarros, hierba, ladera y bruma. Solo visual. **Pendiente:** rendimiento en el móvil.
 
@@ -22,7 +25,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Pendiente 15° (antes 20°), par de crawlers como antes. **Pendiente:** probarlo en el móvil.
 
 ### La maqueta: subida de 30° de A a B ✅ (CRW-18)
-- Montaña en zigzag, meta arriba, una sola pasada, obstáculos inclinados con la cuesta; crawlers con más par. IA: 180-220 s. **Pendiente:** probarlo en el móvil (el minimapa aún dibuja la vuelta oculta).
+- Montaña en zigzag, meta arriba, una sola pasada, obstáculos inclinados con la cuesta; crawlers con más par. IA: 180-220 s. **Pendiente:** probarlo en el móvil.
 
 ### La maqueta sin nombres ni carteles ✅ (CRW-17)
 - Sin aviso «Obstáculo n/N» ni postes/carteles; checkpoints internos intactos. **Pendiente:** verlo en el móvil.
