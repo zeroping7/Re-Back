@@ -9,6 +9,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### La maqueta sin nombres ni carteles ✅ (CRW-17)
+- Sin aviso «Obstáculo n/N» ni postes/carteles; checkpoints internos intactos. **Pendiente:** verlo en el móvil.
+
 ### Rally sin guardabarros ✅ (COC-24)
 - `noArches` en el Rally. **Pendiente:** verlo en el móvil.
 

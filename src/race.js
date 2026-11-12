@@ -279,13 +279,11 @@ export class Race {
     if (d > c.N / 2) d -= c.N;
     st.progress += d; st.idx = ni;
 
-    // CRW-11: puertas numeradas de los obstáculos (solo el jugador)
+    // CRW-11/17: checkpoints de los obstáculos (solo el jugador, sin aviso)
     const gates = this.T.gates;
     if (gates && car.isPlayer && this.started && !st.finished) {
       while ((st.gateN ?? 0) < gates.length && st.progress >= gates[st.gateN ?? 0].i) {
-        const g = gates[st.gateN ?? 0]; st.gateN = (st.gateN ?? 0) + 1;
-        this.hud.message(`🚩 Obstáculo ${st.gateN}/${gates.length} · ${g.name}`, 1.8);
-        this.sfx.play('pickup');
+        st.gateN = (st.gateN ?? 0) + 1; // CRW-17: checkpoint interno, sin aviso
       }
     }
 

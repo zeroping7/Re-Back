@@ -290,7 +290,7 @@ export function crawlKit(B, circuit) {
   // Al terminar: puertas numeradas por orden de recorrido (también al revés) y puntos de reaparición
   function finish() {
     gates.sort((a, b) => a.i - b.i);
-    gates.forEach((g, k) => gateVisual(samples[g.i], k + 1));
+    // CRW-17: sin postes ni carteles; las puertas solo sirven de checkpoint interno
     return {
       gates, safe: [...new Set([0, ...safe])].sort((a, b) => a - b), pits, hazards, zones,
       step: () => {}, update: (t) => { for (const f of visuals) f(t); },
