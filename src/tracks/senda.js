@@ -46,7 +46,7 @@ function build(B) {
   const gr = groundTex('grass', [40, 24]);
   const floorMat = new THREE.MeshStandardMaterial({ map: gr.map, normalMap: gr.normalMap, normalScale: new THREE.Vector2(0.5, 0.5), roughness: 0.95, color: '#a9b88a' });
   const fl = new THREE.Mesh(new THREE.PlaneGeometry(R.x * 12, R.z * 12), floorMat);
-  fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; B.scene.add(fl);
+  fl.rotation.x = -Math.PI / 2; fl.position.y = -0.6; fl.receiveShadow = true; B.scene.add(fl); // CRW-21: por debajo de la montaña (y = 0) para que no parpadeen
   B.collider(B.RAPIER.ColliderDesc.cuboid(R.x * 2, 1, R.z * 2), { x: 0, y: -1, z: 0 }, null, { friction: 0.9 });
 
   // camino de tierra (también es la superficie de la cuesta)

@@ -82,6 +82,7 @@ troncos y roca. Decidido el 10-11-2026.
 | CRW-18 | **La maqueta pasa a ser un tramo de A a B en cuesta de 30°** (petición #62): camino en zigzag (recta, horquilla con el banco de arena, recta) subiendo a 30° de la salida (abajo) a la meta (arriba, ≈250 m de desnivel), sobre una montaña al aire libre. Obstáculos en el mismo orden y forma: los rígidos (escalones, troncos, rampa, puentes) se inclinan enteros con la pendiente; las rocas y la arena siguen el suelo; el vado es una poza horizontal. Una sola pasada (sin vueltas ni variantes al revés/espejo); al cruzar la meta se frena. Si el coche cae, rueda cuesta abajo; si se queda parado o volcado reaparece en el último obstáculo. Física crawler con más par (motor ×2,6). Criterio: los 5 coches de Obstáculos terminan (`racesim senda 3 1 cabra`, yeti), medallas 300/240/200 s | ✅ |
 | CRW-19 | La maqueta: pendiente de **20°** (antes 30°) y par de los crawlers como antes de CRW-18 (motor ×1,15) (petición #63) | ✅ |
 | CRW-20 | La maqueta: pendiente de **15°** (antes 20°), resto igual (petición #64) | ✅ |
+| CRW-21 | La maqueta: el suelo de alrededor no parpadea (el prado se dibujaba en el mismo plano que la base de la montaña; ahora queda 0,6 por debajo) (petición #65) | ✅ |
 | CRW-08 | Orden: primero el circuito 1 hasta dejarlo fino con el usuario; después los escenarios 2 (naturaleza volcánica con arroyo) y 3 (jardín/garaje gigante). Cada circuito tiene una sola ambientación coherente | 🚧 |
 
 ## Coches

@@ -9,6 +9,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### La maqueta: suelo sin parpadeo ✅ (CRW-21)
+- El prado estaba en el mismo plano que la base de la montaña. **Pendiente:** verlo en el móvil.
+
 ### La maqueta: subida de 15° ✅ (CRW-20)
 - Pendiente 15° (antes 20°), par de crawlers como antes. **Pendiente:** probarlo en el móvil.
 
