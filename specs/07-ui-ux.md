@@ -54,7 +54,7 @@ Inicio (toca para empezar)
 | UX-17 | **Arena con looping y subida a la mesa**: rampas sin plataformas sueltas encima; looping de juguete (con velocidad ≥12 entra "en el carril" y lo recorre entero, turbo en la entrada); suelo → silla → mesa → bajada al suelo, todo enlazado; cajas de energía también en la silla y la mesa (`tests/loop.mjs`, `tests/arena.mjs`) | ✅ |
 | UX-18 | Chocar con las esquinas o paredes ya no recoloca el coche: solo si se sale de verdad del escenario (+6 u) o vuelca | ✅ |
 | UX-24 | **Batalla: rampas macizas**: las rampas de la arena son cuñas cerradas hasta el suelo (sin hueco debajo donde atascarse) (`tests/arena.mjs`, fotos `tests/arenashot.mjs`) | ✅ |
-| UX-25 | Batalla: looping más realista (física, no carril automático) | 📝 |
+| UX-25 | **Batalla: looping con física**: se entra a cualquier velocidad; al subir se pierde velocidad por la gravedad y al bajar se gana; gas y freno cuentan; si arriba no hay velocidad para que la fuerza centrífuga sostenga el coche (v²/r + g·cosθ < 0) se despega y cae. Rizo de radio 4,5; turbo de entrada 1,4 s (justo para darlo a fondo) (`tests/loop.mjs`: con turbo lo dan los 4 coches; sin carrerilla se caen) | ✅ |
 | UX-26 | Batalla: la IA sube a las zonas elevadas (silla/mesa/caja) a por la estrella o el portador | 📝 |
 | UX-27 | Batalla: límites de la habitación bien marcados (el coche no se mete en las paredes) | 📝 |
 | UX-28 | Batalla: 4 coches más (8 en total) | 📝 |

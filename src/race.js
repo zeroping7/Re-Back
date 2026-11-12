@@ -844,7 +844,7 @@ export class Race {
     const vflat = new THREE.Vector3().copy(car.velocity).setY(0);
     if (vflat.length() > 6 && car.fwdSpeed > 0) tmp.lerp(vflat.normalize(), 0.35).normalize();
     if (car.fwdSpeed < -3) tmp.negate().lerp(this.camDir, 0.5);
-    if (!car.rail) this.camDir.lerp(tmp, 1 - Math.exp(-dt * 4.5)).normalize(); // en el looping la cámara no da la vuelta
+    if (!car.loopZone) this.camDir.lerp(tmp, 1 - Math.exp(-dt * 4.5)).normalize(); // en el looping la cámara no da la vuelta
 
     const intro = this.phase === 'countdown' ? THREE.MathUtils.smoothstep(this.countdown, 0, 3.2) : 0;
     const far = this.camMode === 'far';

@@ -79,7 +79,7 @@ function build(B) {
   box(5, 1.2, 4, -45, 9.6, 14, '#1e88e5');
 
   // 3) looping (rizo completo) al noreste: se entra hacia el oeste por z=-27 y se sale por z=-19
-  const loopInfo = loop(B, { cx: 24, z0: -27, z1: -19, R: 5, w: 6 });
+  const loopInfo = loop(B, { cx: 24, z0: -27, z1: -19, R: 4.5, w: 6 });
   // placa de turbo antes de la entrada
   const pad = new THREE.Mesh(new THREE.PlaneGeometry(8, 6), new THREE.MeshStandardMaterial({ map: chevronTexture(), emissive: '#ffffff', emissiveMap: chevronTexture(), emissiveIntensity: 0.8 }));
   pad.rotation.x = -Math.PI / 2; pad.rotation.z = Math.PI / 2; pad.position.set(36, 0.05, -27); scene.add(pad);
@@ -202,22 +202,23 @@ export function battleStep(race, dt) {
   if (B.over) return;
   if (!race.started) return;
   B.lastT = Math.max(0, B.lastT - dt);
-  // looping (UX-17): con velocidad suficiente el coche entra "en el carril" y lo recorre entero,
-  // como en las pistas de juguete; si entra lento, sube un poco y cae hacia atrás
+  // looping (UX-25): física de verdad. Dentro del rizo no actúa el estabilizador anti-vuelco (que lo tumbaría):
+  // si llegas con velocidad, la fuerza centrífuga te pega a la pista; si no, te caes
   for (const L of race.T.loops || []) {
     for (const c of race.cars) {
-      if (c.rail) { railStep(c, L, dt); continue; }
       const p = c.currPos, P = L.pad;
+      c.loopZone = p.x > L.min.x && p.x < L.max.x && p.z > L.min.z && p.z < L.max.z && p.y < L.max.y;
       if (p.x > P.min.x && p.x < P.max.x && p.z > P.min.z && p.z < P.max.z && p.y < 3 && c.velocity.x < -2) {
         if (c.fx.boost < 0.3 && c.isPlayer) race.sound('turbo', p);
-        c.fx.boost = Math.max(c.fx.boost, 0.9);
+        c.fx.boost = Math.max(c.fx.boost, 1.4);
       }
-      if (p.y > 2 || c.speed < 12) continue;
+      if (c.rail) { railStep(race, c, L, dt); continue; }
+      if (p.y > 2 || c.contacts === 0) continue;
       const dx = p.x - L.cx;
-      // entrada normal (hacia -x por el carril z0) o al revés (hacia +x por el carril z1)
-      if (dx > 0 && dx < 3 && Math.abs(p.z - L.z0) < L.w / 2 - 0.5 && c.velocity.x < -6) c.rail = { th: 0, dir: 1, v: c.speed };
-      else if (dx < 0 && dx > -3 && Math.abs(p.z - L.z1) < L.w / 2 - 0.5 && c.velocity.x > 6) c.rail = { th: Math.PI * 2, dir: -1, v: c.speed };
-      if (c.rail && c.isPlayer) race.shake(0.15);
+      // entrada normal (hacia -x por el carril z0) o al revés (hacia +x por el carril z1): a cualquier velocidad;
+      // la física decide si llegas arriba
+      if (dx > 0 && dx < 3 && Math.abs(p.z - L.z0) < L.w / 2 - 0.5 && c.velocity.x < -3) c.rail = { th: 0, dir: 1, v: c.speed };
+      else if (dx < 0 && dx > -3 && Math.abs(p.z - L.z1) < L.w / 2 - 0.5 && c.velocity.x > 3) c.rail = { th: Math.PI * 2, dir: -1, v: c.speed };
     }
   }
   // quien lleva la estrella va algo más lento (si no, nadie le alcanzaría)
@@ -302,24 +303,41 @@ export function battleRender(race) {
   B.light.position.copy(p);
 }
 
+// Rizo con física (UX-25): el coche va pegado a la cinta mientras la fuerza centrífuga lo sostenga.
+// Al subir pierde velocidad por la gravedad y al bajar la gana; el gas empuja, el freno frena.
+// Si la fuerza contra la pista se hace negativa (va lento arriba) se despega y cae con física normal.
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion();
-function railStep(c, L, dt) {
-  const r = c.rail;
-  r.v = Math.max(r.v, 24);
-  r.th += (r.dir * r.v * dt) / L.R;
-  const done = r.dir > 0 ? r.th >= Math.PI * 2 : r.th <= 0;
+function railStep(race, c, L, dt) {
+  const r = c.rail, g = -race.world.gravity.y;
+  const ride = 0.62, rr = L.R - ride; // radio que recorre el centro del coche
+  const th0 = THREE.MathUtils.clamp(r.th, 0, Math.PI * 2);
+  // aceleración a lo largo de la cinta: gravedad + motor + freno + rozamiento
+  const boost = c.fx.boost > 0, maxS = c.t.maxSpeed * (boost ? 1.35 : 1);
+  const eng = c.throttle * 15 * (boost ? 1.6 : 1) * Math.max(0, 1 - Math.pow(Math.max(0, r.v) / maxS, 1.6));
+  const brk = c.braking ? 18 : 0;
+  r.v += (-g * Math.sin(th0) * r.dir + eng - brk * Math.sign(r.v) - 0.015 * r.v * Math.abs(r.v)) * dt;
+  // fuerza contra la pista (por unidad de masa): v²/r + g·cos(th)
+  const N = (r.v * r.v) / rr + g * Math.cos(th0);
+  r.th += (r.dir * r.v * dt) / rr;
   const th = THREE.MathUtils.clamp(r.th, 0, Math.PI * 2), u = th / (Math.PI * 2), sm = u * u * (3 - 2 * u), dsm = 6 * u * (1 - u);
-  const ride = 0.62; // altura del centro del coche sobre la cinta
   const nIn = new THREE.Vector3(Math.sin(th), Math.cos(th), 0); // hacia el centro del rizo
   const pos = new THREE.Vector3(L.cx - L.R * Math.sin(th), L.R * (1 - Math.cos(th)) + 0.08, L.z0 + (L.z1 - L.z0) * sm).addScaledVector(nIn, ride);
-  const T = new THREE.Vector3(-Math.cos(th) * L.R, Math.sin(th) * L.R, (L.z1 - L.z0) * dsm / (Math.PI * 2)).normalize().multiplyScalar(r.dir);
-  const side = new THREE.Vector3().crossVectors(nIn, T).normalize(); // eje X local del coche
+  const T = new THREE.Vector3(-Math.cos(th) * rr, Math.sin(th) * rr, (L.z1 - L.z0) * dsm / (Math.PI * 2)).normalize().multiplyScalar(r.dir);
+  const side = new THREE.Vector3().crossVectors(nIn, T).normalize();
   const up = new THREE.Vector3().crossVectors(T, side).normalize();
   _m.makeBasis(side, up, T); _q.setFromRotationMatrix(_m);
+  const vel = T.clone().multiplyScalar(r.v);
   c.body.setTranslation(pos, true); c.body.setRotation(_q, true);
-  c.body.setLinvel({ x: T.x * r.v, y: T.y * r.v, z: T.z * r.v }, true); c.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+  c.body.setLinvel({ x: vel.x, y: vel.y, z: vel.z }, true); c.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
   c.fx.stick = 0.2;
-  if (done) c.rail = null;
+  // fuera del rizo (terminado o ha vuelto atrás a la entrada): sigue con física normal
+  if (r.th >= Math.PI * 2 || r.th <= 0) { c.rail = null; return; }
+  // despegue: arriba sin velocidad suficiente → cae (gira un poco al soltarse)
+  if (N < 0 && th > 0.6 && th < Math.PI * 2 - 0.6) {
+    c.rail = null;
+    c.body.setAngvel({ x: 0, y: 0, z: -r.dir * r.v / rr * 0.6 }, true);
+    if (c.isPlayer) race.shake(0.2);
+  }
 }
 
 // ---------- Piloto de batalla: persigue la estrella o a quien la lleva; si la tiene, huye ----------

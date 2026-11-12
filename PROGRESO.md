@@ -9,8 +9,11 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Batalla: looping con física ✅ (UX-25)
+- Ya no se recorre solo: la gravedad frena al subir, el gas empuja y, si arriba vas lento, el coche se despega y cae. Con el turbo de la entrada y a fondo se da entero. **Pendiente:** probarlo en el móvil (si cuesta demasiado: turbo de entrada `1.4` o radio `R: 4.5` en `src/battle.js`).
+
 ### Batalla: rampas macizas ✅ (UX-24)
-- Las rampas de la arena son cuñas cerradas hasta el suelo: ya no hay hueco debajo. **Pendiente (uno a uno):** looping realista (UX-25), IA que sube a lo alto (UX-26), paredes (UX-27), 8 coches (UX-28).
+- Las rampas de la arena son cuñas cerradas hasta el suelo: ya no hay hueco debajo. **Pendiente (uno a uno):** IA que sube a lo alto (UX-26), paredes (UX-27), 8 coches (UX-28).
 
 ### La maqueta · bajada en el menú ✅ (CRW-26)
 - Sale como pista propia en Obstáculos (carrera, contrarreloj…), con su propio récord, fantasma y medalla.
