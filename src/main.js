@@ -5,7 +5,7 @@ import '@fontsource/russo-one/latin-400.css';
 import { Race, FIXED, fmtTime, getBest } from './race.js';
 import { TRACKS, trackById, trackFromKey, VARIANTS, variantUnlocked, tracksFor } from './tracks/index.js';
 import { DISCS, discById, discUnlocked, carAllowed, MODES, MEDALS, medalLevel, fmtPts } from './disciplines.js';
-import { ARENA } from './battle.js';
+import { ARENA, battleTime } from './battle.js';
 import { CARS, carById, UPGRADES, MAX_LEVEL, carTuning, tractionName } from './cars.js';
 import { carStats } from './carstats.js';
 import {
@@ -289,7 +289,8 @@ async function init() {
     }
     carCards($('cars'), buildSetup);
     seg('opt-laps', (trackById(cur).oneWay ? [1] : LAPS[disc]).map((n) => [n, String(n)]), curLaps, (v) => { if (disc === 'race') settings.laps = v; else settings.lapsD[disc] = v; saveSettings(); });
-    seg('opt-rivals', disc === 'drift' && mode !== 'battle' ? [[1, '1'], [2, '2'], [3, '3']] : [[1, '1'], [3, '3'], [5, '5']], () => (disc === 'drift' && mode !== 'battle' ? Math.min(3, settings.rivals) : settings.rivals), (v) => { settings.rivals = v; saveSettings(); });
+    if (mode === 'battle') seg('opt-rivals', [[5, '5'], [10, '10']], () => (settings.bRivals === 10 ? 10 : 5), (v) => { settings.bRivals = v; saveSettings(); }); // UX-28
+    else seg('opt-rivals', disc === 'drift' ? [[1, '1'], [2, '2'], [3, '3']] : [[1, '1'], [3, '3'], [5, '5']], () => (disc === 'drift' ? Math.min(3, settings.rivals) : settings.rivals), (v) => { settings.rivals = v; saveSettings(); });
     seg('opt-diff', [[0.86, 'Fácil'], [0.94, 'Normal'], [1.02, 'Difícil']], () => settings.diff, (v) => { settings.diff = v; saveSettings(); });
   }
 
@@ -444,7 +445,7 @@ async function init() {
       const c = cupById(cup.id);
       return { track: c.tracks[cup.idx], laps: c.laps, rivals: c.rivals, diff: c.diff, practice: false, kind: `${c.icon} ${c.name} · Prueba ${cup.idx + 1} de ${c.tracks.length}` };
     }
-    if (mode === 'battle') return { track: 'arena', battle: true, laps: 1, rivals: Math.max(1, settings.rivals), diff: settings.diff, practice: false, kind: '⭐ Batalla de la Estrella' };
+    if (mode === 'battle') return { track: 'arena', battle: true, laps: 1, rivals: settings.bRivals === 10 ? 10 : 5, diff: settings.diff, practice: false, kind: '⭐ Batalla de la Estrella' };
     if (mode === 'solo') return { track: trackKey(), laps: disc === 'drift' ? 2 : 1, rivals: 0, diff: 1, practice: false, solo: true, kind: `${modeDef().icon} ${D().name} · ${modeDef().name}` };
     if (mode === 'practice') return { track: trackKey(), laps: 3, rivals: 0, diff: 1, practice: true, kind: '⏱ Contrarreloj' };
     return { track: trackKey(), laps: curLaps(), rivals: disc === 'drift' ? Math.min(3, settings.rivals) : settings.rivals, diff: settings.diff, practice: false, kind: disc === 'race' ? '🏁 Carrera rápida' : `${modeDef().icon} ${D().name} · ${modeDef().name}` };
@@ -454,7 +455,7 @@ async function init() {
   function showLoading(def, cfg) {
     $('ld-kind').textContent = cfg.kind;
     $('ld-name').textContent = def.name;
-    $('ld-desc').textContent = cfg.solo ? `${def.desc} · ${medalGoals(def)}` : cfg.battle ? `${def.desc} · ${cfg.rivals + 1} coches · reloj de 60 s` : def.desc + (cfg.practice && def.variant ? '' : cfg.practice ? (profile.stars[def.id] ? ' · ⭐ estrella conseguida' : ' · ☆ busca la estrella') : ` · ${cfg.laps} vueltas · ${cfg.rivals + 1} coches`);
+    $('ld-desc').textContent = cfg.solo ? `${def.desc} · ${medalGoals(def)}` : cfg.battle ? `${def.desc} · ${cfg.rivals + 1} coches · reloj de ${battleTime(cfg.rivals + 1)} s` : def.desc + (cfg.practice && def.variant ? '' : cfg.practice ? (profile.stars[def.id] ? ' · ⭐ estrella conseguida' : ' · ☆ busca la estrella') : ` · ${cfg.laps} vueltas · ${cfg.rivals + 1} coches`);
     const tips = TIPS_D[def.disc] || TIPS;
     $('ld-tip').textContent = '💡 ' + tips[Math.floor(Math.random() * tips.length)];
     $('loading').style.setProperty('--tc', def.color);
@@ -729,7 +730,7 @@ async function init() {
     if (params.get('variant')) settings.variant = params.get('variant');
     if (params.get('track')) settings.track = params.get('track');
     if (params.get('car')) { profile.owned[params.get('car')] ??= {}; profile.selected = params.get('car'); }
-    if (params.has('rivals')) settings.rivals = +params.get('rivals');
+    if (params.has('rivals')) settings.rivals = settings.bRivals = +params.get('rivals');
     if (params.has('laps')) settings.laps = +params.get('laps');
     if (params.has('diff')) settings.diff = +params.get('diff');
     if (params.get('camMode')) settings.cam = params.get('camMode');

@@ -14,8 +14,8 @@ import { loadGhost, saveGhost, ghostModel, poseAt, poseLerp, ReplayRecorder, Dir
 import { setMirrorText } from './textures.js';
 
 export const FIXED = 1 / 60;
-const RIVAL_COLORS = ['#ff7a00', '#00b8a9', '#ff4f9a', '#7cb342', '#5c6bc0', '#fdd835', '#8d6e63'];
-const RIVAL_NAMES = ['Turbo', 'Pila', 'Zumbi', 'Trasto', 'Muelle', 'Chapa', 'Tuerca'];
+const RIVAL_COLORS = ['#ff7a00', '#00b8a9', '#ff4f9a', '#7cb342', '#5c6bc0', '#fdd835', '#8d6e63', '#e53935', '#26c6da', '#ab47bc'];
+const RIVAL_NAMES = ['Turbo', 'Pila', 'Zumbi', 'Trasto', 'Muelle', 'Chapa', 'Tuerca', 'Rayo', 'Petardo', 'Clavo'];
 
 // Una carrera completa: escena, física, coches, IA, objetos, vueltas y cámara.
 export class Race {

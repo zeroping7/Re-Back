@@ -87,7 +87,7 @@ export class Hud {
     this.bT = (this.bT || 0) + 1;
     if (this.bT % 6) return;
     const rows = [...d.cars].sort((a, b) => B.timers.get(a) - B.timers.get(b)).map((c) => {
-      const left = B.timers.get(c), pct = (left / 60) * 100;
+      const left = B.timers.get(c), pct = (left / (B.time || 60)) * 100;
       return `<div class="br${c === d.player ? ' me' : ''}${c === B.holder ? ' hold' : ''}"><span class="dot" style="background:${c.color}"></span>` +
         `<span class="nm">${c === B.holder ? '⭐ ' : ''}${c.name}</span><i><b style="width:${pct}%;background:${c.color}"></b></i><span class="tm">${left.toFixed(1)}</span></div>`;
     }).join('');

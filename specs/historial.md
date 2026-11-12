@@ -85,3 +85,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 71 | Batalla: looping con física real (si vas lento te caes) | UX-25 ✅ |
 | 72 | Batalla: la IA no sube a las zonas altas (si te quedas arriba ganas); que la estrella a veces salga arriba | UX-26 ✅ |
 | 73 | Batalla: al ir contra las paredes el coche desaparece hasta la mitad | UX-27 ✅ |
+| 74 | Batalla: rivales a elegir 5 o 10 (quitar 1 y 3) | UX-28 ✅ |

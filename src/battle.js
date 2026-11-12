@@ -8,6 +8,8 @@ import { haloTexture } from './items.js';
 // Arena cerrada. La estrella aparece en el centro; quien la lleva gasta su reloj; se roba tocando al que la
 // lleva (o con un arma que le aturda); gana quien vacía su reloj.
 export const BATTLE_TIME = 60;
+// UX-28: con muchos coches la estrella cambia de manos a menudo; el reloj es más corto para que no se eternice
+export const battleTime = (n) => (n <= 6 ? BATTLE_TIME : 30);
 
 const ROOM = { x: 50, z: 36, h: 32 };
 export const ARENA = {
@@ -115,7 +117,7 @@ function build(B) {
     ].map((z) => ({ ...z, min: z.min.map((v) => v * S), max: z.max.map((v) => v * S), y: z.y * S })),
     // donde puede aparecer la estrella: suelo (alfombra) o arriba (caja, silla, mesa)
     starSpots: { floor: W([[0, 14], [0, -14]]), high: W([[0, 0, 3], [-15, 24, 4.5], [-39, 21, 9]]) },
-    spawns: W([[32, 2], [-26, -2], [12, 16], [-8, -28], [44, 26], [-24, 10], [0, -14], [40, -6]]),
+    spawns: W([[32, 2], [-26, -2], [12, 16], [-8, -28], [44, 26], [-24, 10], [0, -14], [40, -6], [-44, -28], [20, 30], [-22, -20]]), // UX-28: 11 coches
     loops: [loopInfo],
     zones: [],
     dust: [0.85, 0.8, 0.7],
@@ -199,9 +201,11 @@ export function setupBattle(race) {
   const light = new THREE.PointLight('#ffd23f', 60, 18, 1.6);
   race.scene.add(mesh, halo, light);
   race.battleState = {
-    timers: new Map(race.cars.map((car) => [car, BATTLE_TIME])),
+    time: battleTime(race.cars.length),
+    timers: new Map(race.cars.map((car) => [car, battleTime(race.cars.length)])),
     holder: null, holdT: 0, lastHolder: null, lastT: 0,
     pos: starSpawn(race.T), // UX-26: a veces arriba (caja, silla o mesa)
+    immune: 1 + Math.max(0, race.cars.length - 4) * 0.15,
     mesh, halo, light, over: false,
   };
 }
@@ -252,7 +256,7 @@ export function battleStep(race, dt) {
     // aturdido por un arma: suelta la estrella
     if (h.fx.stun > 0.4 && B.holdT > 0.5) return dropStar(race);
     // robo al tocarle
-    if (B.holdT > 1.0) {
+    if (B.holdT > B.immune) { // tras cogerla, un rato sin que te la roben (más con más coches: UX-28)
       for (const o of race.cars) {
         if (o === h || o.currPos.distanceTo(h.currPos) > 2.7) continue;
         give(race, o);
@@ -297,7 +301,7 @@ function finishBattle(race, winner) {
   B.over = true;
   race.phase = 'done';
   const order = [...race.cars].sort((a, b) => B.timers.get(a) - B.timers.get(b));
-  order.forEach((car, i) => { const st = race.state(car); st.place = i + 1; st.finished = true; st.finishTime = BATTLE_TIME - B.timers.get(car); });
+  order.forEach((car, i) => { const st = race.state(car); st.place = i + 1; st.finished = true; st.finishTime = B.time - B.timers.get(car); });
   race.order = order;
   race.sfx.play(winner.isPlayer ? 'finish' : 'lap');
   race.hud.message(winner.isPlayer ? '⭐ ¡HAS GANADO LA BATALLA!' : `⭐ ¡Gana ${winner.name}!`, 3, 'big go');
