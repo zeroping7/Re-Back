@@ -12,8 +12,8 @@ ajuste base. Nombres y diseños originales.
 | chispa | Chispa | buggy | Aficionado | Eléctrico | 4x4 | 7 | 1.500 |
 | tanque | Tanque | monster truck | Avanzado | Nitro | 4x4 50/50 | 11 | 3.000 |
 | rally | Rally | rally compacto | Avanzado | Nitro | 4x4 60 % detrás | 8,5 | 4.000 |
-| flecha | Flecha | turismo | Semi-pro | Eléctrico | 4x4 70 % detrás | 8 | 7.500 |
-| formula | Fórmula | monoplaza | Pro | Nitro | Trasera | 7,5 | 10.000 |
+| flecha | Flecha | turismo | Semi-pro | Eléctrico | 4x4 70 % detrás | 8 | 12.000 (pide Copa Plata) |
+| formula | Fórmula | monoplaza | Pro | Nitro | Trasera | 7,5 | 18.000 (pide Copa Oro) |
 
 | ID | Requisito | Estado |
 |---|---|---|

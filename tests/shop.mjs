@@ -8,7 +8,7 @@ const errors = [];
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
 page.on('dialog', (d) => d.accept());
 await page.goto(process.argv[2], { waitUntil: 'load' });
-await page.evaluate(() => localStorage.setItem('reback.profile.v1', JSON.stringify({ money: 6000, owned: { furgo: {}, pulga: {} }, selected: 'pulga' })));
+await page.evaluate(() => localStorage.setItem('reback.profile.v2', JSON.stringify({ money: 6000, owned: { furgo: {}, pulga: {} }, selected: 'pulga' })));
 await page.reload({ waitUntil: 'load' });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 await sleep(2500);
@@ -21,6 +21,6 @@ await page.evaluate(() => document.querySelector('#g-actions .buy').click()); aw
 await page.evaluate(() => document.querySelector('#g-ups button').click()); await sleep(600);
 await page.evaluate(() => document.querySelector('#g-ups button').click()); await sleep(1200);
 await page.screenshot({ path: 'tests/shots/shop2.png' });
-const prof = await page.evaluate(() => localStorage.getItem('reback.profile.v1'));
+const prof = await page.evaluate(() => localStorage.getItem('reback.profile.v2'));
 console.log(prof, errors);
 await browser.close();

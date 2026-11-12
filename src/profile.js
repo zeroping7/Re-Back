@@ -1,9 +1,11 @@
-import { CARS, carById, UPGRADES, MAX_LEVEL } from './cars.js';
+import { CARS, carById, UPGRADES, MAX_LEVEL, carUnlocked } from './cars.js';
+import { raceReward, upgradeLevelCost, STAR_PRIZE, FIRST_WIN, FIRST_WIN_MIN_CARS, diffTier } from './economy.js';
 import { TRACKS } from './tracks/index.js';
 import { DISCS, discUnlocked, carAllowed, carDiscs, MEDALS, MEDAL_REPEAT } from './disciplines.js';
 
 // Partida guardada: dinero, coches comprados y sus mejoras
-const KEY = 'reback.profile.v1';
+const KEY = 'reback.profile.v2'; // ECO-14: v2 = economía nueva, la partida empieza de cero
+try { localStorage.removeItem('reback.profile.v1'); } catch { /* nada */ }
 const START = { money: 500, owned: { furgo: {}, pulga: {} }, selected: 'pulga', earned: 0, cups: {}, stars: {} };
 
 function load() {
@@ -22,6 +24,7 @@ profile.stars ??= {}; // estrellas ocultas cogidas por circuito
 profile.sel ??= { race: profile.selected };
 for (const k in profile.sel) if (!profile.owned[profile.sel[k]]) profile.sel[k] = profile.selected; // último coche usado en cada disciplina (DIS-03)
 profile.medals ??= {}; // mejor medalla por circuito en los modos en solitario (DEC-01)
+profile.wins ??= {}; // primeras victorias cobradas por circuito y dificultad (ECO-13)
 profile.granted ??= {}; // disciplinas cuyo coche básico ya se regaló (DIS-04)
 
 profile.inst ??= {}; // niveles montados por coche y mejora (si falta, todos los comprados)
@@ -69,15 +72,14 @@ export function stepUpgrade(id, upId, d) {
 export function upgradeCost(id, upId) {
   const lvl = ownedUpgrades(id)[upId] || 0;
   if (lvl >= MAX_LEVEL) return null;
-  const base = 150 + carById(id).price * 0.1;
-  return Math.round((base * (lvl + 1)) / 50) * 50;
+  return upgradeLevelCost(carById(id).price, lvl);
 }
 
 function spentOn(id) {
   let total = carById(id).price;
   const up = ownedUpgrades(id);
   for (const u of UPGRADES) {
-    for (let l = 0; l < (up[u.id] || 0); l++) total += Math.round(((150 + carById(id).price * 0.1) * (l + 1)) / 50) * 50;
+    for (let l = 0; l < (up[u.id] || 0); l++) total += upgradeLevelCost(carById(id).price, l);
   }
   return total;
 }
@@ -85,7 +87,7 @@ export const sellValue = (id) => Math.round((spentOn(id) * 0.6) / 50) * 50;
 
 export function buyCar(id, disc) {
   const c = carById(id);
-  if (c.secret || isOwned(id) || profile.money < c.price) return false;
+  if (c.secret || isOwned(id) || profile.money < c.price || !carUnlocked(c, profile.cups)) return false;
   profile.money -= c.price;
   profile.owned[id] = {};
   profile.selected = id;
@@ -149,19 +151,20 @@ export function awardMedal(key, level) {
   const prev = profile.medals[key] || 0;
   let reward = 0;
   for (let l = prev; l < level; l++) reward += MEDALS[l].prize;
-  if (!reward && level > 0) reward = MEDAL_REPEAT;
+  if (!reward && level > 0) reward = MEDAL_REPEAT[level - 1];
   if (level > prev) profile.medals[key] = level;
   if (reward) addMoney(reward); else saveProfile();
   return { reward, isNew: level > prev };
 }
 
-// Premio por carrera: según puesto, nº de coches, vueltas y dificultad
-export function raceReward(place, total, laps, diff) {
-  const table = [1000, 650, 450, 300, 200, 150];
-  const base = table[Math.min(place - 1, table.length - 1)];
-  const field = 0.7 + 0.1 * total;
-  const diffMul = diff < 0.9 ? 0.7 : diff > 1 ? 1.5 : 1;
-  return Math.round((base * field * diffMul * (0.6 + 0.4 * (laps / 3))) / 10) * 10;
+// ECO-13: primera victoria en un circuito y dificultad. Devuelve el premio (0 si ya estaba cobrada)
+export function firstWin(trackId, diff, total) {
+  if (total < FIRST_WIN_MIN_CARS) return 0;
+  const tier = diffTier(diff), key = `${String(trackId).split(':')[0]}:${tier}`;
+  if (profile.wins[key]) return 0;
+  profile.wins[key] = 1;
+  addMoney(FIRST_WIN[tier]);
+  return FIRST_WIN[tier];
 }
 
 // Guarda el mejor puesto conseguido en una copa
@@ -170,7 +173,6 @@ export function setCupResult(id, place) {
 }
 
 // Estrella oculta: premio solo la primera vez
-export const STAR_PRIZE = 500;
 export function takeStar(trackId) {
   if (profile.stars[trackId]) return false;
   profile.stars[trackId] = true;
@@ -188,4 +190,4 @@ export function checkSecret() {
 
 export function addMoney(n) { profile.money += n; profile.earned = (profile.earned || 0) + n; saveProfile(); }
 
-export { CARS };
+export { CARS, raceReward, STAR_PRIZE };

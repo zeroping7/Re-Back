@@ -3,16 +3,16 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import '@fontsource/russo-one/latin-400.css';
 import { Race, FIXED, fmtTime, getBest } from './race.js';
-import { TRACKS, trackById, trackFromKey, VARIANTS, variantUnlocked, tracksFor } from './tracks/index.js';
+import { TRACKS, trackById, trackFromKey, VARIANTS, variantUnlocked, tracksFor, trackUnlocked, trackNeeds } from './tracks/index.js';
 import { DISCS, discById, discUnlocked, carAllowed, MODES, MEDALS, medalLevel, fmtPts } from './disciplines.js';
 import { ARENA, battleTime } from './battle.js';
-import { CARS, carById, UPGRADES, MAX_LEVEL, carTuning, tractionName } from './cars.js';
+import { CARS, carById, UPGRADES, MAX_LEVEL, carTuning, tractionName, carNeeds, carUnlocked } from './cars.js';
 import { carStats } from './carstats.js';
 import {
   profile, isOwned, upgradesOf, ownedUpgrades, installedLevel, stepUpgrade, upgradeCost, sellValue, buyCar, sellCar, buyUpgrade, selectCar, raceReward, addMoney,
-  onProfileChange, setCupResult, takeStar, STAR_PRIZE, checkSecret, starsGot, useDisc, grantStarters, awardMedal,
+  onProfileChange, setCupResult, firstWin, takeStar, STAR_PRIZE, checkSecret, starsGot, useDisc, grantStarters, awardMedal,
 } from './profile.js';
-import { CUPS, cupById, cupUnlocked, cupPrize, addPoints, standings, POINTS, cupsFor } from './cups.js';
+import { CUPS, cupById, cupUnlocked, cupPrize, cupPayout, addPoints, standings, POINTS, cupsFor } from './cups.js';
 import { Showroom } from './showroom.js';
 import { Controls } from './controls.js';
 import { PadInput } from './gamepad.js';
@@ -253,6 +253,7 @@ async function init() {
   const medalIcon = (key) => { const l = profile.medals[key] || 0; return l ? MEDALS[l - 1].icon : ''; };
   function buildSetup() {
     if (!variantUnlocked(settings.variant, profile.cups)) settings.variant = 'normal';
+    if (!trackUnlocked(curTrack(), profile.cups)) setTrack(defTrack[disc]); // ECO-11
     const tracks = $('tracks'); tracks.innerHTML = '';
     const cur = curTrack(), vr = trackById(cur).oneWay ? 'normal' : settings.variant || 'normal';
     const entries = tracksFor(disc).flatMap((t) => (t.oneWay && t.revName ? [[t, t.id], [t, t.id + ':rev']] : [[t, t.id]])); // CRW-26
@@ -260,6 +261,14 @@ async function init() {
       const key = id.includes(':') ? id : t.id + (vr !== 'normal' ? ':' + vr : '');
       const best = getBest(key);
       const c = document.createElement('button');
+      if (!trackUnlocked(t.id, profile.cups)) { // ECO-11: circuito que se abre con una copa
+        const cupName = cupById(trackNeeds(t.id)).name;
+        c.className = 'card locked';
+        c.innerHTML = `${trackPv(t, '')}<b>🔒 ${t.name}</b><small>Queda entre los 3 primeros de la ${cupName}</small>`;
+        c.addEventListener('click', () => { sfx.play('click'); toast(`🔒 Queda entre los 3 primeros de la ${cupName}`); });
+        tracks.append(c);
+        continue;
+      }
       c.className = 'card' + (cur === id ? ' sel' : '') + (vr !== 'normal' ? ' v-' + vr : '');
       const star = disc === 'race' && mode === 'practice' && vr === 'normal' ? `<span class="star ${profile.stars[t.id] ? 'got' : ''}">${profile.stars[t.id] ? '⭐' : '☆'}</span>` : '';
       const ghost = (mode === 'practice' || (disc === 'obst' && mode === 'solo')) && hasGhost(key) ? '<span class="ghost-ic">👻</span>' : '';
@@ -383,7 +392,7 @@ async function init() {
       c.innerHTML = hidden
         ? `${carPv(d)}<b>❓ Secreto</b><small>Consigue todas las estrellas</small><div class="price">⭐ ${starsGot()}/${TRACKS.length}</div>`
         : `${carPv(d)}<b>${own ? '' : '🔒 '}${d.name}</b><small>${d.clase}</small>` +
-        (own ? `<div class="own">${inUse(d.id) ? '✔ En uso' : 'Tuyo'}</div>` : `<div class="price">🪙 ${coins(d.price)}</div>`);
+        (own ? `<div class="own">${inUse(d.id) ? '✔ En uso' : 'Tuyo'}</div>` : `<div class="price">🪙 ${coins(d.price)}${carUnlocked(d, profile.cups) ? '' : ' · ' + cupById(carNeeds(d)).icon}</div>`);
       c.addEventListener('click', () => { gSel = d.id; sfx.play('click'); room.showCar(d.id); buildGarage(); });
       list.append(c);
     }
@@ -407,6 +416,9 @@ async function init() {
       $('g-name').textContent = '❓ Coche secreto';
       $('g-desc').textContent = `Consigue las ${TRACKS.length} estrellas ocultas en Contrarreloj (llevas ${starsGot()})`;
       btn(`⭐ ${starsGot()}/${TRACKS.length}`, 'buy', false, () => {});
+    } else if (!own && !carUnlocked(d, profile.cups)) { // ECO-12
+      $('g-desc').textContent = `${d.desc} · 🔒 Queda entre los 3 primeros de la ${cupById(carNeeds(d)).name} para poder comprarlo`;
+      btn(`🔒 ${cupById(carNeeds(d)).name} · 🪙 ${coins(d.price)}`, 'buy', false, () => {});
     } else if (!own) {
       btn(`Comprar · 🪙 ${coins(d.price)}`, 'buy', profile.money >= d.price, () => { if (buyCar(d.id, gDisc)) { sfx.play('finish'); buildGarage(); } });
     } else {
@@ -578,13 +590,14 @@ async function init() {
       const value = drift ? me.score : me.time, lvl = medalLevel(def, value), got = awardMedal(def.key || def.id, lvl);
       reward = got.reward;
       title = lvl ? `${MEDALS[lvl - 1].icon} ¡Medalla de ${MEDALS[lvl - 1].name.toLowerCase()}!${got.isNew ? '' : ' (repetida)'}` : 'Sin medalla… ¡otra vez!';
-    } else reward = raceReward(me.place, res.length, cfg.laps, cfg.diff);
+    } else reward = raceReward(me.place, res.length, cfg.battle ? 2 : cfg.laps, cfg.diff, def.disc || 'race'); // ECO-02 (la Batalla paga como 2 vueltas)
     $('res-title').textContent = title;
     $('res-table').innerHTML = res.map((r) => `<tr class="${r.player ? 'me' : ''}"><td>${cfg.solo ? '' : r.place + 'º'}</td><td><span class="dot" style="background:${r.color}"></span>${r.name}</td>` +
       (drift ? `<td class="pts">${fmtPts(r.score)} pts</td>` : `<td>${r.finished ? fmtTime(r.time) : '—'}</td>`) +
       `<td>⏱ ${fmtTime(drift ? (r.finished ? r.time : 0) : r.best)}</td>${inCup ? `<td class="pts">+${POINTS[r.place - 1] || 0}</td>` : ''}</tr>`).join('');
     if (reward && !cfg.solo) addMoney(reward);
-    $('res-reward').textContent = reward ? `+ 🪙 ${coins(reward)}` : '';
+    const first = !cfg.solo && !cfg.battle && me.place === 1 ? firstWin(def.id, cfg.diff, res.length) : 0; // ECO-13
+    $('res-reward').textContent = (reward ? `+ 🪙 ${coins(reward)}` : '') + (first ? ` · 🎯 Primera victoria aquí: + 🪙 ${coins(first)}` : '');
     $('res-cup').classList.toggle('hidden', !inCup);
     document.querySelector('#m-results .res-col').classList.toggle('wide', inCup);
     if (inCup) $('cup-table').innerHTML = standingsRows(standings(cup));
@@ -631,8 +644,9 @@ async function init() {
   function showPodium() {
     const c = cupById(cup.id), table = standings(cup);
     const place = table.findIndex((e) => e.player) + 1;
-    const prize = cupPrize(c, place);
+    const prev = profile.cups[c.id], prize = cupPayout(c, place, prev), repeat = prize && prize < cupPrize(c, place); // ECO-10
     const before = CUPS.map((x) => cupUnlocked(x, profile.cups));
+    const closedT = TRACKS.filter((t) => !trackUnlocked(t.id, profile.cups)), closedC = CARS.filter((x) => !carUnlocked(x, profile.cups));
     setCupResult(c.id, place);
     if (prize) addMoney(prize);
     const opened = CUPS.filter((x, i) => !before[i] && cupUnlocked(x, profile.cups));
@@ -643,8 +657,11 @@ async function init() {
     $('pod-title').textContent = `${c.icon} ${c.name}`;
     $('pod-sub').textContent = place === 1 ? '¡Eres el campeón!' : place <= 3 ? `¡Al podio! Has quedado ${place}º` : `Has quedado ${place}º. ¡La próxima vez!`;
     $('pod-table').innerHTML = standingsRows(table);
-    $('pod-reward').textContent = prize ? `Premio de la copa: + 🪙 ${coins(prize)}` : 'Sin premio: hay que acabar entre los 3 primeros';
+    $('pod-reward').textContent = prize ? `Premio de la copa: + 🪙 ${coins(prize)}${repeat ? (place < prev ? ' (por mejorar tu puesto)' : ' (copa repetida)') : ''}` : 'Sin premio: hay que acabar entre los 3 primeros';
+    const newT = closedT.filter((t) => trackUnlocked(t.id, profile.cups)), newC = closedC.filter((x) => carUnlocked(x, profile.cups));
     $('pod-unlock').innerHTML = [opened.length ? `🔓 ¡${opened.map((x) => x.name).join(' y ')} desbloqueada!` : '',
+      newT.length ? `🗺️ Circuito${newT.length > 1 ? 's' : ''} nuevo${newT.length > 1 ? 's' : ''}: <b>${newT.map((t) => t.name).join(' y ')}</b>` : '',
+      newC.length ? `🚗 Ya puedes comprar: <b>${newC.map((x) => x.name).join(' y ')}</b>` : '',
       ...newDiscs.map((d) => `${d.icon} ¡Nueva disciplina: <b>${d.name}</b>! Regalo: ${carById(d.starter).name}`)].filter(Boolean).join('<br>');
     room.showPodium(table);
     room.setView('podium');
@@ -737,7 +754,7 @@ async function init() {
     mode = params.has('practice') ? 'practice' : params.has('battle') ? 'battle' : params.has('solo') ? 'solo' : 'race';
     if (params.get('track')) { disc = trackById(params.get('track')).disc || 'race'; settings.trk[disc] = params.get('track'); }
     if (params.get('disc')) disc = params.get('disc');
-    if (params.has('unlock')) { profile.cups.bronce = 1; profile.cups.plata = 1; grantStarters(); }
+    if (params.has('unlock')) { profile.cups.bronce = 1; profile.cups.plata = 1; profile.cups.oro = 1; grantStarters(); }
     if (!params.get('car')) useDisc(disc);
     sfx.start();
     if (params.get('cup')) { mode = 'cup'; cup = { id: params.get('cup'), idx: +(params.get('cupIdx') || 0), table: {} }; }

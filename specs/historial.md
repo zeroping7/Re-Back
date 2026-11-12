@@ -88,3 +88,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 74 | Batalla: rivales a elegir 5 o 10 (quitar 1 y 3) | UX-28 ✅ |
 | 75 | Obstáculos: al llegar a meta (subiendo y bajando) el coche da marcha atrás | CRW-27 ✅ |
 | 76 | Sonido de derrape en suelo duro (también caucho; no en jardín ni sobre agua, tierra o aceite) y marcas más realistas | AUD-14, FIS-36 ✅ |
+| 77 | Revisar la economía: ganar dinero, comprar coches y desbloquear coches y circuitos, ni muy fácil ni muy lento. Ritmo de 4–5 h para los coches de Carrera, circuitos bloqueados, partida reiniciada, online con monedas más adelante. Nota para revisarla al añadir coches o circuitos | ECO-02, ECO-04, ECO-06, ECO-10..14 ✅, ECO-15 📝 |

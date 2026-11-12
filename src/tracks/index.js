@@ -15,6 +15,11 @@ export const ALL_TRACKS = [...TRACKS, cocina, garaje, senda];
 export const tracksFor = (disc) => ALL_TRACKS.filter((t) => (t.disc || 'race') === disc);
 export const trackById = (id) => ALL_TRACKS.find((t) => t.id === String(id).split(':')[0]) || TRACKS[0]; // CRW-26: admite 'senda:rev'
 
+// ECO-11: circuitos de Carrera que se abren con las copas (entre los 3 primeros)
+export const TRACK_NEEDS = { parque: 'bronce', museo: 'plata', muelle: 'plata' };
+export const trackNeeds = (id) => TRACK_NEEDS[String(id).split(':')[0]] || null;
+export const trackUnlocked = (id, cups = {}) => { const n = trackNeeds(id); return !n || (cups[n] ?? 99) <= 3; };
+
 // Variantes (CIR-23 / UX-13): mismo circuito al revés o en espejo. Clave: 'salon', 'salon:rev', 'salon:mirror'
 export const VARIANTS = [
   { id: 'normal', name: 'Normal', short: '', icon: '' },

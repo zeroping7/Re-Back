@@ -21,6 +21,13 @@ logotipos, música, sonidos, texturas ni modelos de Re-Volt, y no mencionarlo de
   junto con los links de la web y del APK. `N` = número de ejecución del workflow *Build*: tras el push, `gh run list -R zeroping7/re-back -L 1 --json number,headSha`
   (comprueba que `headSha` es tu commit). La compilación tarda ~2 min; avísale de que hasta entonces verá la versión anterior.
 
+## ⚠ Economía: revísala al añadir coches, circuitos, copas o modos
+
+Siempre que añadas o quites un coche, circuito, copa o modo, sigue la lista **«Revisión al añadir contenido»** de
+`specs/09-economia.md` (precio en la escalera, con qué copa se abre, premios únicos) y pasa `node tests/economy.mjs`
+(tiene que acabar en ✓). Ritmo decidido por el usuario: coche nuevo cada 6–8 carreras al principio y 15–20 al final;
+todos los de Carrera en 4–5 h. Las carreras online darán monedas (ECO-15) cuando exista NET-08.
+
 ## Notas técnicas rápidas
 
 - `npm run build`; servir `dist/` con `npx vite preview --port 4173` para las pruebas en Chrome headless.

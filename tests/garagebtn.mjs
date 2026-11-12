@@ -24,7 +24,7 @@ ok(await vis('m-garage'), 'abre el garaje');
 ok((await page.evaluate(() => document.getElementById('g-name').textContent)) === id, 'garaje en el coche ' + id);
 // comprar mejora, quitar y poner
 await page.evaluate(() => { window.__prof = null; });
-const money = await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('reback.profile.v1')); p.money = 99999; localStorage.setItem('reback.profile.v1', JSON.stringify(p)); return p.money; });
+const money = await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('reback.profile.v2')); p.money = 99999; localStorage.setItem('reback.profile.v2', JSON.stringify(p)); return p.money; });
 await page.reload({ waitUntil: 'load' }); await sleep(2500);
 await page.evaluate(() => document.getElementById('btn-start')?.click()); await sleep(1200);
 await page.evaluate(() => document.querySelector('[data-go="garage"]').click()); await sleep(800);

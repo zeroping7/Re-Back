@@ -8,7 +8,7 @@ export const CARS = [
     stats: { vel: 2, acel: 5, manejo: 4 },
   },
   {
-    id: 'flecha', noArches: true, disc: ['race', 'drift'], price: 7500, name: 'Flecha', desc: 'Turismo bajo y rapidísimo', color: '#f5c518', style: 'touring', number: '1',
+    id: 'flecha', noArches: true, disc: ['race', 'drift'], price: 12000, name: 'Flecha', desc: 'Turismo bajo y rapidísimo', color: '#f5c518', style: 'touring', number: '1',
     clase: 'Semi-pro', motor: 'Eléctrico', sound: ['e1', 1.00], mass: 8, rearBias: 70,
     wheelR: 0.32, wheelX: 0.62, wheelZf: 0.78, wheelZr: -0.76,
     mods: { engine: 1.14, maxSpeed: 1.17, grip: 1.1, steer: 0.95, susp: 1.35 },
@@ -23,7 +23,7 @@ export const CARS = [
     stats: { vel: 2, acel: 4, manejo: 3 },
   },
   {
-    id: 'formula', price: 10000, name: 'Fórmula', desc: 'Monoplaza: se pega en curva', color: '#d50000', style: 'f1', number: '1', rimColor: '#ffd400',
+    id: 'formula', price: 18000, name: 'Fórmula', desc: 'Monoplaza: se pega en curva', color: '#d50000', style: 'f1', number: '1', rimColor: '#ffd400',
     clase: 'Pro', motor: 'Nitro', sound: ['n4', 1.00], mass: 7.5, rearBias: 100,
     wheelR: 0.34, wheelX: 0.64, wheelZf: 0.9, wheelZr: -0.68,
     mods: { engine: 1.08, maxSpeed: 1.16, grip: 1.22, steer: 1.0, susp: 1.5 },
@@ -135,6 +135,11 @@ export const CARS = [
 CARS.sort((a, b) => a.price - b.price);
 
 export const carById = (id) => CARS.find((c) => c.id === id) || CARS[0];
+
+// ECO-12: las clases altas piden copa además del precio (entre los 3 primeros)
+export const CLASS_NEEDS = { 'Semi-pro': 'plata', Pro: 'oro' };
+export const carNeeds = (def) => (def.secret ? null : CLASS_NEEDS[def.clase] || null);
+export const carUnlocked = (def, cups = {}) => { const n = carNeeds(def); return !n || (cups[n] ?? 99) <= 3; };
 
 // Clases (como en las ligas de coches RC) y rivales según la dificultad
 export const CLASSES = ['Novato', 'Aficionado', 'Avanzado', 'Semi-pro', 'Pro'];

@@ -59,7 +59,7 @@ export const MEDALS = [
   { id: 'plata', icon: '🥈', name: 'Plata', prize: 600 },
   { id: 'oro', icon: '🥇', name: 'Oro', prize: 1000 },
 ];
-export const MEDAL_REPEAT = 100;
+export const MEDAL_REPEAT = [60, 150, 250]; // DEC-01: repetir paga según la medalla lograda en ese intento
 // nivel 0..3 para un valor (puntos en drift: más es mejor; segundos en obstáculos: menos es mejor)
 export function medalLevel(trackDef, value) {
   const m = trackDef.medals;

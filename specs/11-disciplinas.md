@@ -103,7 +103,7 @@ troncos y roca. Decidido el 10-11-2026.
 
 | ID | Requisito | Estado |
 |---|---|---|
-| DEC-01 | **Medallas** en los modos en solitario: bronce 300 🪙, plata 600, oro 1.000 la primera vez que se consigue cada una; repetir sin mejorar da 100 | ✅ |
+| DEC-01 | **Medallas** en los modos en solitario: bronce 300 🪙, plata 600, oro 1.000 la primera vez que se consigue cada una; repetir sin mejorar da 60 / 150 / 250 según la medalla lograda en ese intento | ✅ |
 | DEC-02 | Duelo de Drift y Carrera de Obstáculos pagan como una carrera normal (ECO-02) | ✅ |
 | DEC-03 | **Copa Derrape** (cocina → garaje → cocina al revés) y **Copa Obstáculos** (escritorio → fregadero → escritorio al revés): 3 pruebas con puntos, premio 4.000 | ✅ |
 
