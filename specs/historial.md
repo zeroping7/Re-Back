@@ -79,3 +79,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 66 | La maqueta: mejorar todo el apartado visual para que parezca una maqueta de montaña, sin cambiar nada de lo que hay | CRW-22 ✅ |
 | 67 | La maqueta: mejorar la experiencia visual del trayecto desde el coche (suelo, rocas…) lo más realista posible sin cambiar nada | CRW-23 ✅ |
 | 68 | Actualizar la vista del mapa de La maqueta para que se vea como es ahora | CRW-24 ✅ |
+| 69 | Salón: rampa con el parqué del suelo, turbos fijos colocados con el visor y cuestas grandes en el tramo central | — ✅ |
