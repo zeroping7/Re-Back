@@ -26,6 +26,7 @@ export class Race {
     this.practice = practice;
     this.battle = battle;
     if (battle) this.laps = laps = 999;
+    if (trackDef.oneWay) this.laps = laps = 1; // CRW-18: tramo A→B, una sola pasada
     this.disc = battle ? 'race' : (trackDef.disc || 'race'); // DIS-02
     this.simT = 0;
     this.camMode = camMode;
@@ -238,6 +239,7 @@ export class Race {
       if (!this.started) input = car.isPlayer ? { ...playerInput, throttle: 0, brake: 0, hold: true } : hold;
       else if (car.isPlayer) input = st.finished || this.autoPlayer ? this.playerAI.update(dt, this, st) : playerInput;
       else input = this.ai.get(car).update(dt, this, st);
+      if (st.finished && this.T.finishIdx !== undefined) input = { steer: 0, throttle: 0, brake: 1 }; // CRW-18: tras la meta de un tramo A→B, frenar
       if (!car.isPlayer && this.started && !this.practice && !this.battle && this.disc !== 'drift') {
         const ps = this.state(this.player);
         const diff = (st.progress - ps.progress) / this.circuit.N;
@@ -289,7 +291,7 @@ export class Race {
 
     // vueltas
     if (this.started && !st.finished) {
-      const laps = Math.floor(st.progress / c.N);
+      const laps = Math.floor((st.progress + (this.T.finishIdx !== undefined ? c.N - this.T.finishIdx : 0)) / c.N); // CRW-18: meta en B
       if (laps > st.laps) {
         st.laps = laps;
         const lapTime = this.time - st.lapStart;
@@ -329,7 +331,7 @@ export class Race {
     // (también si está en el suelo por debajo de un puente o una cuesta: se ha caído)
     // CRW-11: foso bajo los puentes y pasarelas: si el coche está por debajo de la plataforma, se ha caído
     const pit = (this.T.pits || []).find((q) => st.idx >= q.i0 && st.idx <= q.i1);
-    if ((lat > c.width / 2 + 2 || p.y < sc.p.y - 1.4 || (pit && p.y < pit.y)) && car.contacts > 0) st.offT = (st.offT || 0) + dt; else st.offT = 0;
+    if ((lat > c.width / 2 + 2 || p.y < sc.p.y - 1.4 || (pit && p.y < (pit.y ?? sc.p.y + pit.top))) && car.contacts > 0) st.offT = (st.offT || 0) + dt; else st.offT = 0;
     // recolocar si vuelca o se sale
     const b = this.bounds;
     if (car.upsideTime > 1.4 || p.y < -4 || Math.abs(p.x) > b.x + 6 || Math.abs(p.z) > b.z + 6 || st.offT > (this.disc === 'obst' ? 0.9 : car.isPlayer ? 2.5 : 1.5)) {

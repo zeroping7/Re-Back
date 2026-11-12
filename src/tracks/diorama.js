@@ -38,8 +38,9 @@ function instanced(B, items) {
 // Muros de roca a los dos lados del camino (dos filas, la de atrás más alta)
 export function rockWalls(B, circuit, { seed = 5 } = {}) {
   const rnd = mulberry(seed), S = circuit.samples, N = circuit.N, hw = circuit.width / 2, items = [];
-  for (let i = 0; i < N; i += 1) for (let sub = 0; sub < 2; sub++) {
-    const s = S[i], s2 = S[(i + 1) % N], u = sub * 0.5 + rnd() * 0.25;
+  const [r0, r1] = circuit.drive || [0, N]; // tramo A→B: solo la parte que se recorre
+  for (let k = r0; k < r1; k += 1) for (let sub = 0; sub < 2; sub++) {
+    const i = ((k % N) + N) % N, s = S[i], s2 = S[(i + 1) % N], u = sub * 0.5 + rnd() * 0.25;
     const px = s.p.x + (s2.p.x - s.p.x) * u, pz = s.p.z + (s2.p.z - s.p.z) * u, nx = s.n.x, nz = s.n.z, h = s.h + (s2.h - s.h) * u;
     for (const side of [1, -1]) for (let row = 0; row < 2; row++) {
       if (row && rnd() < 0.3) continue;

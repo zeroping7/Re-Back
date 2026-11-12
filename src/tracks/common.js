@@ -208,6 +208,16 @@ export function buildCircuit(B, def) {
     }
     elev.push({ i0: c - 1, i1: c + total + 1, top: (c + n) % N, kind: 'ramp', def: rp });
   }
+  // Tramo de A a B en cuesta (CRW-18): def.grade suma una pendiente y dice qué parte se recorre (drive = [i0, i1], i0 puede ser < 0).
+  // El resto del bucle está oculto (sin suelo ni bordes): solo cierra el circuito para la IA, el fantasma y el minimapa.
+  let drive = null;
+  if (def.grade) {
+    const g = def.grade(samples, N);
+    samples.forEach((s, i) => { s.h += g.h[i]; });
+    drive = g.drive;
+    elev.length = 0;
+    elev.push({ i0: drive[0], i1: drive[1], kind: 'grade', def: {} });
+  }
   for (const s of samples) s.p.y = s.h;
 
   // ---------- Bordes ----------
@@ -215,6 +225,7 @@ export function buildCircuit(B, def) {
   const st = noBarrier ? { colors: ['#ffffff'] } : def.barrier;
   let gaps = def.gaps && (B.reverse ? def.gaps.map(([a, b, sd]) => [(N - b) % N, (N - a) % N, sd === undefined ? sd : -sd]) : def.gaps);
   // huecos por fracción de vuelta (puentes sin bordes, OBS-01)
+  if (drive) gaps = [...(gaps || []), [drive[1], N + drive[0]]];
   if (def.gapFracs) gaps = [...(gaps || []), ...def.gapFracs.map(([a, b, sd]) => (B.reverse ? [at(b), at(a), sd === undefined ? sd : -sd] : [at(a), at(b), sd]))];
   // bordes visibles bajos y sobrios; la colisión es un muro invisible más alto
   const blockH = st.height ?? 0.6, blockT = st.thick ?? 0.6;
@@ -333,7 +344,7 @@ export function buildCircuit(B, def) {
   scene.add(line);
   }
 
-  const C = { curve, samples, N, length, width, spacing: 1.6, elev, at, minRadius, straightest };
+  const C = { curve, samples, N, length, width, spacing: 1.6, elev, at, minRadius, straightest, drive };
   function sampleNear(x, z) {
     let best = 0, bd = Infinity;
     for (const s of samples) { const d = (s.p.x - x) ** 2 + (s.p.z - z) ** 2; if (d < bd) { bd = d; best = s.i; } }
@@ -455,13 +466,14 @@ export function trackRibbon(B, circuit, material, extra = 1, y = 0.02) {
   const S = circuit.samples, N = S.length, hw = circuit.width / 2 + extra;
   const pos = [], uv = [], idx = [];
   let v = 0;
-  for (let i = 0; i <= N; i++) {
-    const s = S[i % N];
+  const [r0, r1] = circuit.drive || [0, N], cnt = r1 - r0; // en un tramo A→B solo la parte que se recorre
+  for (let k = 0; k <= cnt; k++) {
+    const i = k, s = S[(((r0 + k) % N) + N) % N];
     const l = s.p.clone().addScaledVector(s.n, hw), r = s.p.clone().addScaledVector(s.n, -hw);
     pos.push(l.x, y + s.h, l.z, r.x, y + s.h, r.z);
     uv.push(0, v, 1, v);
     v += 1.6 / (hw * 2);
-    if (i < N) { const a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+    if (i < cnt) { const a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));

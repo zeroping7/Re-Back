@@ -43,7 +43,7 @@ export function crawlTuning(t) {
   return {
     ...t,
     maxSpeed: t.maxSpeed * 0.5,
-    engine: t.engine * 1.15,
+    engine: t.engine * 2.6,
     rearBias: 50,
     gripFront: t.gripFront * 1.7, gripRear: t.gripRear * 1.7,
     sideFront: 1.4, sideRear: 1.4,

@@ -123,7 +123,7 @@ async function init() {
   const curTrack = () => { const id = disc === 'race' ? settings.track : settings.trk[disc]; return tracksFor(disc).some((t) => t.id === id) ? id : defTrack[disc]; };
   const setTrack = (id) => { if (disc === 'race') settings.track = id; else settings.trk[disc] = id; saveSettings(); };
   const LAPS = { race: [2, 3, 5], drift: [2, 3], obst: [1, 2, 3] };
-  const curLaps = () => (disc === 'race' ? settings.laps : settings.lapsD[disc] ?? 2);
+  const curLaps = () => (disc === 'race' ? settings.laps : trackById(curTrack()).oneWay ? 1 : settings.lapsD[disc] ?? 2);
 
   // entrar en un modo de una disciplina
   function enter(d, go) {
@@ -249,12 +249,12 @@ async function init() {
     }
   }
 
-  const trackKey = () => curTrack() + (settings.variant && settings.variant !== 'normal' ? ':' + settings.variant : '');
+  const trackKey = () => curTrack() + (settings.variant && settings.variant !== 'normal' && !trackById(curTrack()).oneWay ? ':' + settings.variant : ''); // CRW-18: tramos A→B sin variantes
   const medalIcon = (key) => { const l = profile.medals[key] || 0; return l ? MEDALS[l - 1].icon : ''; };
   function buildSetup() {
     if (!variantUnlocked(settings.variant, profile.cups)) settings.variant = 'normal';
     const tracks = $('tracks'); tracks.innerHTML = '';
-    const vr = settings.variant || 'normal', cur = curTrack();
+    const cur = curTrack(), vr = trackById(cur).oneWay ? 'normal' : settings.variant || 'normal';
     for (const t of tracksFor(disc)) {
       const key = t.id + (vr !== 'normal' ? ':' + vr : '');
       const best = getBest(key);
@@ -274,6 +274,7 @@ async function init() {
     if (disc === 'obst' && settings.variant === 'mirror') settings.variant = 'normal'; // sin espejo en Obstáculos
     for (const V of VARIANTS) {
       if (disc === 'obst' && V.id === 'mirror') continue;
+      if (trackById(cur).oneWay && V.id !== 'normal') continue;
       const open = variantUnlocked(V.id, profile.cups);
       const b = document.createElement('button');
       b.textContent = (open ? '' : '🔒 ') + V.name + (V.icon ? ' ' + V.icon : '');
@@ -286,7 +287,7 @@ async function init() {
       vEl.append(b);
     }
     carCards($('cars'), buildSetup);
-    seg('opt-laps', LAPS[disc].map((n) => [n, String(n)]), curLaps, (v) => { if (disc === 'race') settings.laps = v; else settings.lapsD[disc] = v; saveSettings(); });
+    seg('opt-laps', (trackById(cur).oneWay ? [1] : LAPS[disc]).map((n) => [n, String(n)]), curLaps, (v) => { if (disc === 'race') settings.laps = v; else settings.lapsD[disc] = v; saveSettings(); });
     seg('opt-rivals', disc === 'drift' && mode !== 'battle' ? [[1, '1'], [2, '2'], [3, '3']] : [[1, '1'], [3, '3'], [5, '5']], () => (disc === 'drift' && mode !== 'battle' ? Math.min(3, settings.rivals) : settings.rivals), (v) => { settings.rivals = v; saveSettings(); });
     seg('opt-diff', [[0.86, 'Fácil'], [0.94, 'Normal'], [1.02, 'Difícil']], () => settings.diff, (v) => { settings.diff = v; saveSettings(); });
   }

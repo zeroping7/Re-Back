@@ -72,3 +72,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 59 | Humo de escape realista en los coches nitro: a ralentí algo de humo, al subir revoluciones menos humo pero con más fuerza, desde 1/3 de revoluciones nada, y al bajar de 1/3 vuelve a empezar; por todos los escapes de cada coche | COC-23 ✅ |
 | 60 | Quitar los guardabarros del Rally y subirlo | COC-24 ✅ |
 | 61 | Circuito de obstáculos: quitar los nombres al llegar a cada obstáculo y los carteles, pero mantener los checkpoints internos | CRW-17 ✅ |
+| 62 | La maqueta: convertirla en un tramo de A a B con pendiente de 30° de principio a fin, en zigzag por una montaña, manteniendo los obstáculos; si falla, el coche rueda cuesta abajo; solo coches de Obstáculos | CRW-18 ✅ |

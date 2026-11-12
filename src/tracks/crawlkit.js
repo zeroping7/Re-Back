@@ -28,7 +28,8 @@ export const LEN = {
   sand: 26, ford: 16, climb: 17, garden: 16, tib: P.tib.ramp * 2 + P.tib.deck + 1,
 }; // altura aproximada del centro del coche sobre el suelo (mundo)
 
-export function crawlKit(B, circuit) {
+export function crawlKit(B0, circuit) {
+  let B = B0, flat = null; // flat: obstáculo que se está construyendo inclinado (CRW-18)
   const SC = B.S, MX = B.MX;
   const W = circuit.width, sp = circuit.spacing, samples = circuit.samples;
   const gates = [], safe = [], pits = [], hazards = [], zones = [], visuals = [];
@@ -44,6 +45,10 @@ export function crawlKit(B, circuit) {
     const f = { i: c, t, n, yaw: Math.atan2(t.x, t.z), L, y0: s.h, i0: c - half, i1: c + half, c: s.p.clone(),
       idx: (a) => c + Math.round(a / sp),
       pos: (a, lat = 0) => s.p.clone().addScaledVector(t, a).addScaledVector(n, lat) };
+    if (tiltNext) { // CRW-18: en la cuesta, la pieza se construye plana y se gira entera para apoyarla sobre la pendiente
+      const ang = Math.atan2(groundAt(f, L / 2) - groundAt(f, -L / 2), L);
+      if (Math.abs(ang) > 0.01) { B = tiltBuilder(B0, new THREE.Vector3(f.c.x, f.y0, f.c.z), t.clone().cross(new THREE.Vector3(0, 1, 0)).normalize(), ang); flat = f; f.tilt = ang; }
+    }
     const ig = f.i0 - entry, ie = f.i1 + exit;
     gates.push({ i: ig, name });
     safe.push(ig, ie);
@@ -54,7 +59,7 @@ export function crawlKit(B, circuit) {
     for (let a = -f.L / 2 - 4; a <= f.L / 2 + 1; a += 4.5) hazards.push({ pos: world(f.pos(a)), r: 0, slow, hold: hold ? 9 : 0 });
   }
   // Foso bajo una plataforma: si el coche está por debajo, se ha caído (top = altura de la plataforma, diseño)
-  function pit(f, a0, a1, top) { pits.push({ i0: f.idx(a0), i1: f.idx(a1), y: (f.y0 + top) * SC + 0.2 }); }
+  function pit(f, a0, a1, top) { pits.push(f.tilt ? { i0: f.idx(a0 * Math.cos(f.tilt)), i1: f.idx(a1 * Math.cos(f.tilt)), top: top * SC + 0.2 } : { i0: f.idx(a0), i1: f.idx(a1), y: (f.y0 + top) * SC + 0.2 }); }
 
   // Losa cuya cara SUPERIOR va de (a0, h0) a (a1, h1)
   function surf(f, a0, h0, a1, h1, { lat = 0, w = W * 0.94, th = 0.22, material = plankMat, solid = true } = {}) {
@@ -92,8 +97,8 @@ export function crawlKit(B, circuit) {
   // Roca suelta de forma variada (bola facetada, losa inclinada o tocón de cinco-ocho lados); `e` = cuánto sobresale del suelo
   function rock(f, a, lat, r, e, color, kind = (rnd() * 3) | 0) {
     if (kind) e *= 0.72; // las losas y tocones tienen la cima plana: más bajos para que el chasis no se enganche
-    const p = f.pos(a, lat), y = groundAt(f, a);
-    e = Math.max(0.04, e - Math.abs(slopeAt(f, a)) * r * 0.9); // en pendiente la cara de abajo asoma más
+    const p = f.pos(a, lat), y = flat === f ? f.y0 : groundAt(f, a); // en una pieza inclinada, el suelo local es plano
+    e = Math.max(0.04, e - (flat === f ? 0 : Math.abs(slopeAt(f, a))) * r * 0.9); // en pendiente la cara de abajo asoma más
     if (kind === 0) return B.ball(r, p.x, y + e - r, p.z, color, { detail: rnd() < 0.5 ? 0 : 1, phys: PHYS });
     if (kind === 1) {
       const w = r * (1.6 + rnd() * 0.8), d = r * (1.2 + rnd() * 0.8), h = Math.max(e * 1.6, r * 0.7);
@@ -297,5 +302,37 @@ export function crawlKit(B, circuit) {
     };
   }
 
-  return { steps, logPile, rampDouble, coveredBridge, sandBank, ford, rockClimb, rockGarden, tibetan, finish };
+  // Piezas rígidas (escalones, troncos, rampas y puentes): en cuesta se inclinan enteras
+  let tiltNext = false;
+  const tilted = (fn) => (...args) => { tiltNext = true; try { return fn(...args); } finally { tiltNext = false; B = B0; flat = null; } };
+  return { steps: tilted(steps), logPile: tilted(logPile), rampDouble: tilted(rampDouble), coveredBridge: tilted(coveredBridge), sandBank, ford, rockClimb, rockGarden, tibetan: tilted(tibetan), finish };
+}
+
+// Constructor que gira todo lo que crea un ángulo `ang` alrededor del eje `axis` que pasa por `o` (mallas y colisiones)
+function tiltBuilder(B, o, axis, ang) {
+  const q = new THREE.Quaternion().setFromAxisAngle(axis, ang);
+  const M = new THREE.Matrix4().makeTranslation(o.x, o.y, o.z).multiply(new THREE.Matrix4().makeRotationFromQuaternion(q)).multiply(new THREE.Matrix4().makeTranslation(-o.x, -o.y, -o.z));
+  const tf = (m) => { m.applyMatrix4(M); return m; };
+  const tp = (p) => new THREE.Vector3(p.x, p.y, p.z).sub(o).applyQuaternion(q).add(o);
+  const collider = (desc, pos, quat, opts) => B.collider(desc, tp(pos), quat ? q.clone().multiply(new THREE.Quaternion(quat.x, quat.y, quat.z, quat.w)) : q.clone(), opts);
+  const C = B.RAPIER.ColliderDesc;
+  return {
+    ...B, collider,
+    scene: { add: (...objs) => { for (const m of objs) B.scene.add(tf(m)); } },
+    box(w, h, d, x, y, z, material, opt = {}) {
+      const m = tf(B.box(w, h, d, x, y, z, material, { ...opt, solid: false }));
+      if (opt.solid !== false) B.collider(C.cuboid(w / 2, h / 2, d / 2), m.position, m.quaternion, opt.phys || {});
+      return m;
+    },
+    cyl(rTop, rBot, h, x, y, z, material, opt = {}) {
+      const m = tf(B.cyl(rTop, rBot, h, x, y, z, material, { ...opt, solid: false }));
+      if (opt.solid !== false) B.collider(C.cylinder(h / 2, Math.max(rTop, rBot)), m.position, m.quaternion, opt.phys || {});
+      return m;
+    },
+    ball(r, x, y, z, material, opt = {}) {
+      const m = tf(B.ball(r, x, y, z, material, { ...opt, solid: false }));
+      if (opt.solid !== false) B.collider(C.ball(r), m.position, null, opt.phys || {});
+      return m;
+    },
+  };
 }
