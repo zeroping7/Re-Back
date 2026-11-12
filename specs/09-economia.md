@@ -18,7 +18,7 @@ coche en uso, copas y estrellas.
 | ECO-11 | **Circuitos por progreso**: al empezar solo Salón, Súper y Jardín. Parque se abre con la Copa Bronce; Museo y Muelle con la Plata (entre los 3 primeros). En el menú salen con 🔒 y la copa que piden; el podio anuncia los que se abren | ✅ |
 | ECO-12 | **Coches por clase**: los Semi-pro piden la Copa Plata y los Pro la Copa Oro (entre los 3 primeros) además del precio. El garaje lo indica y el podio anuncia los que ya se pueden comprar | ✅ |
 | ECO-13 | **Primera victoria** en cada circuito y dificultad (carreras con 4 coches o más, también en copa): 300 / 400 / 500 🪙 una sola vez. Sale en los resultados | ✅ |
-| ECO-14 | Partida reiniciada con la economía nueva (clave de guardado `reback.profile.v2`; los récords y fantasmas se conservan) | ✅ |
+| ECO-14 | Clave de guardado `reback.profile.v2`. Si no existe pero hay una partida `v1`, se migra entera (dinero, coches, mejoras, copas, estrellas, medallas); solo empieza de cero quien no tenía partida | ✅ |
 | ECO-15 | **Online**: las carreras online darán monedas, menos que en solitario (propuesta: 50 % del premio de carrera, sin primeras victorias). Se hace con NET-08 | 📝 |
 
 ## Ritmo buscado (decidido el 12 nov 2026)

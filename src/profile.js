@@ -4,13 +4,13 @@ import { TRACKS } from './tracks/index.js';
 import { DISCS, discUnlocked, carAllowed, carDiscs, MEDALS, MEDAL_REPEAT } from './disciplines.js';
 
 // Partida guardada: dinero, coches comprados y sus mejoras
-const KEY = 'reback.profile.v2'; // ECO-14: v2 = economía nueva, la partida empieza de cero
-try { localStorage.removeItem('reback.profile.v1'); } catch { /* nada */ }
+const KEY = 'reback.profile.v2'; // ECO-14: v2 = economía nueva; si hay partida v1 se conserva (coches, mejoras, copas, dinero)
+const OLD_KEY = 'reback.profile.v1';
 const START = { money: 500, owned: { furgo: {}, pulga: {} }, selected: 'pulga', earned: 0, cups: {}, stars: {} };
 
 function load() {
   try {
-    const p = JSON.parse(localStorage.getItem(KEY) || 'null');
+    const p = JSON.parse(localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY) || 'null');
     if (p && p.owned && Object.keys(p.owned).length) return p;
   } catch { /* nada */ }
   return JSON.parse(JSON.stringify(START));
