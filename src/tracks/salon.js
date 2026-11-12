@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { surfaceTex, rugTexture, wallpaperTexture, bookCoverTexture, canTexture, groundTex } from '../textures.js';
-import { buildCircuit, mat, BARRIER_GROUPS, trackPatch, autoBoosts } from './common.js';
+import { surfaceTex, rugTexture, wallpaperTexture, canTexture, groundTex } from '../textures.js';
+import { buildCircuit, mat, BARRIER_GROUPS, trackPatch, chevronTexture } from './common.js';
 
 // Circuito 1: "El salón". Escala de juguete: 1 unidad ≈ 22 cm.
 const ROOM = { x: 64, z: 46, h: 34 };
@@ -10,7 +10,7 @@ export default {
   id: 'salon',
   name: 'El salón',
   short: 'Salón',
-  desc: 'Parqué, rampa-libro y túnel bajo la mesa',
+  desc: 'Parqué, rampa y túnel bajo la mesa',
   color: '#e8a23b',
   build,
 };
@@ -78,8 +78,6 @@ function build(B) {
 
 
   // ---------- Trazado ----------
-  const bookTex = bookCoverTexture('FÍSICA', '#1f4e8c');
-  bookTex.wrapS = bookTex.wrapT = THREE.RepeatWrapping;
   const circuit = buildCircuit(B, {
     points: [
       [-40, 38], [-15, 39], [10, 38], [30, 36], [44, 31], [53, 29], [58, 22], [57, 13], [53, 6], [52, -4], [58, -18], [50, -32], [36, -38], [20, -38],
@@ -89,10 +87,16 @@ function build(B) {
     start: [-30, 38.5],
     width: 7,
     limits: [ROOM.x - 1, ROOM.z - 1],
-    hills: [{ frac: 0.82, len: 30, h: 1.6 }, { frac: 0.145, len: 22, h: 1.2 }, { frac: 0.5, len: 40, h: 1.0, double: true }],
+    hills: [
+      { frac: 0.82, len: 30, h: 1.6 },
+      { frac: 0.145, len: 22, h: 1.2 },
+      { frac: 0.5, len: 100, h: 3 },
+      { frac: 0.55, len: 100, h: 3 },
+      { frac: 0.6, len: 100, h: 3 },
+    ],
     ramps: [{ frac: 0.07, len: 9, h: 1.8 }],
     hillMaterial: floorMat,
-    rampMaterial: new THREE.MeshStandardMaterial({ map: bookTex, roughness: 0.55 }),
+    rampMaterial: floorMat, // mismo parqué que el suelo (UV de mundo)
     groundUV,
     barrier: { colors: ['#c62828', '#f5f5f5'] },
     chevrons: { bg: '#c62828', fg: '#ffffff' },
@@ -113,7 +117,8 @@ function build(B) {
     const p = curvy(f0, f1);
     zones.push(trackPatch(B, circuit, [p.x, p.z], 18, 'slide', { ...wax, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0.1, surface: 'wax' }));
   }
-  zones.push(...autoBoosts(B, circuit, 2, zones.map((z) => [z.from, z.to])));
+  // turbos fijos (colocados con el visor de circuitos)
+  for (const at of [[42, -36], [6, 14]]) zones.push(trackPatch(B, circuit, at, 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
   // bolos para derribar
   {
     const s = samples[circuit.at(0.27)];

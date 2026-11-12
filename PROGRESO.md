@@ -9,6 +9,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Salón: rampa, turbos y cuestas retocados ✅
+- Rampa con el mismo parqué que el suelo, turbos fijos en [42,-36] y [6,14] (sin el de debajo de la mesa) y tres cuestas grandes (h 3) en el tramo central. Ajustado con el visor de circuitos.
+
 ### Minimapa de tramos A→B ✅ (CRW-24)
 - Solo salida→meta.
 
