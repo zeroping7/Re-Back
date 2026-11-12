@@ -9,6 +9,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### La maqueta: sin marcha atrás tras la meta ✅ (CRW-27)
+- Tras la meta el coche se sujeta parado (antes el freno metía marcha atrás). Prueba: `node tests/finishhold.mjs`.
+
 ### Batalla con 5 o 10 rivales ✅ (UX-28)
 - Con 11 coches el reloj es de 30 s. **Pendiente:** rendimiento en el móvil con 11 coches.
 

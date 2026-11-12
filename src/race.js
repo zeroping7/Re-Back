@@ -239,7 +239,7 @@ export class Race {
       if (!this.started) input = car.isPlayer ? { ...playerInput, throttle: 0, brake: 0, hold: true } : hold;
       else if (car.isPlayer) input = st.finished || this.autoPlayer ? this.playerAI.update(dt, this, st) : playerInput;
       else input = this.ai.get(car).update(dt, this, st);
-      if (st.finished && this.T.finishIdx !== undefined) input = { steer: 0, throttle: 0, brake: 1 }; // CRW-18: tras la meta de un tramo A→B, frenar
+      if (st.finished && this.T.finishIdx !== undefined) input = { steer: 0, throttle: 0, brake: 0, hold: true }; // hold: freno sin meter marcha atrás (CRW-27) // CRW-18: tras la meta de un tramo A→B, frenar
       if (!car.isPlayer && this.started && !this.practice && !this.battle && this.disc !== 'drift') {
         const ps = this.state(this.player);
         const diff = (st.progress - ps.progress) / this.circuit.N;
