@@ -36,11 +36,26 @@ function build(B) {
   });
 
   // ---------- Rampas (UX-17): losas inclinadas, sin plataformas sueltas encima ----------
-  // slab: superficie desde (a0, h0) hasta (a1, h1) a lo largo del eje que marca ry, centrada en (cx, cz)
+  // slab (BAT-01): rampa MACIZA desde (a0, h0) hasta (a1, h1) a lo largo del eje que marca ry, centrada en (cx, cz).
+  // Cuña cerrada hasta el suelo: no queda hueco debajo donde los coches se metan y se atasquen.
   const slab = (cx, cz, ry, a0, a1, h0, h1, w, color) => {
-    const da = a1 - a0, dh = h1 - h0, L = Math.hypot(da, dh), ang = Math.atan2(dh, da), t = 0.8;
-    const ma = (a0 + a1) / 2 + Math.sin(ang) * t / 2, my = (h0 + h1) / 2 - Math.cos(ang) * t / 2;
-    box(L + 0.6, t, w, cx + Math.cos(ry) * ma, my, cz - Math.sin(ry) * ma, color, { rot: [0, ry, ang] });
+    const sh = new THREE.Shape();
+    sh.moveTo(a0, 0); sh.lineTo(a1, 0);
+    if (h1 > 0) sh.lineTo(a1, h1);
+    if (h0 > 0) sh.lineTo(a0, h0);
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: w, bevelEnabled: false });
+    geo.translate(0, 0, -w / 2);
+    const m = new THREE.Mesh(geo, mat(color));
+    m.position.set(cx, 0, cz); m.rotation.y = ry; m.castShadow = true; m.receiveShadow = true;
+    scene.add(m); m.updateMatrixWorld(true);
+    const pts = [];
+    const v = new THREE.Vector3();
+    for (const [a, h] of [[a0, 0], [a1, 0], [a1, h1], [a0, h0]]) for (const z of [-w / 2, w / 2]) {
+      v.set(a, h, z).applyMatrix4(m.matrixWorld);
+      pts.push(v.x * S * B.MX, v.y * S, v.z * S);
+    }
+    const desc = RAPIER.ColliderDesc.convexHull(new Float32Array(pts)).setFriction(0.6).setRestitution(0.1);
+    B.world.createCollider(desc, B.fixed);
   };
   const ramp = '#8d6e63';
 

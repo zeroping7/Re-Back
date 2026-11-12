@@ -53,6 +53,11 @@ Inicio (toca para empezar)
 | UX-16 | Lista de relojes de la batalla arriba a la derecha, bajo los botones, compacta: no tapa el centro de la pantalla | ✅ |
 | UX-17 | **Arena con looping y subida a la mesa**: rampas sin plataformas sueltas encima; looping de juguete (con velocidad ≥12 entra "en el carril" y lo recorre entero, turbo en la entrada); suelo → silla → mesa → bajada al suelo, todo enlazado; cajas de energía también en la silla y la mesa (`tests/loop.mjs`, `tests/arena.mjs`) | ✅ |
 | UX-18 | Chocar con las esquinas o paredes ya no recoloca el coche: solo si se sale de verdad del escenario (+6 u) o vuelca | ✅ |
+| UX-24 | **Batalla: rampas macizas**: las rampas de la arena son cuñas cerradas hasta el suelo (sin hueco debajo donde atascarse) (`tests/arena.mjs`, fotos `tests/arenashot.mjs`) | ✅ |
+| UX-25 | Batalla: looping más realista (física, no carril automático) | 📝 |
+| UX-26 | Batalla: la IA sube a las zonas elevadas (silla/mesa/caja) a por la estrella o el portador | 📝 |
+| UX-27 | Batalla: límites de la habitación bien marcados (el coche no se mete en las paredes) | 📝 |
+| UX-28 | Batalla: 4 coches más (8 en total) | 📝 |
 | UX-19 | **Coche libre en preparar carrera, campeonato y garaje**: paneles en el 58 % izquierdo de la pantalla; la cámara del taller desplaza la imagen para centrar el coche en el 42 % derecho, sin que lo tape ninguna lista. Cada coche nuevo arranca la peana mostrando el frente en 3/4 | ✅ (falta probar en el móvil) |
 | UX-20 | **Versión en la pantalla de inicio y en el menú principal** (abajo a la derecha, p. ej. `v1.0.123`): la pone el CI (`1.0.<nº de ejecución>`, la misma que el APK); en local sale `dev` | ✅ |
 | UX-21 | **«Más coches» vuelve a su sitio**: si el garaje se abre desde «Más coches» (preparar carrera o campeonato), «Usar este» devuelve al menú de origen con el coche elegido y «←» también vuelve ahí (no al menú principal) | ✅ |
