@@ -81,3 +81,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 68 | Actualizar la vista del mapa de La maqueta para que se vea como es ahora | CRW-24 ✅ |
 | 69 | Salón: rampa con el parqué del suelo, turbos fijos colocados con el visor y cuestas grandes en el tramo central | — ✅ |
 | 70 | Batalla de la estrella: coches atascados bajo las rampas, looping automático, IA no sube a lo alto, coches que se meten en las paredes, 4 coches más. Uno a uno | UX-24 ✅, UX-25..28 📝 |
+| 70 | Salón: mover un turbo y las armas con el visor de circuitos | — ✅ |

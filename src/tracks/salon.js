@@ -118,7 +118,7 @@ function build(B) {
     zones.push(trackPatch(B, circuit, [p.x, p.z], 18, 'slide', { ...wax, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0.1, surface: 'wax' }));
   }
   // turbos fijos (colocados con el visor de circuitos)
-  for (const at of [[42, -36], [6, 14]]) zones.push(trackPatch(B, circuit, at, 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
+  for (const at of [[39, -37], [6, 14]]) zones.push(trackPatch(B, circuit, at, 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
   // bolos para derribar
   {
     const s = samples[circuit.at(0.27)];
@@ -340,7 +340,7 @@ function build(B) {
   return {
     circuit,
     bounds: { x: ROOM.x - 1.5, z: ROOM.z - 1.5, h: ROOM.h - 1 },
-    itemSpots: [0.3, 0.7],
+    itemSpots: [0.338, 0.624],
     zones,
     update: (t) => { for (const f of anim) f(t); },
     lights: {
