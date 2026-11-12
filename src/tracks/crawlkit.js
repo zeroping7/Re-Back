@@ -203,8 +203,9 @@ export function crawlKit(B0, circuit) {
     zones.push(trackPatch(B, circuit, [x, z], L, 'sand', { ...sandTex, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0, normalScale: 1.2, inset: 0.1, surface: 'sand' }));
     const placed = [];
     for (let k = 0, tries = 0; k < P.sand.mounds && tries < 3000; tries++) {
-      const i = f.i0 + 2 + Math.floor(rnd() * (f.i1 - f.i0 - 3)), s = samples[i], s2 = samples[i + 1];
-      const u = rnd(), lat = (rnd() * 2 - 1) * (W / 2 - 0.15), tall = rnd() < 0.22, e = tall ? 0.34 + rnd() * 0.24 : 0.05 + rnd() * 0.2, r = tall ? 0.75 + rnd() * 0.4 : 0.35 + rnd() * 0.4;
+      // CRW-25: al revés, mismo sitio físico que en el original (los montículos están probados para que haya paso)
+      const i0 = f.i0 + 2 + Math.floor(rnd() * (f.i1 - f.i0 - 3)), i = B0.reverse ? f.i0 + f.i1 - i0 : i0, s = samples[i], s2 = samples[B0.reverse ? i - 1 : i + 1];
+      const u = rnd(), lat = (rnd() * 2 - 1) * (W / 2 - 0.15) * (B0.reverse ? -1 : 1), tall = rnd() < 0.22, e = tall ? 0.34 + rnd() * 0.24 : 0.05 + rnd() * 0.2, r = tall ? 0.75 + rnd() * 0.4 : 0.35 + rnd() * 0.4;
       const px = s.p.x + (s2.p.x - s.p.x) * u + s.n.x * lat, pz = s.p.z + (s2.p.z - s.p.z) * u + s.n.z * lat;
       if (placed.some((q) => Math.hypot(q.x - px, q.z - pz) < (q.r + r) * 0.5)) continue;
       placed.push({ x: px, z: pz, r });

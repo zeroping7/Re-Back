@@ -12,6 +12,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 ### Batalla: rampas macizas ✅ (UX-24)
 - Las rampas de la arena son cuñas cerradas hasta el suelo: ya no hay hueco debajo. **Pendiente (uno a uno):** looping realista (UX-25), IA que sube a lo alto (UX-26), paredes (UX-27), 8 coches (UX-28).
 
+### Copa Obstáculos: 2ª carrera = La maqueta · bajada ✅ (CRW-25)
+- `senda:rev` ya no es un trozo del bucle oculto: sale de B (arriba) y baja hasta A con los mismos 9 obstáculos en orden inverso. Misma montaña; montículos de arena en el mismo sitio que en la subida. IA ≈ 172 s.
+
 ### Salón: rampa, turbos y cuestas retocados ✅
 - Rampa con el mismo parqué que el suelo, turbos fijos en [42,-36] y [6,14] (sin el de debajo de la mesa) y tres cuestas grandes (h 3) en el tramo central. Ajustado con el visor de circuitos.
 

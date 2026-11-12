@@ -34,7 +34,8 @@ export default {
   id: 'senda', disc: 'obst',
   name: 'La maqueta', short: 'Maqueta',
   desc: 'Subida de 15° de A a B con nueve obstáculos obligatorios',
-  oneWay: true, // tramo A→B: una sola pasada, sin variantes
+  oneWay: true, // tramo A→B: una sola pasada (sin variantes en el menú)
+  revName: 'La maqueta · bajada', revShort: 'Bajada', // CRW-25: 'senda:rev' = bajada de B a A (Copa Obstáculos)
   color: '#8d6e3f',
   medals: [300, 240, 200],
   music: 'parque', ambient: 'salon',
@@ -55,14 +56,14 @@ function build(B) {
 
   const circuit = buildCircuit(B, {
     points: PTS,
-    start: [-XW, RAD],
+    start: B.reverse ? [FINISH_X, -RAD] : [-XW, RAD], // CRW-25: la bajada sale de B (arriba)
     width: 2.6,
     limits: [R.x - 2, R.z - 2],
     hills: [
       // vado hundido (CRW-16): orillas altas a la entrada y la salida, el agua llena el hueco
       ...[-1, 1].map((sd) => ({ at: [at(BOT, 'ford') + sd * (LEN.ford / 2 - 0.4), -RAD], len: 4.4, h: 0.52 })),
       { at: [at(BOT, 'climb'), -RAD], len: LEN.climb - 1, h: 3.0 }, { at: [at(BOT, 'garden'), -RAD], len: LEN.garden - 1, h: 2.2 }],
-    grade, // CRW-18: cuesta de 30° de A a B
+    grade: (S, N) => grade(S, N, B.reverse), // CRW-18: cuesta de A a B (CRW-25: al revés, bajada de B a A)
     hillMaterial: dirtMat,
     barrier: { colors: ['#6c7079'], thick: 0.6, hidden: true, wallHalf: 0.55 }, // solo colisión: las rocas son el dibujo
     chevrons: false,
@@ -120,19 +121,26 @@ function build(B) {
 
 // Cuesta (CRW-18): 30° desde la salida hasta la meta, salvo el vado (poza horizontal). Antes de la salida y tras la meta,
 // rellanos planos; el resto del bucle (oculto) baja para cerrar el circuito.
-function grade(samples, N) {
+function grade(samples, N, rev = false) {
   const near = (x, z) => samples.reduce((b, s) => ((s.p.x - x) ** 2 + (s.p.z - z) ** 2 < (b.p.x - x) ** 2 + (b.p.z - z) ** 2 ? s : b)).i;
-  const iB = near(FINISH_X, -RAD), fc = near(at(BOT, 'ford'), -RAD), fh = Math.ceil((LEN.ford / 2 + 0.6) / 1.6);
+  // U(i) = índice de la muestra i en el orden de subida (A = 0). En la bajada (CRW-25) las muestras van al revés
+  // desde B, así que la montaña es la misma: se calcula la subida y se lee hacia atrás.
+  const iA = near(-XW, RAD);
+  const U = (i) => (rev ? ((iA - i) % N + N) % N : i);
+  const uOf = (x, z) => U(near(x, z));
+  const iB = uOf(FINISH_X, -RAD), fc = uOf(at(BOT, 'ford'), -RAD), fh = Math.ceil((LEN.ford / 2 + 0.6) / 1.6);
   const pre = Math.round(EXT * 0.75 / 1.6), post = 8;
-  const h = new Array(N).fill(0);
+  const up = new Array(N).fill(0);
   let y = 0;
   for (let i = 1; i <= iB + post; i++) {
     if (i <= iB && Math.abs(i - fc) > fh) y += 1.6 * GRADE;
-    h[i] = y;
+    up[i] = y;
   }
   const i1 = iB + post, i0 = N - pre; // bajada oculta
-  for (let i = i1 + 1; i < i0; i++) h[i] = y * (1 - (i - i1) / (i0 - i1));
-  return { h, drive: [-pre, i1] };
+  for (let i = i1 + 1; i < i0; i++) up[i] = y * (1 - (i - i1) / (i0 - i1));
+  const h = new Array(N); for (let i = 0; i < N; i++) h[i] = up[U(i)];
+  // bajada: sale de B (índice 0) con rellano detrás y acaba en A con rellano después
+  return { h, drive: rev ? [-pre, iA + post] : [-pre, i1] };
 }
 
 // Montaña: malla de alturas que deja un arcén plano a los lados del camino y cae en ladera hacia fuera.

@@ -29,5 +29,5 @@ export function trackFromKey(key = 'salon') {
   const base = trackById(id);
   if (v === 'normal') return base;
   const V = VARIANTS.find((x) => x.id === v) || VARIANTS[0];
-  return { ...base, key: `${base.id}:${V.id}`, variant: V.id, reverse: V.id === 'rev', mirror: V.id === 'mirror', name: `${base.name}${V.short}`, short: `${base.short}${V.short}` };
+  return { ...base, key: `${base.id}:${V.id}`, variant: V.id, reverse: V.id === 'rev', mirror: V.id === 'mirror', name: V.id === 'rev' && base.revName ? base.revName : `${base.name}${V.short}`, short: V.id === 'rev' && base.revShort ? base.revShort : `${base.short}${V.short}` };
 }
