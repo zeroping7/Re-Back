@@ -9,6 +9,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Paredes sin meterse en el zócalo ✅ (UX-27)
+- La pared física va delante del zócalo blanco (en todas las habitaciones). Prueba: `node tests/walls.mjs`. Queda: 8 coches en batalla (UX-28).
+
 ### Batalla: la IA sube a lo alto ✅ (UX-26)
 - Rutas de subida a la caja, la silla y la mesa; la estrella sale a veces arriba. Prueba: `node tests/climb.mjs`. **Pendiente:** probar en el móvil; quedan paredes (UX-27) y 8 coches (UX-28).
 

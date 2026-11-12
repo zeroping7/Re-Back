@@ -501,7 +501,9 @@ export function room(B, { x, z, h, floor, wall, ceil = '#f4f1ea', baseboard = '#
     scene.add(w);
     if (baseboard) { const bb = B.box(len, 1.4, 0.4, wx, 0.7, wz, baseboard, { rot: [0, ry, 0], solid: false, shadow: false }); bb.translateZ(0.2); }
     const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ry);
-    const off = new THREE.Vector3(0, 0, -1).applyQuaternion(q);
+    // UX-27: la cara física de la pared va delante del zócalo (si no, el coche se mete y se le ve medio cortado)
+    const inset = baseboard ? 0.6 : 0.1;
+    const off = new THREE.Vector3(0, 0, inset - 1).applyQuaternion(q);
     B.collider(RAPIER.ColliderDesc.cuboid(len / 2, h / 2, 1), { x: wx + off.x, y: h / 2, z: wz + off.z }, q, { friction: 0.05, restitution: 0.5, groups: BARRIER_GROUPS });
   }
   const c = new THREE.Mesh(new THREE.PlaneGeometry(x * 2, z * 2), mat(ceil, { flatShading: false }));
