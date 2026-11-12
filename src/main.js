@@ -120,7 +120,7 @@ async function init() {
   const D = () => discById(disc);
   const modeDef = (m = mode) => MODES[disc].find((x) => x.go === m) || MODES[disc][0];
   const defTrack = { race: 'salon', drift: 'cocina', obst: 'senda' };
-  const curTrack = () => { const id = disc === 'race' ? settings.track : settings.trk[disc]; return tracksFor(disc).some((t) => t.id === id) ? id : defTrack[disc]; };
+  const curTrack = () => { const id = disc === 'race' ? settings.track : settings.trk[disc]; return tracksFor(disc).some((t) => t.id === id || (t.revName && t.id + ':rev' === id)) ? id : defTrack[disc]; }; // CRW-26: 'senda:rev' = bajada como pista propia
   const setTrack = (id) => { if (disc === 'race') settings.track = id; else settings.trk[disc] = id; saveSettings(); };
   const LAPS = { race: [2, 3, 5], drift: [2, 3], obst: [1, 2, 3] };
   const curLaps = () => (disc === 'race' ? settings.laps : trackById(curTrack()).oneWay ? 1 : settings.lapsD[disc] ?? 2);
@@ -249,24 +249,25 @@ async function init() {
     }
   }
 
-  const trackKey = () => curTrack() + (settings.variant && settings.variant !== 'normal' && !trackById(curTrack()).oneWay ? ':' + settings.variant : ''); // CRW-18: tramos A→B sin variantes
+  const trackKey = () => curTrack().includes(':') ? curTrack() : curTrack() + (settings.variant && settings.variant !== 'normal' && !trackById(curTrack()).oneWay ? ':' + settings.variant : ''); // CRW-18: tramos A→B sin variantes
   const medalIcon = (key) => { const l = profile.medals[key] || 0; return l ? MEDALS[l - 1].icon : ''; };
   function buildSetup() {
     if (!variantUnlocked(settings.variant, profile.cups)) settings.variant = 'normal';
     const tracks = $('tracks'); tracks.innerHTML = '';
     const cur = curTrack(), vr = trackById(cur).oneWay ? 'normal' : settings.variant || 'normal';
-    for (const t of tracksFor(disc)) {
-      const key = t.id + (vr !== 'normal' ? ':' + vr : '');
+    const entries = tracksFor(disc).flatMap((t) => (t.oneWay && t.revName ? [[t, t.id], [t, t.id + ':rev']] : [[t, t.id]])); // CRW-26
+    for (const [t, id] of entries) {
+      const key = id.includes(':') ? id : t.id + (vr !== 'normal' ? ':' + vr : '');
       const best = getBest(key);
       const c = document.createElement('button');
-      c.className = 'card' + (cur === t.id ? ' sel' : '') + (vr !== 'normal' ? ' v-' + vr : '');
+      c.className = 'card' + (cur === id ? ' sel' : '') + (vr !== 'normal' ? ' v-' + vr : '');
       const star = disc === 'race' && mode === 'practice' && vr === 'normal' ? `<span class="star ${profile.stars[t.id] ? 'got' : ''}">${profile.stars[t.id] ? '⭐' : '☆'}</span>` : '';
       const ghost = (mode === 'practice' || (disc === 'obst' && mode === 'solo')) && hasGhost(key) ? '<span class="ghost-ic">👻</span>' : '';
       const medal = disc !== 'race' && medalIcon(key) ? `<span class="star got">${medalIcon(key)}</span>` : '';
       const rec = disc === 'drift' ? `💨 ${best.score ? fmtPts(best.score) + ' pts' : '— pts'}` : disc === 'obst' ? `⏱ ${fmtTime(best.race)}` : `⏱ ${fmtTime(best.lap)}`;
-      c.innerHTML = `${trackPv(t, star + ghost + medal)}<b>${trackFromKey(key).name}</b><small>${t.desc}</small>` +
+      c.innerHTML = `${trackPv(t, star + ghost + medal)}<b>${trackFromKey(key).name}</b><small>${id.includes(':') ? t.revDesc || t.desc : t.desc}</small>` +
         `<div class="rec">${rec}${best.wins ? ' · 🏆' + best.wins : ''}</div>`;
-      c.addEventListener('click', () => { setTrack(t.id); sfx.play('click'); buildSetup(); });
+      c.addEventListener('click', () => { setTrack(id); sfx.play('click'); buildSetup(); });
       tracks.append(c);
     }
     // sentido: normal, al revés, espejo (UX-13)

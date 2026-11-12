@@ -35,7 +35,7 @@ export default {
   name: 'La maqueta', short: 'Maqueta',
   desc: 'Subida de 15° de A a B con nueve obstáculos obligatorios',
   oneWay: true, // tramo A→B: una sola pasada (sin variantes en el menú)
-  revName: 'La maqueta · bajada', revShort: 'Bajada', // CRW-25: 'senda:rev' = bajada de B a A (Copa Obstáculos)
+  revName: 'La maqueta · bajada', revShort: 'Bajada', revDesc: 'De B a A, cuesta abajo: los mismos obstáculos al revés', // CRW-25: 'senda:rev' = bajada de B a A (Copa Obstáculos)
   color: '#8d6e3f',
   medals: [300, 240, 200],
   music: 'parque', ambient: 'salon',

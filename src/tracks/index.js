@@ -13,7 +13,7 @@ import senda from './senda.js';
 export const TRACKS = [salon, superm, jardin, museo, muelle, parque];
 export const ALL_TRACKS = [...TRACKS, cocina, garaje, senda];
 export const tracksFor = (disc) => ALL_TRACKS.filter((t) => (t.disc || 'race') === disc);
-export const trackById = (id) => ALL_TRACKS.find((t) => t.id === id) || TRACKS[0];
+export const trackById = (id) => ALL_TRACKS.find((t) => t.id === String(id).split(':')[0]) || TRACKS[0]; // CRW-26: admite 'senda:rev'
 
 // Variantes (CIR-23 / UX-13): mismo circuito al revés o en espejo. Clave: 'salon', 'salon:rev', 'salon:mirror'
 export const VARIANTS = [
