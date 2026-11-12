@@ -1,38 +1,56 @@
 import * as THREE from 'three';
 import { mulberry } from './kit.js';
 import { ROCK } from './crawlkit.js';
+import { groundTex } from '../textures.js';
 
 // Ambientación de maqueta para los circuitos de crawler (CRW-09): rocas de poliespán con musgo,
 // montaña, pinos y fondo de cortinas con luna. Todo es decorado sin colisión (los muros invisibles
 // del camino son los que paran al coche).
 
-// Roca de poliespán: icosfera irregular, con musgo en la parte de arriba (color por vértice)
-function rockGeometry() {
-  const g = new THREE.IcosahedronGeometry(1, 1);
+// Roca realista (CRW-23): icosfera con relieve de varias escalas, base aplanada para asentarse, grietas más oscuras
+// y algo de liquen arriba (color por vértice); textura de granito con relieve
+let rockTexCache = null;
+export function rockTextures() { return (rockTexCache ||= groundTex('rock', [2, 2])); }
+export function rockGeometry(detail = 2, seed = 1) {
+  const g = new THREE.IcosahedronGeometry(1, detail);
   const p = g.attributes.position, col = [];
+  const n = (x, y, z) => 0.18 * Math.sin(x * 3.1 + y * 2.3 + z * 4.7 + seed) + 0.1 * Math.sin(x * 7.9 - y * 6.1 + z * 3.3 + seed * 2)
+    + 0.05 * Math.sin(x * 17.3 + y * 13.7 - z * 11.9) + 0.03 * Math.sin(-x * 29.1 + y * 23.3 + z * 31.7);
   for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
-    const j = 1 + 0.2 * Math.sin(x * 9.1 + y * 5.3 + z * 7.7) + 0.1 * Math.sin(x * 21.7 - y * 13.1 + z * 4.9);
-    p.setXYZ(i, x * j, y * j, z * j);
-    const moss = Math.max(0, Math.min(1, (y - 0.2) * 1.7)) * (0.55 + 0.45 * Math.sin(x * 6 + z * 5));
-    col.push(1 - 0.28 * moss, 1 - 0.02 * moss, 1 - 0.5 * moss);
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i), d = n(x, y, z), j = 1 + d;
+    const yy = y < -0.25 ? -0.25 + (y + 0.25) * 0.35 : y; // base plana
+    p.setXYZ(i, x * j, yy * j, z * j);
+    const crev = Math.max(0, Math.min(1, 0.5 - d * 2.6)); // huecos más oscuros
+    const lichen = Math.max(0, Math.min(1, (y - 0.35) * 1.6)) * (0.5 + 0.5 * Math.sin(x * 5 + z * 4 + seed));
+    const v = 1.08 - crev * 0.42;
+    col.push(v * (1 - 0.18 * lichen), v * (1 - 0.02 * lichen), v * (1 - 0.32 * lichen));
   }
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   g.computeVertexNormals();
   return g;
 }
+export function rockMaterial() {
+  const t = rockTextures();
+  return new THREE.MeshStandardMaterial({ map: t.map, normalMap: t.normalMap, normalScale: new THREE.Vector2(1.2, 1.2), vertexColors: true, roughness: 0.92 });
+}
 
 function instanced(B, items) {
   if (!items.length) return;
-  const mesh = new THREE.InstancedMesh(rockGeometry(), new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.95 }), items.length);
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), c = new THREE.Color(), s = new THREE.Vector3();
-  items.forEach((it, i) => {
-    e.set(it.tx || 0, it.ry, it.tz || 0); q.setFromEuler(e);
-    m.compose(it.p, q, s.set(...it.s));
-    mesh.setMatrixAt(i, m); mesh.setColorAt(i, c.set(it.color));
+  // tres formas distintas para que no se vean todas iguales
+  const groups = [0, 1, 2].map(() => []);
+  items.forEach((it, i) => groups[i % 3].push(it));
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), c = new THREE.Color(), s = new THREE.Vector3(), white = new THREE.Color('#ffffff');
+  const mt = rockMaterial();
+  groups.forEach((list, gi) => {
+    const mesh = new THREE.InstancedMesh(rockGeometry(2, gi * 1.7 + 0.4), mt, list.length);
+    list.forEach((it, i) => {
+      e.set(it.tx || 0, it.ry, it.tz || 0); q.setFromEuler(e);
+      m.compose(it.p, q, s.set(...it.s));
+      mesh.setMatrixAt(i, m); mesh.setColorAt(i, c.set(it.color).lerp(white, 0.45));
+    });
+    mesh.castShadow = true; mesh.receiveShadow = true;
+    B.scene.add(mesh);
   });
-  mesh.castShadow = true; mesh.receiveShadow = true;
-  B.scene.add(mesh);
 }
 
 // Muros de roca a los dos lados del camino (dos filas, la de atrás más alta)

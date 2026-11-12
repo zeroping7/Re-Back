@@ -262,6 +262,80 @@ export function groundTex(kind, repeat = [1, 1]) {
       h.strokeStyle = '#606060'; h.lineWidth = 18;
       for (const x of [S * 0.3, S * 0.7]) { h.beginPath(); h.moveTo(x, 0); h.lineTo(x + (r() - 0.5) * 20, S); h.stroke(); }
     }, repeat, 3);
+    // Camino de tierra compactada realista (CRW-23): grano fino, guijarros con luz y sombra, grietas secas,
+    // roderas oscuras con dibujo de taco y bordes con algo de hierba (u≈0 y u≈1 son los bordes del camino)
+    case 'trail': return pair(1024, (g, h, S) => {
+      g.fillStyle = '#86674a'; g.fillRect(0, 0, S, S);
+      for (let k = 0; k < 90; k++) { // manchas grandes de humedad y tierra más clara
+        const x = r() * S, y = r() * S, rad = 40 + r() * 140;
+        const gr = g.createRadialGradient(x, y, 0, x, y, rad); const l = 28 + r() * 26;
+        gr.addColorStop(0, `hsla(${24 + r() * 12},${28 + r() * 14}%,${l}%,0.35)`); gr.addColorStop(1, `hsla(28,30%,${l}%,0)`);
+        g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+      }
+      for (let k = 0; k < 60000; k++) { // grano
+        const l = 22 + r() * 40; g.fillStyle = `hsla(${22 + r() * 16},${18 + r() * 26}%,${l}%,${0.35 + r() * 0.5})`;
+        const x = r() * S, y = r() * S, s = 1 + r() * 2.2; g.fillRect(x, y, s, s);
+        if (r() < 0.3) { h.fillStyle = `rgb(${100 + l},${100 + l},${100 + l})`; h.fillRect(x, y, s, s); }
+      }
+      // roderas (a lo largo, v) con dibujo de taco
+      for (const cx of [S * 0.3, S * 0.7]) {
+        const w = 70, wob = r() * 6;
+        const gr = g.createLinearGradient(cx - w / 2, 0, cx + w / 2, 0);
+        gr.addColorStop(0, 'rgba(40,26,16,0)'); gr.addColorStop(0.5, 'rgba(40,26,16,0.28)'); gr.addColorStop(1, 'rgba(40,26,16,0)');
+        g.fillStyle = gr; g.fillRect(cx - w / 2, 0, w, S);
+        h.fillStyle = 'rgba(70,70,70,0.6)'; h.fillRect(cx - w * 0.35, 0, w * 0.7, S);
+        for (let y = 0; y < S; y += 18) { // tacos
+          for (const sd of [-1, 1]) {
+            g.fillStyle = 'rgba(30,20,12,0.22)'; g.save(); g.translate(cx + sd * 14 + Math.sin(y * 0.02) * wob, y); g.rotate(sd * 0.5); g.fillRect(-9, -3, 18, 6); g.restore();
+            h.fillStyle = 'rgba(50,50,50,0.5)'; h.save(); h.translate(cx + sd * 14, y); h.rotate(sd * 0.5); h.fillRect(-9, -3, 18, 6); h.restore();
+          }
+        }
+      }
+      // grietas secas
+      g.lineCap = 'round';
+      for (let k = 0; k < 26; k++) {
+        let x = r() * S, y = r() * S; const n = 5 + r() * 8;
+        g.strokeStyle = 'rgba(38,24,14,0.5)'; h.strokeStyle = '#3a3a3a'; g.lineWidth = h.lineWidth = 1 + r() * 1.6;
+        g.beginPath(); h.beginPath(); g.moveTo(x, y); h.moveTo(x, y);
+        for (let j = 0; j < n; j++) { x += (r() - 0.5) * 36; y += (r() - 0.5) * 36; g.lineTo(x, y); h.lineTo(x, y); }
+        g.stroke(); h.stroke();
+      }
+      // guijarros: sombra abajo, cuerpo, brillo arriba (y relieve en el mapa de alturas)
+      for (let k = 0; k < 1400; k++) {
+        const x = r() * S, y = r() * S, rad = 1.5 + Math.pow(r(), 3) * 11, rot = r() * 3, hue = 20 + r() * 25, sat = 5 + r() * 18, l = 35 + r() * 35;
+        g.fillStyle = 'rgba(25,15,8,0.45)'; g.beginPath(); g.ellipse(x + rad * 0.25, y + rad * 0.35, rad, rad * 0.75, rot, 0, 7); g.fill();
+        g.fillStyle = `hsl(${hue},${sat}%,${l}%)`; g.beginPath(); g.ellipse(x, y, rad, rad * 0.75, rot, 0, 7); g.fill();
+        g.fillStyle = `hsla(${hue},${sat}%,${Math.min(92, l + 22)}%,0.6)`; g.beginPath(); g.ellipse(x - rad * 0.25, y - rad * 0.25, rad * 0.45, rad * 0.3, rot, 0, 7); g.fill();
+        const hg = h.createRadialGradient(x, y, 0, x, y, rad); hg.addColorStop(0, '#f0f0f0'); hg.addColorStop(1, '#909090');
+        h.fillStyle = hg; h.beginPath(); h.ellipse(x, y, rad, rad * 0.75, rot, 0, 7); h.fill();
+      }
+      // bordes con hierba seca y tierra suelta
+      for (const [x0, x1] of [[0, S * 0.08], [S * 0.92, S]]) for (let k = 0; k < 2600; k++) {
+        const x = x0 + r() * (x1 - x0), y = r() * S, len = 4 + r() * 10, l = 26 + r() * 28;
+        g.strokeStyle = `hsla(${60 + r() * 40},${30 + r() * 25}%,${l}%,0.8)`; g.lineWidth = 1.2;
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x + (r() - 0.5) * 6, y - len); g.stroke();
+      }
+    }, repeat, 4);
+    // Roca granítica realista (CRW-23): moteado de minerales, vetas, líquenes y grietas
+    case 'rock': return pair(512, (g, h, S) => {
+      g.fillStyle = '#8b8a86'; g.fillRect(0, 0, S, S);
+      for (let k = 0; k < 120; k++) { const x = r() * S, y = r() * S, rad = 20 + r() * 80, l = 40 + r() * 25; const gr = g.createRadialGradient(x, y, 0, x, y, rad); gr.addColorStop(0, `hsla(${30 + r() * 20},${6 + r() * 8}%,${l}%,0.35)`); gr.addColorStop(1, `hsla(30,8%,${l}%,0)`); g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
+        const hh = h.createRadialGradient(x, y, 0, x, y, rad); const v = 90 + r() * 80; hh.addColorStop(0, `rgba(${v},${v},${v},0.5)`); hh.addColorStop(1, `rgba(${v},${v},${v},0)`); h.fillStyle = hh; h.fillRect(x - rad, y - rad, rad * 2, rad * 2); }
+      for (let k = 0; k < 26000; k++) { // minerales: cuarzo claro, mica oscura, feldespato rosado
+        const t = r(), c = t < 0.45 ? `hsl(40,6%,${68 + r() * 22}%)` : t < 0.8 ? `hsl(220,6%,${14 + r() * 18}%)` : `hsl(${12 + r() * 14},${18 + r() * 14}%,${52 + r() * 16}%)`;
+        g.fillStyle = c; const s = 1 + r() * 2.5; g.fillRect(r() * S, r() * S, s, s);
+      }
+      for (let k = 0; k < 14; k++) { // vetas y grietas
+        let x = r() * S, y = r() * S; g.strokeStyle = r() < 0.5 ? 'rgba(30,28,26,0.6)' : 'rgba(225,220,205,0.35)'; h.strokeStyle = '#3c3c3c'; g.lineWidth = h.lineWidth = 1 + r() * 2.5;
+        g.beginPath(); h.beginPath(); g.moveTo(x, y); h.moveTo(x, y);
+        for (let j = 0; j < 9; j++) { x += (r() - 0.5) * 70; y += (r() - 0.3) * 50; g.lineTo(x, y); h.lineTo(x, y); }
+        g.stroke(); h.stroke();
+      }
+      for (let k = 0; k < 70; k++) { // líquenes
+        const x = r() * S, y = r() * S, rad = 4 + r() * 16, col = r() < 0.6 ? `hsla(${70 + r() * 30},30%,${45 + r() * 15}%,0.55)` : `hsla(45,55%,${55 + r() * 10}%,0.5)`;
+        g.fillStyle = col; for (let j = 0; j < 6; j++) { g.beginPath(); g.arc(x + (r() - 0.5) * rad, y + (r() - 0.5) * rad, rad * (0.2 + r() * 0.4), 0, 7); g.fill(); }
+      }
+    }, repeat, 5);
     case 'mud': return pair(512, (g, h, S) => {
       g.fillStyle = '#4a3220'; g.fillRect(0, 0, S, S);
       for (let k = 0; k < 120; k++) {

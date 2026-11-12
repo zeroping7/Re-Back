@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { groundTex, wallpaperTexture } from '../textures.js';
 import { buildCircuit, trackRibbon, bannerTexture } from './common.js';
 import { crawlKit, LEN } from './crawlkit.js';
-import { rockWalls } from './diorama.js';
+import { rockWalls, rockGeometry, rockMaterial, rockTextures } from './diorama.js';
 import { mulberry } from './kit.js';
 
 // Circuito 1 de Obstáculos · "La maqueta": maqueta de una montaña sobre la mesa de un taller de modelismo (CRW-22).
@@ -48,7 +48,10 @@ function build(B) {
 
   // camino de tierra (también es la superficie de la cuesta)
   const dt = groundTex('dirt', [1, 1]);
-  const dirtMat = new THREE.MeshStandardMaterial({ map: dt.map, normalMap: dt.normalMap, normalScale: new THREE.Vector2(0.7, 0.7), roughness: 1, color: '#c9ad82' });
+  const dirtMat = new THREE.MeshStandardMaterial({ map: dt.map, normalMap: dt.normalMap, normalScale: new THREE.Vector2(0.7, 0.7), roughness: 1, color: '#a88d6a' });
+  // CRW-23: superficie del camino con tierra compactada realista (roderas, guijarros, grietas, bordes con hierba)
+  const tr = groundTex('trail', [1, 1]);
+  const trailMat = new THREE.MeshStandardMaterial({ map: tr.map, normalMap: tr.normalMap, normalScale: new THREE.Vector2(1.3, 1.3), roughness: 0.96, color: '#e6d6c0' });
 
   const circuit = buildCircuit(B, {
     points: PTS,
@@ -64,7 +67,7 @@ function build(B) {
     barrier: { colors: ['#6c7079'], thick: 0.6, hidden: true, wallHalf: 0.55 }, // solo colisión: las rocas son el dibujo
     chevrons: false,
   });
-  trackRibbon(B, circuit, dirtMat, 0.15, 0.025);
+  trackRibbon(B, circuit, trailMat, 0.15, 0.025);
 
   // ---------- Obstáculos (en orden de recorrido) ----------
   const K = crawlKit(B, circuit);
@@ -92,6 +95,7 @@ function build(B) {
   // ---------- Montaña ----------
   const M = mountain(B, circuit), top = M.maxH;
   rockWalls(B, circuit);
+  roadside(B, circuit);
   modelTrees(B, M);
   modelDetails(B, M);
   backdrop(B);
@@ -103,7 +107,8 @@ function build(B) {
     zones: T.zones, hazards: T.hazards, gates: T.gates, safe: T.safe, pits: T.pits,
     step: T.step, update: T.update,
     dust: [0.7, 0.6, 0.45],
-    lights: { // taller con luz cálida de flexo y la claridad de la ventana
+    lights: { // taller con luz cálida de flexo y la claridad de la ventana; algo de bruma para dar profundidad (CRW-23)
+      fog: ['#cbb89c', 140, 760],
       background: '#3a3029',
       hemi: ['#ffe9cc', '#4a3a2c', 0.8],
       sun: { color: '#ffe2b8', intensity: 3.0, offset: [22, 44, 18] },
@@ -137,7 +142,7 @@ function mountain(B, circuit) {
   const pts = []; for (let k = d0; k <= d1; k++) pts.push(S[((k % N) + N) % N]);
   const STEP = 1, CORR = circuit.width / 2 + 0.6 + STEP * 1.5, K = 1.5;
   const nx = Math.round(R.x * 2 / STEP), nz = Math.round(R.z * 2 / STEP);
-  const pos = [], col = [], idx = [], phys = [];
+  const pos = [], col = [], idx = [], phys = [], uvs = [];
   const c = new THREE.Color(), grass = new THREE.Color('#7f9a5a'), rock = new THREE.Color('#8a857c'), dirt = new THREE.Color('#b39a74');
   let maxH = 0;
   const H = new Float32Array((nx + 1) * (nz + 1)), DIST = new Float32Array(H.length);
@@ -160,6 +165,7 @@ function mountain(B, circuit) {
     const sl = Math.max(Math.abs((H[k + 1] ?? y) - y), Math.abs((H[k + nx + 1] ?? y) - y)) / STEP;
     const jit = sl > 0.3 ? (rnd() - 0.5) * 0.5 : 0; // ladera algo irregular
     pos.push(x, y + (y > 0.2 ? jit : 0), z); phys.push(x * B.S, y * B.S, z * B.S);
+    uvs.push(x * 0.09 + z * 0.03, z * 0.09 + y * 0.09); // coordenadas del mundo: la textura no se estira en los cortados
     const moss = 0.5 + 0.5 * Math.sin(x * 0.21 + Math.sin(z * 0.17) * 2.3) * Math.cos(z * 0.13 - x * 0.05);
     const band = 0.5 + 0.5 * Math.sin(y * 0.9 + Math.sin(x * 0.05) * 1.5); // vetas horizontales de roca pintada
     if (sl > 0.25) c.copy(rock).lerp(ochre, band * 0.55).lerp(flock, sl < 1.6 ? Math.min(0.85, moss * 1.2) * (1 - y / (maxH + 1)) : 0);
@@ -173,8 +179,11 @@ function mountain(B, circuit) {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   g.setIndex(idx); g.computeVertexNormals();
-  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: true }));
+  // CRW-23: detalle de roca/tierra encima del color pintado (relieve fino y grano)
+  const rt = rockTextures(), det = detailTexture();
+  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: true, map: det, normalMap: rt.normalMap, normalScale: new THREE.Vector2(0.8, 0.8) }));
   m.receiveShadow = true; m.castShadow = true; B.scene.add(m);
   if (B.mirror) for (let k = 0; k < phys.length; k += 3) phys[k] = -phys[k];
   B.world.createCollider(B.RAPIER.ColliderDesc.trimesh(new Float32Array(phys), new Uint32Array(idx), B.RAPIER.TriMeshFlags.FIX_INTERNAL_EDGES).setFriction(0.9), B.fixed);
@@ -346,4 +355,61 @@ function modelDetails(B, M) {
     roof.rotation.set(0, ry, Math.PI / 2); roof.rotateX(Math.PI / 2); roof.position.set(x, 3.9, z); roof.castShadow = true; B.scene.add(roof);
     B.box(1, 1.8, 0.2, x + Math.sin(ry) * 1.8, 0.9, z + Math.cos(ry) * 1.8, '#5b3a22', { solid: false, rot: [0, ry, 0] });
   }
+}
+
+// Textura de detalle en gris claro (media ≈ 1): solo añade grano y manchas al color de la ladera
+function detailTexture() {
+  const S = 512, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d'), r = mulberry(91);
+  g.fillStyle = '#ececec'; g.fillRect(0, 0, S, S);
+  for (let k = 0; k < 160; k++) { const x = r() * S, y = r() * S, rad = 10 + r() * 60, v = 190 + r() * 65; const gr = g.createRadialGradient(x, y, 0, x, y, rad); gr.addColorStop(0, `rgba(${v},${v},${v},0.5)`); gr.addColorStop(1, `rgba(${v},${v},${v},0)`); g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2); }
+  for (let k = 0; k < 40000; k++) { const v = 150 + r() * 105; g.fillStyle = `rgb(${v},${v},${v})`; g.fillRect(r() * S, r() * S, 1 + r() * 2, 1 + r() * 2); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
+
+// Borde del camino (CRW-23, solo visual): guijarros sueltos y matas de hierba entre el camino y las rocas
+function roadside(B, circuit) {
+  const S = circuit.samples, N = circuit.N, hw = circuit.width / 2, [r0, r1] = circuit.drive, rnd = mulberry(23);
+  const pebbles = [], tufts = [];
+  for (let k = r0; k < r1; k++) {
+    const i = ((k % N) + N) % N, s = S[i], s2 = S[(i + 1) % N];
+    for (let j = 0; j < 9; j++) { // guijarros: casi todos en el borde, algunos dentro del camino
+      const u = rnd(), side = rnd() < 0.5 ? -1 : 1, inner = rnd() < 0.25;
+      const lat = side * (inner ? rnd() * (hw - 0.3) : hw - 0.35 + rnd() * 0.45), sz = inner ? 0.025 + rnd() * 0.035 : 0.04 + Math.pow(rnd(), 2) * 0.12;
+      const px = s.p.x + (s2.p.x - s.p.x) * u + s.n.x * lat, pz = s.p.z + (s2.p.z - s.p.z) * u + s.n.z * lat, h = s.h + (s2.h - s.h) * u;
+      pebbles.push([px, h + sz * 0.25, pz, sz, rnd()]);
+    }
+    for (let j = 0; j < 4; j++) { // matas de hierba seca pegadas a las rocas
+      const u = rnd(), side = rnd() < 0.5 ? -1 : 1, lat = side * (hw + 0.02 + rnd() * 0.3);
+      const px = s.p.x + (s2.p.x - s.p.x) * u + s.n.x * lat, pz = s.p.z + (s2.p.z - s.p.z) * u + s.n.z * lat, h = s.h + (s2.h - s.h) * u;
+      tufts.push([px, h, pz, 0.6 + rnd() * 0.7, rnd()]);
+    }
+  }
+  const mt = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), p = new THREE.Vector3(), sc = new THREE.Vector3(), c = new THREE.Color();
+  // guijarros (roca realista pequeña)
+  const peb = new THREE.InstancedMesh(rockGeometry(1, 3.3), rockMaterial(), pebbles.length);
+  pebbles.forEach(([x, y, z, sz, v], i) => {
+    e.set((v - 0.5) * 0.6, v * 40, (v - 0.5) * 0.5); q.setFromEuler(e);
+    mt.compose(p.set(x, y, z), q, sc.set(sz * (1 + v * 0.5), sz * 0.6, sz)); peb.setMatrixAt(i, mt);
+    peb.setColorAt(i, c.setHSL(0.08 + v * 0.05, 0.08 + v * 0.1, 0.55 + v * 0.25));
+  });
+  peb.receiveShadow = true; B.scene.add(peb);
+  // matas: haz de briznas finas, verde en la base y pajizo en la punta
+  const blades = [], cols = [];
+  for (let b = 0; b < 9; b++) {
+    const a = b / 9 * Math.PI * 2 + b, lean = 0.25 + (b % 3) * 0.15, h = 0.16 + (b % 4) * 0.05, w = 0.012;
+    const bx = Math.cos(a) * 0.02, bz = Math.sin(a) * 0.02, tx = bx + Math.cos(a) * lean * h, tz = bz + Math.sin(a) * lean * h;
+    const px = -Math.sin(a) * w, pz = Math.cos(a) * w;
+    blades.push(bx - px, 0, bz - pz, bx + px, 0, bz + pz, tx, h, tz);
+    cols.push(0.33, 0.42, 0.18, 0.33, 0.42, 0.18, 0.78, 0.72, 0.42);
+  }
+  const bg = new THREE.BufferGeometry();
+  bg.setAttribute('position', new THREE.Float32BufferAttribute(blades, 3)); bg.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3)); bg.computeVertexNormals();
+  const tuft = new THREE.InstancedMesh(bg, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, side: THREE.DoubleSide }), tufts.length);
+  tufts.forEach(([x, y, z, s, v], i) => {
+    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), v * 6.28);
+    mt.compose(p.set(x, y, z), q, sc.set(s, s * (0.8 + v * 0.5), s)); tuft.setMatrixAt(i, mt);
+    tuft.setColorAt(i, c.setHSL(0.15 + v * 0.08, 0.35, 0.75 + v * 0.25));
+  });
+  B.scene.add(tuft);
 }

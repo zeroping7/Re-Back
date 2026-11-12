@@ -77,3 +77,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 64 | La maqueta: bajar la cuesta a 15° y mantener el resto | CRW-20 ✅ |
 | 65 | La maqueta: el suelo de alrededor parpadea | CRW-21 ✅ |
 | 66 | La maqueta: mejorar todo el apartado visual para que parezca una maqueta de montaña, sin cambiar nada de lo que hay | CRW-22 ✅ |
+| 67 | La maqueta: mejorar la experiencia visual del trayecto desde el coche (suelo, rocas…) lo más realista posible sin cambiar nada | CRW-23 ✅ |

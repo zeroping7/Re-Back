@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { rockTextures } from './diorama.js';
 import { mat, trackPatch, bannerTexture } from './common.js';
 import { mulberry } from './kit.js';
 import { groundTex, surfaceTex } from '../textures.js';
@@ -95,7 +96,15 @@ export function crawlKit(B0, circuit) {
   const SAND = ['#d9bd84', '#cfae72', '#e3c88f', '#c8a766'];
 
   // Roca suelta de forma variada (bola facetada, losa inclinada o tocón de cinco-ocho lados); `e` = cuánto sobresale del suelo
+  // CRW-23: las rocas sueltas llevan textura de granito (un material por color)
+  const rockMats = new Map(), white = new THREE.Color('#ffffff');
+  const rockMat = (color) => {
+    if (typeof color !== 'string') return color;
+    if (!rockMats.has(color)) { const t = rockTextures(); rockMats.set(color, new THREE.MeshStandardMaterial({ map: t.map, normalMap: t.normalMap, normalScale: new THREE.Vector2(1.1, 1.1), color: new THREE.Color(color).lerp(white, 0.4), roughness: 0.92, flatShading: true })); }
+    return rockMats.get(color);
+  };
   function rock(f, a, lat, r, e, color, kind = (rnd() * 3) | 0) {
+    color = rockMat(color);
     if (kind) e *= 0.72; // las losas y tocones tienen la cima plana: más bajos para que el chasis no se enganche
     const p = f.pos(a, lat), y = flat === f ? f.y0 : groundAt(f, a); // en una pieza inclinada, el suelo local es plano
     e = Math.max(0.04, e - (flat === f ? 0 : Math.abs(slopeAt(f, a))) * r * 0.9); // en pendiente la cara de abajo asoma más
