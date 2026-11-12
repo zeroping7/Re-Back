@@ -9,6 +9,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Marcha atrás girando, freno sin acelerar y chirrido real ✅ (FIS-37, FIS-38, AUD-15)
+- Parado, el freno da marcha atrás aunque el volante esté girado. Freno + zigzag ya no acelera (el derrape con freno solo mantiene, nunca suma velocidad). Chirrido grabado de verdad (Kenney, CC0). Prueba: `node tests/reverseprobe.mjs`. **Pendiente:** oírlo y probar el tacto en el móvil.
+
 ### Economía revisada ✅ (ECO-02, ECO-04, ECO-06, ECO-10..14)
 - Premios más bajos y proporcionales a las vueltas; copas repetidas al 25 %; circuitos por progreso (Parque con Bronce, Museo y Muelle con Plata); Flecha 12.000 (pide Plata) y Fórmula 18.000 (pide Oro); mejoras más baratas; medallas repetidas 60/150/250; primera victoria por circuito y dificultad; las partidas anteriores se conservan (migración v1 → v2). Fórmulas en `src/economy.js`, simulación `node tests/economy.mjs`.
 - **Al añadir coches o circuitos:** seguir la lista de `specs/09-economia.md`. **Pendiente:** probar el ritmo en el móvil; monedas en online (ECO-15) con NET-08.

@@ -90,3 +90,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 76 | Sonido de derrape en suelo duro (también caucho; no en jardín ni sobre agua, tierra o aceite) y marcas más realistas | AUD-14, FIS-36 ✅ |
 | 77 | Revisar la economía: ganar dinero, comprar coches y desbloquear coches y circuitos, ni muy fácil ni muy lento. Ritmo de 4–5 h para los coches de Carrera, circuitos bloqueados, partida reiniciada, online con monedas más adelante. Nota para revisarla al añadir coches o circuitos | ECO-02, ECO-04, ECO-06, ECO-10..14 ✅, ECO-15 📝 |
 | 78 | Conservar las partidas avanzadas al cambiar la economía (no borrar coches ni progreso) | ECO-14 ✅ |
+| 79 | Parado, marcha atrás con la dirección girada no responde; a baja velocidad, freno + zigzag acelera. Chirrido de neumáticos con un sonido real | FIS-37, FIS-38, AUD-15 ✅ |

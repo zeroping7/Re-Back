@@ -140,6 +140,7 @@ export class Car {
 
     // --- Motor / freno / marcha atrás ---
     let engine = 0, brakeF = 0, brakeR = 0;
+    if (!(input.brake > 0 && input.throttle === 0 && Math.abs(input.steer) > 0.3)) this._driftV = 0;
     this.drifting = false; this.braking = false; this.reversing = false;
     const fx = this.fx;
     for (const k in fx) fx[k] = Math.max(0, fx[k] - dt);
@@ -161,18 +162,17 @@ export class Car {
         if (Math.abs(input.steer) > 0.3 && fwd > 8) {
           // Freno + giro = derrape (como freno de mano)
           this.drifting = true;
-          engine = t.engine * 0.55;
+          // FIS-38: el motor solo mantiene las ruedas traseras girando; frenando nunca se gana velocidad
+          if (!this._driftV) this._driftV = fwd;
+          this._driftV = Math.min(this._driftV, fwd + 0.3) - 1.5 * dt;
+          engine = t.engine * 0.55 * THREE.MathUtils.clamp((this._driftV - fwd) / 1.5, 0, 1);
         } else {
           brakeF = brakeR = (t.brake / 4) * brk;
           this.braking = true;
         }
       } else if (thr === 0) {
-        // parado: freno + giro solo frena (no arranca); la marcha atrás se mete con el freno solo
-        // y, ya yendo hacia atrás, se puede girar
-        if (input.human && Math.abs(input.steer) > 0.3 && fwd > -1.5) {
-          brakeF = brakeR = (t.brake / 4) * brk;
-          this.braking = true;
-        } else {
+        // FIS-37: parado, el freno mete la marcha atrás también con el volante girado
+        {
           const lim = THREE.MathUtils.clamp((12 + fwd) / 3, 0, 1);
           engine = -t.engine * 0.55 * brk * lim;
           this.reversing = true;

@@ -2,6 +2,7 @@
 // con el motor sintetizado (AUD-10) como respaldo mientras cargan o si fallan.
 import enginesMeta from './assets/engines.json';
 import enginesUrl from './assets/engines.bin?url';
+import skidUrl from './assets/skid.ogg?url'; // AUD-15: chirrido grabado de verdad (Kenney Starter Kit Racing, por Landeplage, CC0)
 
 // Ondas con armónicos a medida (se crean una vez por contexto)
 export function makeWaves(ctx) {
@@ -285,6 +286,7 @@ export class Sfx {
     this.skidGain = ctx.createGain(); this.skidGain.gain.value = 0;
     n.connect(this.skidFilter).connect(this.skidGain).connect(this.master);
     n.start();
+    this._loadSkid();
 
     // capa continua de superficie (agua chapoteando, barro chapoteante, arena rasposa): ruido filtrado con trémolo irregular
     const sn = ctx.createBufferSource(); sn.buffer = buf; sn.loop = true;
@@ -315,6 +317,26 @@ export class Sfx {
   }
 
   // AUD-13: carga las muestras de motor y sustituye las voces sintetizadas (si falla, se queda el motor sintetizado)
+  // AUD-15: sustituye el chirrido sintetizado por la grabación real en cuanto se descarga
+  _loadSkid() {
+    const ctx = this.ctx;
+    fetch(skidUrl).then((r) => r.arrayBuffer()).then((ab) => new Promise((ok, ko) => ctx.decodeAudioData(ab, ok, ko))).then((rec) => {
+      const src = rec.getChannelData(0), X = Math.floor(rec.sampleRate * 0.15), L = src.length - X;
+      const buf = ctx.createBuffer(1, L, rec.sampleRate), d = buf.getChannelData(0);
+      let peak = 0;
+      for (let i = 0; i < L; i++) { d[i] = i < X ? src[i] * (i / X) + src[L + i] * (1 - i / X) : src[i]; peak = Math.max(peak, Math.abs(d[i])); } // fundido: bucle sin costura
+      for (let i = 0; i < L; i++) d[i] /= peak;
+      const n = ctx.createBufferSource(); n.buffer = buf; n.loop = true;
+      n.playbackRate.value = this.skidSrc.playbackRate.value;
+      n.connect(this.skidFilter);
+      n.start(0, Math.random() * buf.duration);
+      const old = this.skidSrc; this.skidSrc = n;
+      try { old.stop(); old.disconnect(); } catch { /* nada */ }
+      this.skidFilter.frequency.value = 250; // la grabación ya trae su timbre: solo se quita el retumbe grave
+      this.skidReal = true;
+    }).catch((e) => console.warn('Chirrido grabado no disponible; se usa el sintetizado', e));
+  }
+
   _loadBank() {
     if (this._bankLoading) return;
     this._bankLoading = true;
@@ -372,8 +394,8 @@ export class Sfx {
     this._lastThr = thr;
     // chirrido: entra a partir de un poco de deslizamiento y crece con él; calla en agua, tierra, aceite… y en el aire
     const sq = screech && !air && speed > 2 ? Math.min(1, Math.max(0, slip - 1) / 9) : 0;
-    this.skidGain.gain.setTargetAtTime(0.32 * Math.pow(sq, 0.7), t, sq > 0 ? 0.04 : 0.09);
-    this.skidSrc.playbackRate.setTargetAtTime(0.88 + sq * 0.18 + Math.min(0.08, speed / 400), t, 0.1);
+    this.skidGain.gain.setTargetAtTime((this.skidReal ? 0.42 : 0.32) * Math.pow(sq, 0.7), t, sq > 0 ? 0.04 : 0.09);
+    this.skidSrc.playbackRate.setTargetAtTime((this.skidReal ? 0.92 + sq * 0.12 : 0.88 + sq * 0.18) + Math.min(0.06, speed / 400), t, 0.1);
   }
 
   hit(strength) {

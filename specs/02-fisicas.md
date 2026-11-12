@@ -71,3 +71,10 @@ Si cambian los valores por defecto se sube la clave de guardado para que se apli
 - `node tests/racesim.mjs <circuito> 3 2`: todos los coches terminan en los tres circuitos.
 - Ningún coche se queda parado contra un escalón de rampa o cuesta.
 - Recolocar nunca deja el coche dentro de una rampa (rayo hacia abajo).
+
+## Marcha atrás y freno (12 nov 2026)
+
+| ID | Requisito | Estado |
+|---|---|---|
+| FIS-37 | Parado, el freno mete la marcha atrás también con el volante girado (antes solo frenaba) | ✅ |
+| FIS-38 | Freno + giro (derrape) nunca hace ganar velocidad: el motor solo mantiene las traseras girando mientras el coche pierde velocidad. Prueba: `node tests/reverseprobe.mjs` | ✅ |
