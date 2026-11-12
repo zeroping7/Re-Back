@@ -55,7 +55,7 @@ Inicio (toca para empezar)
 | UX-18 | Chocar con las esquinas o paredes ya no recoloca el coche: solo si se sale de verdad del escenario (+6 u) o vuelca | ✅ |
 | UX-24 | **Batalla: rampas macizas**: las rampas de la arena son cuñas cerradas hasta el suelo (sin hueco debajo donde atascarse) (`tests/arena.mjs`, fotos `tests/arenashot.mjs`) | ✅ |
 | UX-25 | **Batalla: looping con física**: se entra a cualquier velocidad; al subir se pierde velocidad por la gravedad y al bajar se gana; gas y freno cuentan; si arriba no hay velocidad para que la fuerza centrífuga sostenga el coche (v²/r + g·cosθ < 0) se despega y cae. Rizo de radio 4,5; turbo de entrada 1,4 s (justo para darlo a fondo) (`tests/loop.mjs`: con turbo lo dan los 4 coches; sin carrerilla se caen) | ✅ |
-| UX-26 | Batalla: la IA sube a las zonas elevadas (silla/mesa/caja) a por la estrella o el portador | 📝 |
+| UX-26 | **Batalla: la IA sube a lo alto**: rutas de subida (`nav` de la arena) a la caja, la silla y la mesa (por la silla o por la rampa de la mesa); alineada con la rampa no esquiva; la estrella sale la mitad de las veces arriba (caja, silla o mesa) (`tests/climb.mjs`: quieto arriba con la estrella, la IA te la roba en < 45 s en las 3 zonas) | ✅ |
 | UX-27 | Batalla: límites de la habitación bien marcados (el coche no se mete en las paredes) | 📝 |
 | UX-28 | Batalla: 4 coches más (8 en total) | 📝 |
 | UX-19 | **Coche libre en preparar carrera, campeonato y garaje**: paneles en el 58 % izquierdo de la pantalla; la cámara del taller desplaza la imagen para centrar el coche en el 42 % derecho, sin que lo tape ninguna lista. Cada coche nuevo arranca la peana mostrando el frente en 3/4 | ✅ (falta probar en el móvil) |

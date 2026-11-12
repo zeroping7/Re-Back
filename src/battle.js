@@ -104,6 +104,17 @@ function build(B) {
     bounds: { x: ROOM.x - 1.5, z: ROOM.z - 1.5, h: ROOM.h - 1 },
     itemSpots: [],
     itemPoints: W([[30, -4], [-24, 8], [10, -28], [-39, 21, 9], [-15, 24, 4.5], [40, 26]]),
+    // BAT/UX-26: zonas altas y cómo subir (puntos en orden desde el suelo; [x, z, altura])
+    nav: [
+      { min: [-5.5, -4.5], max: [5.5, 4.5], y: 3, routes: [W([[-28, 0], [-19, 0], [-9, 0, 2.2], [0, 0, 3]]), W([[28, 0], [19, 0], [9, 0, 2.2], [0, 0, 3]])] },
+      { min: [-20, 19], max: [-10, 29], y: 4.5, routes: [W([[16, 24], [7, 24], [-3, 24, 2.2], [-15, 24, 4.5]])] },
+      { min: [-48, 8], max: [-30, 34], y: 9, routes: [
+        W([[16, 24], [7, 24], [-3, 24, 2.2], [-15, 24, 4.5], [-25, 24, 6.7], [-37, 24, 9]]),
+        W([[-39, -24], [-39, -14], [-39, -2, 4.5], [-39, 14, 9]]),
+      ] },
+    ].map((z) => ({ ...z, min: z.min.map((v) => v * S), max: z.max.map((v) => v * S), y: z.y * S })),
+    // donde puede aparecer la estrella: suelo (alfombra) o arriba (caja, silla, mesa)
+    starSpots: { floor: W([[0, 14], [0, -14]]), high: W([[0, 0, 3], [-15, 24, 4.5], [-39, 21, 9]]) },
     spawns: W([[32, 2], [-26, -2], [12, 16], [-8, -28], [44, 26], [-24, 10], [0, -14], [40, -6]]),
     loops: [loopInfo],
     zones: [],
@@ -190,12 +201,20 @@ export function setupBattle(race) {
   race.battleState = {
     timers: new Map(race.cars.map((car) => [car, BATTLE_TIME])),
     holder: null, holdT: 0, lastHolder: null, lastT: 0,
-    pos: new THREE.Vector3(0, 2.4, 14 * race.S * (Math.random() < 0.5 ? 1 : -1)), // en la alfombra, entre la caja y un salto
+    pos: starSpawn(race.T), // UX-26: a veces arriba (caja, silla o mesa)
     mesh, halo, light, over: false,
   };
 }
 
 const flat = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
+
+// la estrella sale en la alfombra o, la mitad de las veces, en una zona alta
+function starSpawn(T, rnd = Math.random) {
+  const S = T.starSpots;
+  if (!S) return new THREE.Vector3(0, 2.4, 0);
+  const list = rnd() < 0.5 ? S.high : S.floor;
+  return list[Math.floor(rnd() * list.length)].clone().add(new THREE.Vector3(0, 2.4, 0));
+}
 
 export function battleStep(race, dt) {
   const B = race.battleState;
@@ -347,6 +366,7 @@ export class BattleDriver {
     this.r = mulberry(seed * 7919);
     this.stuck = 0; this.reverse = 0; this.fleeT = 0; this.flee = null; this.itemDelay = 1;
     this.ray = new RAPIER.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 1 });
+    this.route = null; this.routeT = 0;
     this.input = { steer: 0, throttle: 0, brake: 0 };
   }
 
@@ -372,6 +392,32 @@ export class BattleDriver {
     return this.flee;
   }
 
+  // UX-26: si el objetivo está en una zona alta y el coche abajo, sube por la rampa (puntos de nav)
+  climb(tgt, dt) {
+    const nav = this.race.T.nav, p = this.car.currPos;
+    const zone = nav?.find((z) => tgt.x > z.min[0] && tgt.x < z.max[0] && tgt.z > z.min[1] && tgt.z < z.max[1] && tgt.y > z.y - 1);
+    const onTop = zone && p.x > zone.min[0] - 1 && p.x < zone.max[0] + 1 && p.z > zone.min[1] - 1 && p.z < zone.max[1] + 1 && p.y > zone.y - 1.5;
+    if (!zone || onTop) { this.route = null; return tgt; }
+    this.routeT -= dt;
+    if (!this.route || this.route.zone !== zone || this.routeT <= 0) {
+      // ruta y punto más cercanos a tu altura (nunca uno de arriba si estás abajo)
+      let best = null, bd = Infinity;
+      for (const r of zone.routes) r.forEach((w, i) => {
+        if (w.y > p.y + 2) return;
+        const d = flat(w, p);
+        if (d < bd) { bd = d; best = { pts: r, i }; }
+      });
+      if (!best) { this.route = null; return tgt; }
+      this.route = { zone, ...best, up: best.pts.findIndex((w) => w.y > 1) }; this.routeT = 4;
+    }
+    const R = this.route;
+    let w = R.pts[R.i];
+    if (flat(w, p) < 4.5 && Math.abs(w.y - p.y) < 3) { R.i++; w = R.pts[R.i]; this.routeT = 4; }
+    R.ramp = R.i >= R.up; // ya alineado con la rampa: no esquivar (la rampa daría falso obstáculo)
+    if (!w) { this.route = null; return tgt; }
+    return w;
+  }
+
   // distancia libre delante (rayo contra decorado)
   free(dir, len) {
     const p = this.car.currPos;
@@ -382,7 +428,7 @@ export class BattleDriver {
 
   update(dt) {
     const car = this.car, R = this.race, p = car.currPos, f = car.forward;
-    const tgt = this.target();
+    const tgt = this.climb(this.target(), dt);
     const dx = tgt.x - p.x, dz = tgt.z - p.z, dist = Math.hypot(dx, dz) || 1;
     // ángulo con signo (+ = a la izquierda, como el volante)
     const cross = f.x * dz - f.z * dx, dot = f.x * dx + f.z * dz;
@@ -390,16 +436,17 @@ export class BattleDriver {
     // esquivar obstáculos
     const fw = new THREE.Vector3(f.x, 0, f.z).normalize();
     const look = 5 + car.speed * 0.35;
-    if (this.free(fw, look) < look * 0.9) {
+    if (!(this.route?.ramp && Math.abs(ang) < 0.6) && this.free(fw, look) < look * 0.9) {
       const l = this.free(fw.clone().applyAxisAngle(_Y, 0.6), look), rr = this.free(fw.clone().applyAxisAngle(_Y, -0.6), look);
       ang += (l > rr ? 1 : -1) * 0.9;
     }
     let steer = THREE.MathUtils.clamp(ang * 1.6, -1, 1);
     let throttle = 1, brake = 0;
     if (Math.abs(ang) > 1.6 && car.speed > 9) { throttle = 0.4; }
+    if (this.route && Math.abs(ang) > 0.5 && car.speed > 12) throttle = 0.3; // alinearse antes de la rampa
     // atascado: marcha atrás girando al revés
     if (car.speed < 1.5 && this.reverse <= 0) this.stuck += dt; else this.stuck = Math.max(0, this.stuck - dt * 2);
-    if (this.stuck > 1.1) { this.reverse = 0.9 + this.r() * 0.5; this.stuck = 0; }
+    if (this.stuck > 1.1) { this.reverse = 0.9 + this.r() * 0.5; this.stuck = 0; this.routeT = 0; }
     if (this.reverse > 0) { this.reverse -= dt; throttle = 0; brake = 1; steer = -steer; }
     // objetos: disparar si hay alguien delante cerca
     this.itemDelay -= dt;

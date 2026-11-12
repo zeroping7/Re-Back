@@ -9,6 +9,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
+### Batalla: la IA sube a lo alto ✅ (UX-26)
+- Rutas de subida a la caja, la silla y la mesa; la estrella sale a veces arriba. Prueba: `node tests/climb.mjs`. **Pendiente:** probar en el móvil; quedan paredes (UX-27) y 8 coches (UX-28).
+
 ### Batalla: looping con física ✅ (UX-25)
 - Ya no se recorre solo: la gravedad frena al subir, el gas empuja y, si arriba vas lento, el coche se despega y cae. Con el turbo de la entrada y a fondo se da entero. **Pendiente:** probarlo en el móvil (si cuesta demasiado: turbo de entrada `1.4` o radio `R: 4.5` en `src/battle.js`).
 

@@ -83,3 +83,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 70 | Batalla de la estrella: coches atascados bajo las rampas, looping automático, IA no sube a lo alto, coches que se meten en las paredes, 4 coches más. Uno a uno | UX-24 ✅, UX-25..28 📝 |
 | 70 | Salón: mover un turbo y las armas con el visor de circuitos | — ✅ |
 | 71 | Batalla: looping con física real (si vas lento te caes) | UX-25 ✅ |
+| 72 | Batalla: la IA no sube a las zonas altas (si te quedas arriba ganas); que la estrella a veces salga arriba | UX-26 ✅ |
