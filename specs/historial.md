@@ -92,3 +92,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 78 | Conservar las partidas avanzadas al cambiar la economía (no borrar coches ni progreso) | ECO-14 ✅ |
 | 79 | Parado, marcha atrás con la dirección girada no responde; a baja velocidad, freno + zigzag acelera. Chirrido de neumáticos con un sonido real | FIS-37, FIS-38, AUD-15 ✅ |
 | 80 | Carrera: el coche va muy estable pero en curvas cerradas al derrapar es imposible de controlar y siempre hace trompo. Primero derrape suave, anti-trompo y gas que endereza; luego deslizamiento progresivo y ruedas más pequeñas | FIS-39..43 ✅ |
+| 81 | Obstáculos: que los coches no se frenen tanto al soltar el acelerador y subir la altura de los bajos | CRW-28, CRW-29 ✅ |

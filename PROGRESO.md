@@ -17,9 +17,12 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 5. Cajas sueltas de una en una en lugar de grupos.
 6. Batalla de la Estrella: IA más potente.
 7. Algún salto individual o camino alternativo para coger una caja o un nitro (se puede añadir el nitro).
-8. Coches de Obstáculos: que no se frenen tanto al soltar el acelerador.
-9. Coches de Obstáculos: subir la altura de los bajos.
+8. ~~Coches de Obstáculos: que no se frenen tanto al soltar el acelerador~~ ✅ (CRW-28).
+9. ~~Coches de Obstáculos: subir la altura de los bajos~~ ✅ (CRW-29).
 10. Permitir cambiar el color del coche.
+
+### Obstáculos: ruedan al soltar el gas y bajos más altos ✅ (CRW-28, CRW-29)
+- En llano ruedan ~1,5 s al soltar (antes se paraban en 0,3 s); en cuesta se sujetan como antes. Suspensión ×1,5: bajos +0,06-0,09. Prueba: `node tests/crawlprobe.mjs`. **Pendiente:** tacto en el móvil (si ruedan demasiado, `CRAWL_DECEL` en `src/car.js`).
 
 ### Carrera: ruedas en proporción real y menos raíles ✅ (FIS-42, FIS-43)
 - Ruedas más pequeñas (Pulga −30 %, turismos/Fórmula/Furgo/Rally/Cometa −25 %, Chispa −20 %; Tanque y Morsa igual por Obstáculos). Girando fuerte a velocidad la trasera culea, dirección más viva y más balanceo. Medidores y fotos regenerados. **Pendiente:** tacto en el móvil; decidir ruedas de los coches de Drift.

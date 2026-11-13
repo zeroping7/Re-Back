@@ -17,6 +17,8 @@ function wheelsFor(def) {
 const CONN_Y = -0.02;
 const SPIN_START = 40 / 57.3, ANTI_GAIN = 3, STRAIGHTEN = 0.5;
 // FIS-42: menos raíles: la trasera desliza al girar fuerte a velocidad, dirección más viva y carrocería que se inclina más
+const CRAWL_DECEL = 6, CRAWL_HOLD_V = 0.8; // CRW-28
+const contacts0 = (veh) => { for (let i = 0; i < 4; i++) if (veh.wheelIsInContact(i)) return true; return false; };
 const SLIDE = 0.5, SLIDE_GRIP = 0.08, ANTIROLL = 4.5; // FIS-40/41
 const MASS = 8; // masa de referencia: la potencia y el freno se escalan con la masa de cada coche
 
@@ -186,7 +188,17 @@ export class Car {
     }
     if (boost && thr === 0 && brk === 0) engine = power * THREE.MathUtils.clamp((maxSpeed - fwd) / (maxSpeed * 0.25), 0, 1);
     // resistencia a rodar; el crawler lleva freno motor fuerte: se queda quieto en la cuesta al soltar el gas (CRW-01)
-    if (thr === 0 && brk === 0 && !boost) brakeF = brakeR = this.crawl ? 1.8 : 0.04;
+    // CRW-28: en llano el crawler rueda suelto al soltar el gas; en cuesta (o casi parado) se sujeta como antes
+    if (thr === 0 && brk === 0 && !boost) {
+      const slope = THREE.MathUtils.clamp((Math.abs(this.forward.y) - 0.05) / 0.07, 0, 1); // 3° → 7°
+      const hold = !this.crawl ? 0 : speed < CRAWL_HOLD_V ? 1 : slope;
+      brakeF = brakeR = 0.04 + (1.8 - 0.04) * hold;
+      if (this.crawl && hold < 1 && contacts0(veh)) {
+        // freno motor suave y constante en llano (deceleración CRAWL_DECEL u/s²)
+        const v = b.linvel(), h = Math.hypot(v.x, v.z) || 1, k = Math.min(h, CRAWL_DECEL * dt) * (1 - hold) * this.mass / h;
+        b.applyImpulse({ x: -v.x * k, y: 0, z: -v.z * k }, true);
+      }
+    }
     if (input.hold) { engine = 0; brakeF = brakeR = t.brake / 4; this.reversing = false; }
     // charco: frena suave con resistencia del agua (sin bloquear ruedas, que hacía trompos)
     if (fx.wet > 0 && fwd > maxSpeed) {
