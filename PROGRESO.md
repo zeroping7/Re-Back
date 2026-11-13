@@ -21,10 +21,8 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 9. ~~Coches de Obstáculos: subir la altura de los bajos~~ ✅ (CRW-29).
 10. Permitir cambiar el color del coche.
 
-### Ayuda de giro para botones y agarre sin escalón ✅ (UX-30, FIS-44) — solo Carrera
-- **Física:** antes el coche pasaba de «raíles» (0-2° de cruzada) a derrape de 40° de golpe al pasar del 60 % de volante. Ahora la cruzada sube poco a poco (3-12°). Valores en `src/car.js`: `KV`, `G0`, `G1`, `B1`.
-- **Ayuda de giro** (Opciones y pausa, Sí por defecto): toque corto = corrección pequeña, giro más lento a alta velocidad, afloja si el coche se cruza y contravolante rápido. Valores en `src/car.js`: `AS_T0`, `AS_TV` (tiempo hasta giro completo), `AS_P` (curva).
-- Pruebas: `node tests/steerprobe.mjs`, `tests/assistprobe.mjs`, `tests/assistui.mjs`. **Pendiente:** tacto en el móvil (si gira tarde: bajar `AS_T0`/`AS_TV` o subir Sensibilidad).
+### Ayuda de giro retirada (v1.0.97 → vuelta a v1.0.96)
+- La ayuda de giro para botones y el agarre gradual (UX-30, FIS-44) no gustaron al probarlos y se quitaron. Queda la herramienta de medida `node tests/steerprobe.mjs` (cruzada según el volante). **Siguiente:** slider de dirección en lugar de los pulsadores ◀ ▶.
 
 ### Sensibilidad de la dirección ✅ (UX-29)
 - Opciones y pausa: 60-150 %. Cambia cuánto y lo rápido que gira el volante (botones, mando e inclinación) en las tres disciplinas. **Pendiente:** encontrar el valor que guste en el móvil.

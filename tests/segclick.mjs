@@ -8,7 +8,7 @@ await p.goto(url + '?test&screen=m-settings', { waitUntil: 'load' });
 await new Promise((r) => setTimeout(r, 5000));
 const sel = (id) => p.$$eval(`#${id} button`, (bs) => bs.map((x) => (x.classList.contains('sel') ? x.textContent : null)).filter(Boolean));
 let fail = 0;
-for (const [id, i, id2] of [['opt-sens', 4, 'opt-sens2'], ['opt-sens', 0, 'opt-sens2'], ['opt-assist', 1, 'opt-assist2'], ['opt-assist', 0, 'opt-assist2'], ['opt-music', 1], ['opt-music', 0], ['opt-quality', 1], ['opt-quality', 0]]) {
+for (const [id, i, id2] of [['opt-sens', 4, 'opt-sens2'], ['opt-sens', 0, 'opt-sens2'], ['opt-music', 1], ['opt-music', 0], ['opt-quality', 1], ['opt-quality', 0]]) {
   const btns = await p.$$(`#${id} button`); const want = await btns[i].evaluate((x) => x.textContent);
   await btns[i].evaluate((x) => x.click());
   const got = await sel(id), got2 = id2 ? await sel(id2) : [want];

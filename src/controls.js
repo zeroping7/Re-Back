@@ -1,6 +1,5 @@
 // Entrada: botones táctiles, inclinación del móvil y teclado.
 const KEY_MODE = 'reback.controlMode';
-const KEY_ASSIST = 'reback.steerAssist'; // UX-30: ayuda de giro para botones (por defecto sí)
 const KEY_SENS = 'reback.steerSens'; // UX-29: sensibilidad de la dirección (0,6 … 1,5)
 
 export class Controls {
@@ -12,7 +11,6 @@ export class Controls {
     this.mode = localStorage.getItem(KEY_MODE) || 'buttons'; // 'buttons' | 'tilt'
     this.tilt = 0; this.tiltZero = null;
     this.sens = +(localStorage.getItem(KEY_SENS) || 1) || 1;
-    this.assist = localStorage.getItem(KEY_ASSIST) !== '0';
     this.steerSmooth = 0;
     this.override = null; // para pruebas automáticas
     this.onReset = null; this.onCamera = null;
@@ -89,11 +87,6 @@ export class Controls {
     this.keys.clear(); this.firePending = false; this.pad = null; this.padLook = false; this.camStick.x = this.camStick.y = 0;
   }
 
-  setAssist(v) {
-    this.assist = !!v;
-    try { localStorage.setItem(KEY_ASSIST, v ? '1' : '0'); } catch { /* sin almacenamiento */ }
-  }
-
   setSens(v) {
     this.sens = v;
     try { localStorage.setItem(KEY_SENS, String(v)); } catch { /* sin almacenamiento */ }
@@ -108,7 +101,7 @@ export class Controls {
     const gas = s.gas || k.has('ArrowUp') || k.has('KeyW');
     const brake = s.brake || k.has('ArrowDown') || k.has('KeyS') || k.has('Space');
 
-    let steer, digital; // digital: -1/0/1 cuando se gira con botones o teclas (UX-30)
+    let steer;
     if (this.mode === 'tilt' && !left && !right) {
       const v = Math.max(-1, Math.min(1, -this.tilt * this.sens / 32)); // ±32º = giro completo (UX-29: menos grados con más sensibilidad)
       // FIS-25: curva suave cerca del centro (menos brusco)
@@ -120,17 +113,16 @@ export class Controls {
       const rate = target === 0 ? 9 : 4.2 * this.sens; // UX-29
       this.steerSmooth += Math.max(-rate * dt, Math.min(rate * dt, target - this.steerSmooth));
       steer = this.steerSmooth;
-      digital = target;
     }
     let throttle = gas || (this.autoGas && !brake) ? 1 : 0, brk = brake ? 1 : 0;
     const p = this.pad;
     if (p) {
-      if (p.steer !== 0 && !left && !right) { steer = p.steer; this.steerSmooth = steer; digital = undefined; }
+      if (p.steer !== 0 && !left && !right) { steer = p.steer; this.steerSmooth = steer; }
       brk = Math.max(brk, p.brake);
       throttle = Math.max(throttle, p.gas);
       if (this.autoGas && p.brake > 0.1) throttle = Math.max(gas ? 1 : 0, p.gas);
     }
-    return { steer, throttle, brake: brk, human: true, sens: this.sens, digital, assist: this.assist };
+    return { steer, throttle, brake: brk, human: true, sens: this.sens };
   }
 }
 

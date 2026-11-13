@@ -16,11 +16,10 @@ function wheelsFor(def) {
 }
 const CONN_Y = -0.02;
 const SPIN_START = 40 / 57.3, ANTI_GAIN = 3, STRAIGHTEN = 0.5;
+// FIS-42: menos raíles: la trasera desliza al girar fuerte a velocidad, dirección más viva y carrocería que se inclina más
 const CRAWL_DECEL = 6, CRAWL_HOLD_V = 0.8; // CRW-28
 const contacts0 = (veh) => { for (let i = 0; i < 4; i++) if (veh.wheelIsInContact(i)) return true; return false; };
-const ANTIROLL = 4.5;
-const AS_T0 = 0.26, AS_TV = 0.18, AS_P = 1.7, AS_A0 = 0.03, AS_OUT = 0.12, AS_FLIP = 0.07, AS_CRATE = 2.5, AS_EASE = 0.75, AS_B0 = 0.16, AS_B1 = 0.25; // UX-30
-const G0 = 0.92, G1 = 1.2, B1 = 0.4, KV = 7.5, KMIN = 0.25; // FIS-44
+const SLIDE = 0.5, SLIDE_GRIP = 0.08, ANTIROLL = 4.5; // FIS-40/41
 const MASS = 8; // masa de referencia: la potencia y el freno se escalan con la masa de cada coche
 
 const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q = new THREE.Quaternion(), _qi = new THREE.Quaternion();
@@ -109,7 +108,7 @@ export class Car {
     this.body.setRotation({ x: _q.x, y: _q.y, z: _q.z, w: _q.w }, true);
     this.body.setLinvel({ x: 0, y: 0, z: 0 }, true);
     this.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
-    this.steer = 0; this._as = 0; this.airTime = 0; this.upsideTime = 0; this.loopZone = false; this.rail = null;
+    this.steer = 0; this.airTime = 0; this.upsideTime = 0; this.loopZone = false; this.rail = null;
     this.lastVel.set(0, 0, 0);
     this.snapshot(); this.prevPos.copy(this.currPos); this.prevQuat.copy(this.currQuat);
   }
@@ -139,34 +138,8 @@ export class Car {
     // FIS-24: giro extra a baja velocidad (maniobrar en parado), se desvanece a 6 u/s
     const sens = input.sens ?? 1; // UX-29: sensibilidad elegida en Opciones (solo jugador)
     const lowBoost = 1 + (t.steerLow || 0) * Math.max(0, 1 - Math.abs(fwd) / 6);
-    const dMax = t.steerMax * lowBoost * sens / (1 + Math.abs(fwd) * t.steerFalloff); // giro máximo de las ruedas a esta velocidad
-    const pullK = Math.abs(fwd) > 3 ? pull : 0;
-    let target, ds;
-    if (input.assist && input.digital !== undefined && !this.driftMode && !this.crawl) {
-      // UX-30: ayuda de giro para botones (sí/no). El botón no es «volante a tope»: entra despacio (un toque corto
-      // corrige poco), más despacio cuanto más rápido vas, afloja si el coche se cruza y da contravolante rápido y completo.
-      const d = input.digital, v = Math.abs(fwd);
-      const bs = speed > 3 && fwd > 1 ? Math.atan2(-this.localVel.x, fwd) : 0; // cruzada con signo (+ = cola fuera girando a la izquierda)
-      const ab = Math.abs(bs), yr = b.angvel().y;
-      const counter = d !== 0 && d * bs < 0 && ab > 0.12 && (yr * d < 0 || ab > 0.3);
-      const into = d !== 0 && d * bs > 0;
-      let a = this._as || 0;
-      if (d === 0) a -= Math.sign(a) * Math.min(Math.abs(a), dt / AS_OUT);
-      else if (a * d < 0) a -= Math.sign(a) * Math.min(Math.abs(a), dt / AS_FLIP);
-      else {
-        const T = (AS_T0 + AS_TV * THREE.MathUtils.clamp((v - 10) / 18, 0, 1)) / sens;
-        a = THREE.MathUtils.clamp(a + d * (AS_P / T) * Math.pow(Math.max(Math.abs(a), AS_A0), (AS_P - 1) / AS_P) * dt * (counter ? AS_CRATE : 1), -1, 1);
-      }
-      this._as = a;
-      const surf = this.fx.oil > 0 ? 0.5 : 1; // sobre aceite, menos volante
-      const lim = counter ? Math.max(dMax, t.steerMax * sens * 0.9) : dMax * surf * (into ? 1 - AS_EASE * THREE.MathUtils.clamp((ab - AS_B0) / AS_B1, 0, 1) : 1);
-      target = THREE.MathUtils.clamp(a + pullK, -1, 1) * lim;
-      ds = 14 * dt;
-    } else {
-      this._as = 0;
-      target = THREE.MathUtils.clamp(input.steer + pullK, -1, 1) * dMax;
-      ds = t.steerSpeed * sens * dt * (Math.sign(target - this.steer) !== Math.sign(this.steer) ? 1.6 : 1);
-    }
+    const target = THREE.MathUtils.clamp(input.steer + (Math.abs(fwd) > 3 ? pull : 0), -1, 1) * t.steerMax * lowBoost * sens / (1 + Math.abs(fwd) * t.steerFalloff);
+    const ds = t.steerSpeed * sens * dt * (Math.sign(target - this.steer) !== Math.sign(this.steer) ? 1.6 : 1);
     this.steer += THREE.MathUtils.clamp(target - this.steer, -ds, ds);
     veh.setWheelSteering(0, this.steer);
     veh.setWheelSteering(1, this.steer);
@@ -251,20 +224,16 @@ export class Car {
     const beta = watch ? Math.atan2(Math.abs(this.localVel.x), this.localVel.z) : 0;
     const anti = THREE.MathUtils.clamp((beta - SPIN_START) / 0.5, 0, 1);
     const rearK = (1 + (t.driftRear - 1) * this._dk) * (1 + anti * 0.9);
-    // FIS-44: sin escalón entre agarrar y derrapar (solo Carrera). La trasera suelta un poco antes (G0) y recupera
-    // agarre de forma continua con la cruzada (hasta G1 a B1 rad); la rigidez lateral baja con la velocidad para que
-    // el neumático tenga algo de deriva antes de saturar (rigidez de deriva constante en vez de «raíles»).
-    const raceP = !this.driftMode && !this.crawl;
-    const prog = raceP ? G0 + (G1 - G0) * THREE.MathUtils.clamp(beta / B1, 0, 1) : 1;
-    const kS = raceP ? THREE.MathUtils.clamp(KV / Math.max(speed, 1), KMIN, 1) : 1;
-    const sideF = t.sideFront * kS, sideR = t.sideRear * kS, slipR = prog;
+    // FIS-42: deslizamiento progresivo sin frenar: girando fuerte a velocidad, la trasera pierde algo de rigidez lateral y culea
+    const lk = this.driftMode || this.crawl ? 0 : THREE.MathUtils.clamp(Math.abs(this.steer) / (t.steerMax * 0.55), 0, 1) * THREE.MathUtils.clamp((speed - 6) / 14, 0, 1) * (1 - anti);
+    const sideR = t.sideRear * (1 - SLIDE * lk), slipR = 1 - SLIDE_GRIP * lk;
     const rear = t.rearBias / 100;
     for (let i = 0; i < 4; i++) {
       const front = this.W[i].front;
       // DRI-15: en drift las fuerzas de los neumáticos las pone driftPhysics.js; Rapier solo hace la suspensión
       veh.setWheelEngineForce(i, this.driftMode ? 0 : ((engine * (front ? 1 - rear : rear)) / 2) * this.massK);
       veh.setWheelBrake(i, this.driftMode ? 0 : (front ? brakeF : brakeR) * this.massK);
-      veh.setWheelSideFrictionStiffness(i, this.driftMode ? 0 : front ? sideF : sideR);
+      veh.setWheelSideFrictionStiffness(i, this.driftMode ? 0 : front ? t.sideFront : sideR);
       // aceite: casi sin agarre · zona de derrape: agarre reducido pero controlable
       const oil = fx.oil > 0 ? 0.22 : fx.slide > 0 ? (front ? 0.88 : 0.74) : fx.sand > 0 ? 0.8 : 1;
       veh.setWheelFrictionSlip(i, (front ? t.gripFront : t.gripRear * rearK * slipR) * oil);

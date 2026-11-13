@@ -92,7 +92,4 @@ Criterio: `node tests/spinprobe.mjs` (suelo plano, 7 coches de Carrera, 16-28 u/
 | FIS-43 | Ruedas en proporción más real (diámetro/batalla de ~0,5 a ~0,35-0,4): Pulga −30 %, Furgo, Rally, Flecha, Fórmula y Cometa −25 %, Chispa −20 %. Tanque y Morsa sin cambios (Obstáculos). Altura libre mínima 0,31, como los coches de Drift | ✅ |
 
 Criterio FIS-42/43: `node tests/spinprobe.mjs` sin trompos ni vuelcos (64 pruebas, incluido eslalon a fondo); cruzada al girar a fondo con gas 20-50°. `racesim` en los 6 circuitos de Carrera con 4 coches: todos terminan.
-| FIS-44 | Sin escalón entre agarrar y derrapar (solo Carrera; sustituye al deslizamiento por volante de FIS-42). La rigidez lateral de los neumáticos baja con la velocidad (`KV`/v, mín. 0,25) para que haya deriva antes de saturar, y la trasera suelta un poco antes (×0,92) y recupera agarre de forma continua con la cruzada (hasta ×1,2 a 23°). Drift y Obstáculos sin cambios | ✅ |
-
-Criterio FIS-44: `node tests/steerprobe.mjs`: con volante fijo al 20/40/60/80/100 % la cruzada sube poco a poco (p. ej. Flecha a 22 u/s: 4-6-7-8-8°; antes 0-1-2-41-39°), sin saltos de más de 6° entre un paso y el siguiente. `spinprobe` sin trompos; `racesim` en los 6 circuitos: todos terminan.
 
