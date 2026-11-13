@@ -15,7 +15,9 @@ function wheelsFor(def) {
   ];
 }
 const CONN_Y = -0.02;
-const SPIN_START = 40 / 57.3, ANTI_GAIN = 3, STRAIGHTEN = 0.5; // FIS-40/41
+const SPIN_START = 40 / 57.3, ANTI_GAIN = 3, STRAIGHTEN = 0.5;
+// FIS-42: menos raíles: la trasera desliza al girar fuerte a velocidad, dirección más viva y carrocería que se inclina más
+const SLIDE = 0.5, SLIDE_GRIP = 0.08, ANTIROLL = 4.5; // FIS-40/41
 const MASS = 8; // masa de referencia: la potencia y el freno se escalan con la masa de cada coche
 
 const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q = new THREE.Quaternion(), _qi = new THREE.Quaternion();
@@ -209,16 +211,19 @@ export class Car {
     const beta = watch ? Math.atan2(Math.abs(this.localVel.x), this.localVel.z) : 0;
     const anti = THREE.MathUtils.clamp((beta - SPIN_START) / 0.5, 0, 1);
     const rearK = (1 + (t.driftRear - 1) * this._dk) * (1 + anti * 0.9);
+    // FIS-42: deslizamiento progresivo sin frenar: girando fuerte a velocidad, la trasera pierde algo de rigidez lateral y culea
+    const lk = this.driftMode || this.crawl ? 0 : THREE.MathUtils.clamp(Math.abs(this.steer) / (t.steerMax * 0.55), 0, 1) * THREE.MathUtils.clamp((speed - 6) / 14, 0, 1) * (1 - anti);
+    const sideR = t.sideRear * (1 - SLIDE * lk), slipR = 1 - SLIDE_GRIP * lk;
     const rear = t.rearBias / 100;
     for (let i = 0; i < 4; i++) {
       const front = this.W[i].front;
       // DRI-15: en drift las fuerzas de los neumáticos las pone driftPhysics.js; Rapier solo hace la suspensión
       veh.setWheelEngineForce(i, this.driftMode ? 0 : ((engine * (front ? 1 - rear : rear)) / 2) * this.massK);
       veh.setWheelBrake(i, this.driftMode ? 0 : (front ? brakeF : brakeR) * this.massK);
-      veh.setWheelSideFrictionStiffness(i, this.driftMode ? 0 : front ? t.sideFront : t.sideRear);
+      veh.setWheelSideFrictionStiffness(i, this.driftMode ? 0 : front ? t.sideFront : sideR);
       // aceite: casi sin agarre · zona de derrape: agarre reducido pero controlable
       const oil = fx.oil > 0 ? 0.22 : fx.slide > 0 ? (front ? 0.88 : 0.74) : fx.sand > 0 ? 0.8 : 1;
-      veh.setWheelFrictionSlip(i, (front ? t.gripFront : t.gripRear * rearK) * oil);
+      veh.setWheelFrictionSlip(i, (front ? t.gripFront : t.gripRear * rearK * slipR) * oil);
     }
 
     veh.updateVehicle(dt, undefined, WHEEL_RAY_GROUPS);
@@ -281,7 +286,7 @@ export class Car {
     }
     if (contacts > 0 && !this.loopZone) {
       // estabilizador anti-vuelco suave
-      _v.crossVectors(this.up, UP).multiplyScalar((this.crawl ? 3 : 7) * m * dt * (contacts / 4)); // crawler: antivuelco suave, puede volcar de lado
+      _v.crossVectors(this.up, UP).multiplyScalar((this.crawl ? 3 : this.driftMode ? 7 : ANTIROLL) * m * dt * (contacts / 4)); // crawler: antivuelco suave, puede volcar de lado
       b.applyTorqueImpulse({ x: _v.x, y: _v.y, z: _v.z }, true);
     } else {
       // control en el aire: cabeceo con gas/freno, giro con dirección

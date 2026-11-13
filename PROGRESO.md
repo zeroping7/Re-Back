@@ -10,7 +10,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
 ### 📋 Próxima sesión (pedido el 13-nov-2026, sin empezar)
-1. Ruedas más pequeñas, con las físicas correspondientes (siguiente versión, junto con el deslizamiento progresivo sin frenar).
+1. ~~Ruedas más pequeñas~~ ✅ en Carrera (FIS-43). Drift: pendiente de decidir.
 2. Mejorar la IA de Drift.
 3. Más velocidad punta en Drift (comprobar antes si con los neumáticos nuevos ya se gana algo).
 4. Primer circuito: arreglar la textura del agua.
@@ -20,6 +20,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 8. Coches de Obstáculos: que no se frenen tanto al soltar el acelerador.
 9. Coches de Obstáculos: subir la altura de los bajos.
 10. Permitir cambiar el color del coche.
+
+### Carrera: ruedas en proporción real y menos raíles ✅ (FIS-42, FIS-43)
+- Ruedas más pequeñas (Pulga −30 %, turismos/Fórmula/Furgo/Rally/Cometa −25 %, Chispa −20 %; Tanque y Morsa igual por Obstáculos). Girando fuerte a velocidad la trasera culea, dirección más viva y más balanceo. Medidores y fotos regenerados. **Pendiente:** tacto en el móvil; decidir ruedas de los coches de Drift.
 
 ### Derrape de Carrera sin trompos ✅ (FIS-39, FIS-40, FIS-41)
 - Causa del trompo: al bajar de 8 u/s en pleno derrape se frenaban las 4 ruedas con el coche cruzado. Ahora el derrape sigue hasta soltar el freno; el agarre trasero entra y sale en 0,3 s; anti-trompo a partir de 40° y el gas endereza. Prueba: `node tests/spinprobe.mjs` (antes 7 trompos de 48, ahora 0). **Pendiente:** tacto en el móvil.

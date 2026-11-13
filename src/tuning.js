@@ -7,7 +7,7 @@ export const TUNING_DEFS = [
   { key: 'brake',       label: 'Freno',                 min: 0.5, max: 12,  step: 0.5,  def: 10 },
   { key: 'steerMax',    label: 'Giro máx. (rad)',       min: 0.2, max: 0.9, step: 0.01, def: 0.3 },
   { key: 'steerSpeed',  label: 'Rapidez de giro',       min: 1,   max: 15,  step: 0.5,  def: 6 },
-  { key: 'steerFalloff',label: 'Menos giro a alta vel.',min: 0,   max: 0.1, step: 0.005,def: 0.03 },
+  { key: 'steerFalloff',label: 'Menos giro a alta vel.',min: 0,   max: 0.1, step: 0.005,def: 0.022 },
   { key: 'steerLow',    label: 'Giro extra en parado',  min: 0,   max: 1.5, step: 0.05, def: 0.6 },
   { key: 'gripFront',   label: 'Agarre delantero',      min: 0.5, max: 8,   step: 0.1,  def: 3.0 },
   { key: 'gripRear',    label: 'Agarre trasero',        min: 0.5, max: 8,   step: 0.1,  def: 2.6 },

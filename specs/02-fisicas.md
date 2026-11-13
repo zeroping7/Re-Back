@@ -88,4 +88,8 @@ Si cambian los valores por defecto se sube la clave de guardado para que se apli
 | FIS-41 | Al dar gas tras el derrape, el coche se endereza solo (par suave hacia la dirección de avance) | ✅ |
 
 Criterio: `node tests/spinprobe.mjs` (suelo plano, 7 coches de Carrera, 16-28 u/s, freno + giro corto, largo y gas + giro) sin trompos. Antes: 7 de 48; ahora: 0, con la misma cruzada al derrapar (20-45° a 22-28 u/s).
+| FIS-42 | Menos «raíles» en Carrera: girando fuerte a velocidad, la trasera pierde hasta un 50 % de rigidez lateral y un 8 % de agarre (culea), sin actuar si ya hay anti-trompo; dirección más viva a velocidad (`steerFalloff` 0,03 → 0,022); estabilizador anti-vuelco 7 → 4,5 (Drift y Obstáculos sin cambios) | ✅ |
+| FIS-43 | Ruedas en proporción más real (diámetro/batalla de ~0,5 a ~0,35-0,4): Pulga −30 %, Furgo, Rally, Flecha, Fórmula y Cometa −25 %, Chispa −20 %. Tanque y Morsa sin cambios (Obstáculos). Altura libre mínima 0,31, como los coches de Drift | ✅ |
+
+Criterio FIS-42/43: `node tests/spinprobe.mjs` sin trompos ni vuelcos (64 pruebas, incluido eslalon a fondo); cruzada al girar a fondo con gas 20-50°. `racesim` en los 6 circuitos de Carrera con 4 coches: todos terminan.
 
