@@ -444,3 +444,29 @@ body.pad-mode #btn-look { display: none; }
 .up-row.off .nm, .up-row.off .pips { opacity: .4; }
 .up-row button.tg { min-width: 38px; padding: 7px 0; font-size: 18px; background: #ffffff22; }
 .up-row button.tg:disabled { opacity: .25; }
+
+/* UX-31: dirección con slider. A: barra fija abajo a la izquierda. B: zona flotante (mitad izquierda, invisible hasta tocar) */
+#steer-bar {
+  position: absolute; left: calc(18px + env(safe-area-inset-left)); bottom: 18px; width: min(300px, 40vw); height: 84px;
+  border-radius: 42px; background: #0006; border: 2px solid #ffffff55; box-shadow: 0 3px 0 #0006; backdrop-filter: blur(3px);
+  pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none;
+}
+#steer-bar::before { content: ""; position: absolute; left: 50%; top: 16px; bottom: 16px; width: 2px; margin-left: -1px; background: #ffffff44; }
+#steer-bar .sb-knob {
+  position: absolute; top: 8px; left: 50%; width: 64px; height: 64px; margin-left: -32px; border-radius: 50%;
+  background: #ffffffcc; box-shadow: 0 3px 0 #0008; pointer-events: none; will-change: transform;
+}
+#steer-bar.active .sb-knob { background: #ffb347; }
+#steer-bar .sb-tag { position: absolute; top: 50%; transform: translateY(-50%); font-size: 22px; color: #ffffff88; pointer-events: none; }
+#steer-bar .sb-tag.l { left: 18px; } #steer-bar .sb-tag.r { right: 18px; }
+#steer-float {
+  position: absolute; left: 0; bottom: 0; width: 46vw; height: 64vh;
+  pointer-events: auto; touch-action: none; user-select: none; -webkit-user-select: none;
+}
+#steer-float .sf-origin, #steer-float .sf-finger { position: absolute; display: none; pointer-events: none; }
+#steer-float .sf-origin { width: 180px; height: 52px; margin: -26px 0 0 -90px; border-radius: 26px; background: #0006; border: 2px solid #ffffff55; }
+#steer-float .sf-origin::before { content: ""; position: absolute; left: 50%; top: 10px; bottom: 10px; width: 2px; margin-left: -1px; background: #ffffff66; }
+#steer-float .sf-finger { width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; background: #ffb347; box-shadow: 0 3px 0 #0008; }
+#steer-float.active .sf-origin, #steer-float.active .sf-finger { display: block; }
+body.pad-mode #steer-bar, body.pad-mode #steer-float { display: none !important; }
+

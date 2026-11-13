@@ -21,8 +21,11 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 9. ~~Coches de Obstáculos: subir la altura de los bajos~~ ✅ (CRW-29).
 10. Permitir cambiar el color del coche.
 
+### Dirección con slider ✅ (UX-31)
+- Opciones › Dirección: Flechas, **Barra** (fija, abajo a la izquierda) o **Flotante** (el pulgar marca el centro) e Inclinar. Probado con dos dedos a la vez (slider + gas). **Pendiente:** tacto en el móvil; si el flotante gira demasiado o poco, `FLOAT_RANGE` en `src/controls.js` (80 px = giro completo).
+
 ### Ayuda de giro retirada (v1.0.97 → vuelta a v1.0.96)
-- La ayuda de giro para botones y el agarre gradual (UX-30, FIS-44) no gustaron al probarlos y se quitaron. Queda la herramienta de medida `node tests/steerprobe.mjs` (cruzada según el volante). **Siguiente:** slider de dirección en lugar de los pulsadores ◀ ▶.
+- La ayuda de giro para botones y el agarre gradual (UX-30, FIS-44) no gustaron al probarlos y se quitaron. Queda la herramienta de medida `node tests/steerprobe.mjs` (cruzada según el volante). 
 
 ### Sensibilidad de la dirección ✅ (UX-29)
 - Opciones y pausa: 60-150 %. Cambia cuánto y lo rápido que gira el volante (botones, mando e inclinación) en las tres disciplinas. **Pendiente:** encontrar el valor que guste en el móvil.

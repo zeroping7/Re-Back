@@ -344,7 +344,7 @@ async function init() {
     seg('opt-sound', [[false, 'Sí'], [true, 'No']], () => sfx.muted, (v) => sfx.setMuted(v));
     seg('opt-music', [[true, 'Sí'], [false, 'No']], () => sfx.musicOn, (v) => { sfx.setMusic(v); buildSettings(); });
     seg('opt-music2', [[true, 'Sí'], [false, 'No']], () => sfx.musicOn, (v) => { sfx.setMusic(v); buildSettings(); });
-    seg('opt-steer', [['buttons', 'Botones'], ['tilt', 'Inclinar']], () => controls.mode, (v) => controls.setMode(v));
+    seg('opt-steer', [['buttons', 'Flechas'], ['bar', 'Barra'], ['float', 'Flotante'], ['tilt', 'Inclinar']], () => controls.mode, (v) => controls.setMode(v)); // UX-31
     for (const id of ['opt-sens', 'opt-sens2']) seg(id, [[0.6, '60%'], [0.8, '80%'], [1, '100%'], [1.25, '125%'], [1.5, '150%']], () => controls.sens, (v) => { controls.setSens(v); buildSettings(); }); // UX-29
     seg('opt-autogas', [[true, 'Sí'], [false, 'No']], () => !!settings.autoGas, (v) => { settings.autoGas = v; controls.autoGas = v; saveSettings(); });
     seg('opt-cam', CAMS, () => settings.cam, (v) => setCam(v));

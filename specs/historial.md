@@ -96,4 +96,5 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 82 | Ajuste en Opciones para la sensibilidad de la dirección | UX-29 ✅ |
 | 83 | El selector de sensibilidad no marca el valor elegido | UX-29 ✅ (también Música) |
 | 84 | Con botones táctiles (sí/no) el giro es muy brusco: investigar la mejor opción y añadir una ayuda que adapte el giro de forma progresiva. Solo coches de circuito | FIS-44, UX-30: publicado en v1.0.97 y retirado (ver #85) |
-| 85 | No gusta cómo responde la v1.0.97: volver a la v1.0.96 y sustituir los pulsadores de giro por un slider | Vuelta a v1.0.96 ✅ · slider 📝 |
+| 85 | No gusta cómo responde la v1.0.97: volver a la v1.0.96 y sustituir los pulsadores de giro por un slider | Vuelta a v1.0.96 ✅ · slider UX-31 ✅ |
+| 86 | Implementar los dos sliders (barra fija y flotante) y conservar las flechas, a elegir en Opciones | UX-31 ✅ |

@@ -27,17 +27,20 @@
     <div id="topbar">
       <button id="btn-reset" class="icon" title="Recolocar coche">↺</button>
       <button id="btn-cam" class="icon" title="Cámara (C)">🎥</button>
-      <button id="btn-mode" class="icon" title="Botones / inclinación">🎮</button>
+      <button id="btn-mode" class="icon" title="Cambiar dirección: flechas, barra, flotante o inclinar">◀▶</button>
       <button id="btn-pause" class="icon pause" title="Pausa">II</button>
     </div>
     <div id="speedo"><span id="speed">0</span><small>km/h</small></div>
     <div id="fps"></div>
 
+    <!-- UX-31: dirección con slider (barra fija o flotante) -->
+    <div id="steer-float" class="hidden"><div class="sf-origin"></div><div class="sf-finger"></div></div>
     <button id="btn-look" class="pad look" title="Mirar atrás (Q)">👀</button>
     <div id="steer-pad">
       <button id="btn-left" class="pad">◀</button>
       <button id="btn-right" class="pad">▶</button>
     </div>
+    <div id="steer-bar" class="hidden"><span class="sb-tag l">◀</span><span class="sb-tag r">▶</span><div class="sb-knob"></div></div>
     <div id="pedals">
       <button id="btn-item" class="item">·</button>
       <div class="pedal-row">
