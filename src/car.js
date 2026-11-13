@@ -15,6 +15,7 @@ function wheelsFor(def) {
   ];
 }
 const CONN_Y = -0.02;
+const SPIN_START = 40 / 57.3, ANTI_GAIN = 3, STRAIGHTEN = 0.5; // FIS-40/41
 const MASS = 8; // masa de referencia: la potencia y el freno se escalan con la masa de cada coche
 
 const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q = new THREE.Quaternion(), _qi = new THREE.Quaternion();
@@ -141,6 +142,7 @@ export class Car {
     // --- Motor / freno / marcha atrás ---
     let engine = 0, brakeF = 0, brakeR = 0;
     if (!(input.brake > 0 && input.throttle === 0 && Math.abs(input.steer) > 0.3)) this._driftV = 0;
+    this._wasDrift = this.drifting;
     this.drifting = false; this.braking = false; this.reversing = false;
     const fx = this.fx;
     for (const k in fx) fx[k] = Math.max(0, fx[k] - dt);
@@ -159,7 +161,8 @@ export class Car {
     }
     if (brk > 0) {
       if (fwd > 2) {
-        if (Math.abs(input.steer) > 0.3 && fwd > 8) {
+        // FIS-39: una vez derrapando sigue derrapando hasta casi parar (antes, al bajar de 8 u/s frenaba las 4 ruedas cruzado = trompo)
+        if (Math.abs(input.steer) > 0.3 && (fwd > 8 || (this._wasDrift && speed > 3))) {
           // Freno + giro = derrape (como freno de mano)
           this.drifting = true;
           // FIS-38: el motor solo mantiene las ruedas traseras girando; frenando nunca se gana velocidad
@@ -197,6 +200,15 @@ export class Car {
     }
     this.throttle = thr;
 
+    // FIS-39: el agarre trasero del derrape entra y sale en ~0,3 s (antes era un interruptor)
+    this._dk = THREE.MathUtils.clamp((this._dk || 0) + (this.drifting ? dt / 0.3 : -dt / 0.25), 0, 1);
+    // FIS-40: ángulo de cruzada (morro vs. dirección real); por encima de 40° la trasera recupera agarre
+    // tras derrapar (o yendo hacia delante) vigila también más allá de 90°; marcha atrás normal no cuenta
+    this._guard = this.drifting ? 1.2 : Math.max(0, (this._guard || 0) - dt);
+    const watch = !this.driftMode && speed > 4 && !this.reversing && (this._guard > 0 || this.localVel.z > 1);
+    const beta = watch ? Math.atan2(Math.abs(this.localVel.x), this.localVel.z) : 0;
+    const anti = THREE.MathUtils.clamp((beta - SPIN_START) / 0.5, 0, 1);
+    const rearK = (1 + (t.driftRear - 1) * this._dk) * (1 + anti * 0.9);
     const rear = t.rearBias / 100;
     for (let i = 0; i < 4; i++) {
       const front = this.W[i].front;
@@ -206,7 +218,7 @@ export class Car {
       veh.setWheelSideFrictionStiffness(i, this.driftMode ? 0 : front ? t.sideFront : t.sideRear);
       // aceite: casi sin agarre · zona de derrape: agarre reducido pero controlable
       const oil = fx.oil > 0 ? 0.22 : fx.slide > 0 ? (front ? 0.88 : 0.74) : fx.sand > 0 ? 0.8 : 1;
-      veh.setWheelFrictionSlip(i, (front ? t.gripFront : t.gripRear * (this.drifting ? t.driftRear : 1)) * oil);
+      veh.setWheelFrictionSlip(i, (front ? t.gripFront : t.gripRear * rearK) * oil);
     }
 
     veh.updateVehicle(dt, undefined, WHEEL_RAY_GROUPS);
@@ -246,6 +258,15 @@ export class Car {
       if (Math.abs(yr) > lim) {
         const k = (Math.abs(yr) - lim) * Math.sign(yr) * 5.0 * 0.3;
         b.applyTorqueImpulse({ x: 0, y: -k, z: 0 }, true);
+      }
+    }
+    if (beta > 0.1 && contacts > 1) {
+      // FIS-40/41: anti-trompo y el gas endereza: par que gira el morro hacia donde va el coche
+      const al = Math.min(beta, 0.9) / 0.9;
+      const gain = anti * ANTI_GAIN + (thr > 0 && !this.drifting ? STRAIGHTEN * al : 0);
+      if (gain > 0) {
+        const want = Math.sign(this.localVel.x) * Math.min(beta, 0.9) * 2.2, yr = b.angvel().y;
+        b.applyTorqueImpulse({ x: 0, y: (want - yr) * gain * m * dt, z: 0 }, true);
       }
     }
     this.launch = 0;

@@ -78,3 +78,14 @@ Si cambian los valores por defecto se sube la clave de guardado para que se apli
 |---|---|---|
 | FIS-37 | Parado, el freno mete la marcha atrás también con el volante girado (antes solo frenaba) | ✅ |
 | FIS-38 | Freno + giro (derrape) nunca hace ganar velocidad: el motor solo mantiene las traseras girando mientras el coche pierde velocidad. Prueba: `node tests/reverseprobe.mjs` | ✅ |
+
+## Derrape de Carrera sin trompos (13 nov 2026)
+
+| ID | Requisito | Estado |
+|---|---|---|
+| FIS-39 | Freno + giro: el agarre trasero baja y sube en ~0,3 s (antes, de golpe). Una vez derrapando, sigue derrapando hasta soltar el freno o casi parar; antes, al bajar de 8 u/s frenaba las 4 ruedas con el coche cruzado y hacía trompo | ✅ |
+| FIS-40 | Anti-trompo: con más de 40° entre el morro y la dirección real, la trasera recupera agarre y un par gira el morro hacia donde va el coche | ✅ |
+| FIS-41 | Al dar gas tras el derrape, el coche se endereza solo (par suave hacia la dirección de avance) | ✅ |
+
+Criterio: `node tests/spinprobe.mjs` (suelo plano, 7 coches de Carrera, 16-28 u/s, freno + giro corto, largo y gas + giro) sin trompos. Antes: 7 de 48; ahora: 0, con la misma cruzada al derrapar (20-45° a 22-28 u/s).
+

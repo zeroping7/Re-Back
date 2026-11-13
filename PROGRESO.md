@@ -10,7 +10,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
 ### 📋 Próxima sesión (pedido el 13-nov-2026, sin empezar)
-1. Ruedas más pequeñas, con las físicas correspondientes.
+1. Ruedas más pequeñas, con las físicas correspondientes (siguiente versión, junto con el deslizamiento progresivo sin frenar).
 2. Mejorar la IA de Drift.
 3. Más velocidad punta en Drift (comprobar antes si con los neumáticos nuevos ya se gana algo).
 4. Primer circuito: arreglar la textura del agua.
@@ -20,6 +20,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 8. Coches de Obstáculos: que no se frenen tanto al soltar el acelerador.
 9. Coches de Obstáculos: subir la altura de los bajos.
 10. Permitir cambiar el color del coche.
+
+### Derrape de Carrera sin trompos ✅ (FIS-39, FIS-40, FIS-41)
+- Causa del trompo: al bajar de 8 u/s en pleno derrape se frenaban las 4 ruedas con el coche cruzado. Ahora el derrape sigue hasta soltar el freno; el agarre trasero entra y sale en 0,3 s; anti-trompo a partir de 40° y el gas endereza. Prueba: `node tests/spinprobe.mjs` (antes 7 trompos de 48, ahora 0). **Pendiente:** tacto en el móvil.
 
 ### Marcha atrás girando, freno sin acelerar y chirrido real ✅ (FIS-37, FIS-38, AUD-15)
 - Parado, el freno da marcha atrás aunque el volante esté girado. Freno + zigzag ya no acelera (el derrape con freno solo mantiene, nunca suma velocidad). Chirrido grabado de verdad (Kenney, CC0). Prueba: `node tests/reverseprobe.mjs`. **Pendiente:** oírlo y probar el tacto en el móvil.
