@@ -1,5 +1,6 @@
 // Entrada: botones táctiles, inclinación del móvil y teclado.
 const KEY_MODE = 'reback.controlMode';
+const KEY_SENS = 'reback.steerSens'; // UX-29: sensibilidad de la dirección (0,6 … 1,5)
 
 export class Controls {
   constructor() {
@@ -9,6 +10,7 @@ export class Controls {
     this.keys = new Set();
     this.mode = localStorage.getItem(KEY_MODE) || 'buttons'; // 'buttons' | 'tilt'
     this.tilt = 0; this.tiltZero = null;
+    this.sens = +(localStorage.getItem(KEY_SENS) || 1) || 1;
     this.steerSmooth = 0;
     this.override = null; // para pruebas automáticas
     this.onReset = null; this.onCamera = null;
@@ -85,7 +87,12 @@ export class Controls {
     this.keys.clear(); this.firePending = false; this.pad = null; this.padLook = false; this.camStick.x = this.camStick.y = 0;
   }
 
-  // Devuelve { steer: -1..1 (+ = izquierda), throttle, brake }
+  setSens(v) {
+    this.sens = v;
+    try { localStorage.setItem(KEY_SENS, String(v)); } catch { /* sin almacenamiento */ }
+  }
+
+  // Devuelve { steer: -1..1 (+ = izquierda), throttle, brake, sens }
   read(dt) {
     if (this.override) return this.override;
     const k = this.keys, s = this.state;
@@ -96,14 +103,14 @@ export class Controls {
 
     let steer;
     if (this.mode === 'tilt' && !left && !right) {
-      const v = Math.max(-1, Math.min(1, -this.tilt / 32)); // ±32º = giro completo
+      const v = Math.max(-1, Math.min(1, -this.tilt * this.sens / 32)); // ±32º = giro completo (UX-29: menos grados con más sensibilidad)
       // FIS-25: curva suave cerca del centro (menos brusco)
       steer = Math.abs(v) < 0.05 ? 0 : Math.sign(v) * Math.abs(v) ** 1.35;
     } else {
       const target = (left ? 1 : 0) - (right ? 1 : 0);
       // los botones digitales entran rápido pero no de golpe
       // FIS-25: entrada más progresiva (antes 7): ~0,24 s hasta giro completo
-      const rate = target === 0 ? 9 : 4.2;
+      const rate = target === 0 ? 9 : 4.2 * this.sens; // UX-29
       this.steerSmooth += Math.max(-rate * dt, Math.min(rate * dt, target - this.steerSmooth));
       steer = this.steerSmooth;
     }
@@ -115,7 +122,7 @@ export class Controls {
       throttle = Math.max(throttle, p.gas);
       if (this.autoGas && p.brake > 0.1) throttle = Math.max(gas ? 1 : 0, p.gas);
     }
-    return { steer, throttle, brake: brk, human: true };
+    return { steer, throttle, brake: brk, human: true, sens: this.sens };
   }
 }
 

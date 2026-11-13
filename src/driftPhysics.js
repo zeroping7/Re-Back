@@ -67,9 +67,10 @@ export function driftForces(car, dt, input, c) {
 
   // --- Volante: ángulo de las ruedas delanteras, con contravolante automático ---
   const lock = D.lockMin + (D.lock0 - D.lockMin) / (1 + (speed / D.lockV) * (speed / D.lockV));
-  const target = st * lock;
+  const sens = input.sens ?? 1; // UX-29
+  const target = st * Math.min(0.95, lock * sens);
   car._din = (car._din || 0);
-  car._din += THREE.MathUtils.clamp(target - car._din, -D.steerRate * dt, D.steerRate * dt);
+  car._din += THREE.MathUtils.clamp(target - car._din, -D.steerRate * sens * dt, D.steerRate * sens * dt);
   const zf = W[0].z, zr = W[2].z, L = zf - zr, T = 2 * Math.abs(W[0].x);
   let dAl = 0;
   if (fwd > 3) dAl = Math.atan2(lv.x + w * zf, fwd); // hacia dónde va realmente el eje delantero

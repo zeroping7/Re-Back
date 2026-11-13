@@ -21,6 +21,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 9. ~~Coches de Obstáculos: subir la altura de los bajos~~ ✅ (CRW-29).
 10. Permitir cambiar el color del coche.
 
+### Sensibilidad de la dirección ✅ (UX-29)
+- Opciones y pausa: 60-150 %. Cambia cuánto y lo rápido que gira el volante (botones, mando e inclinación) en las tres disciplinas. **Pendiente:** encontrar el valor que guste en el móvil.
+
 ### Obstáculos: ruedan al soltar el gas y bajos más altos ✅ (CRW-28, CRW-29)
 - En llano ruedan ~1,5 s al soltar (antes se paraban en 0,3 s); en cuesta se sujetan como antes. Suspensión ×1,5: bajos +0,06-0,09. Prueba: `node tests/crawlprobe.mjs`. **Pendiente:** tacto en el móvil (si ruedan demasiado, `CRAWL_DECEL` en `src/car.js`).
 
