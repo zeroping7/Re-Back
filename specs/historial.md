@@ -94,3 +94,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 80 | Carrera: el coche va muy estable pero en curvas cerradas al derrapar es imposible de controlar y siempre hace trompo. Primero derrape suave, anti-trompo y gas que endereza; luego deslizamiento progresivo y ruedas más pequeñas | FIS-39..43 ✅ |
 | 81 | Obstáculos: que los coches no se frenen tanto al soltar el acelerador y subir la altura de los bajos | CRW-28, CRW-29 ✅ |
 | 82 | Ajuste en Opciones para la sensibilidad de la dirección | UX-29 ✅ |
+| 83 | El selector de sensibilidad no marca el valor elegido | UX-29 ✅ (también Música) |

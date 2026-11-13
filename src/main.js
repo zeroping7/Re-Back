@@ -203,8 +203,8 @@ async function init() {
       b.classList.toggle('sel', get() === val);
       b.addEventListener('click', () => {
         set(val); sfx.play('click');
-        el.querySelectorAll('button').forEach((x) => x.classList.remove('sel'));
-        b.classList.add('sel');
+        // UX-29: marca según el valor guardado (si set() redibujó el selector, los botones ya son otros)
+        el.querySelectorAll('button').forEach((x, i) => x.classList.toggle('sel', get() === options[i]?.[0]));
       });
       el.append(b);
     }
