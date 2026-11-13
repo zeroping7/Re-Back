@@ -444,3 +444,12 @@ body.pad-mode #btn-look { display: none; }
 .up-row.off .nm, .up-row.off .pips { opacity: .4; }
 .up-row button.tg { min-width: 38px; padding: 7px 0; font-size: 18px; background: #ffffff22; }
 .up-row button.tg:disabled { opacity: .25; }
+
+/* UX-30: Opciones y Pausa con más filas: caben (y se pueden desplazar sin cortarse por arriba) en móviles bajos */
+#m-settings, #m-pause { align-items: flex-start; }
+#m-settings .menu-col, #m-pause .menu-col { margin-top: auto; margin-bottom: auto; gap: 7px; }
+@media (max-height: 400px) {
+  #m-settings .menu-col, #m-pause .menu-col { gap: 4px; }
+  #m-settings h2, #m-pause h2 { font-size: 24px; margin-bottom: 0; }
+  #m-pause .big-btn { padding: 9px 20px; font-size: 18px; }
+}
