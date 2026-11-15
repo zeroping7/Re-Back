@@ -13,7 +13,7 @@ Las monedas y el garaje son comunes. Código: `src/disciplines.js`.
 
 | ID | Requisito | Estado |
 |---|---|---|
-| DIS-01 | Menú principal: **Jugar**, Batalla, Garaje, Opciones. "Jugar" abre el selector de disciplina: 3 columnas, cada una con sus modos. Las bloqueadas enseñan el candado y qué copa las abre | ✅ |
+| DIS-01 | Menú principal: **Carrera**, Garaje, Opciones (UX-32). "Carrera" abre el selector de disciplina: 3 columnas, cada una con sus modos. Las bloqueadas enseñan el candado y qué copa las abre | ✅ |
 | DIS-02 | Dentro de una disciplina el flujo es el de siempre (circuito → coche → opciones). Las listas de circuitos, coches y copas salen **filtradas** por disciplina | ✅ |
 | DIS-03 | **Garaje con pestañas** por disciplina. Cada disciplina recuerda su último coche usado | ✅ |
 | DIS-04 | Al abrirse una disciplina se **regala su coche básico** (Drift: Patín · Obstáculos: Cabra) y se avisa en el podio | ✅ |

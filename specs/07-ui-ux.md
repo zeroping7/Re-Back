@@ -25,7 +25,7 @@
 
 ```
 Inicio (toca para empezar)
- └─ Menú principal: Carrera rápida · Campeonato · Contrarreloj · Batalla · Garaje · Opciones
+ └─ Menú principal: Carrera (disciplinas; en la columna Carrera: Carrera rápida · Campeonato · Contrarreloj · Batalla) · Garaje · Opciones
      ├─ Carrera rápida → circuito, coche (solo los tuyos), vueltas, rivales, dificultad → Carga → Carrera → Resultados (+🪙)
      ├─ Campeonato → copa (Bronce/Plata/Oro) → coche → 3 carreras con clasificación entre medias → Podio final (+🪙)
      ├─ Contrarreloj → circuito, coche → Carga → Vueltas libres con récord y estrella oculta
@@ -60,6 +60,7 @@ Inicio (toca para empezar)
 | UX-28 | **Batalla con 5 o 10 rivales** (se quitan 1 y 3; ajuste propio `bRivals`, aparte del de carrera). 11 salidas en la arena, nombres y colores para 10 rivales. Con 11 coches el reloj es de 30 s y la protección tras coger la estrella crece con los coches (1 + 0,15·(n−4) s) para que no se eternice (`node tests/racesim.mjs arena 10 1`) | ✅ |
 | UX-29 | Opción «Sensibilidad» de la dirección (60 %, 80 %, 100 %, 125 %, 150 %) en Opciones y en la pausa; se guarda. Escala el giro máximo y la rapidez del volante (botones, mando e inclinación: menos grados para giro completo) en Carrera, Drift y Obstáculos; solo el jugador (petición #82). Al pulsar, queda marcada la opción elegida en Opciones y en la pausa (`tests/segclick.mjs`) | ✅ |
 | UX-31 | Dirección con slider (petición #85-86). Opciones › Dirección: Flechas, Barra, Flotante, Inclinar (el botón 🎮 del HUD las recorre). **Barra fija**: abajo a la izquierda, la posición del dedo respecto al centro es el giro (−100 %…100 %). **Flotante**: zona invisible en la mitad izquierda; donde se apoya el pulgar es el centro y 80 px a cada lado = giro completo. En los dos, al soltar vuelve a recto; funciona a la vez que los pedales (multitáctil); la Sensibilidad se aplica igual. Vale para las tres disciplinas (`tests/sliderui.mjs`, `tests/slidertouch.mjs`) | ✅ |
+| UX-32 | Menú (petición #89): el botón **Jugar** pasa a llamarse **Carrera**; la **Batalla de la Estrella** se quita del menú principal y va como 4.º modo en la columna Carrera del selector de disciplina (← vuelve al selector). Garaje y Opciones en una fila | ✅ |
 | UX-19 | **Coche libre en preparar carrera, campeonato y garaje**: paneles en el 58 % izquierdo de la pantalla; la cámara del taller desplaza la imagen para centrar el coche en el 42 % derecho, sin que lo tape ninguna lista. Cada coche nuevo arranca la peana mostrando el frente en 3/4 | ✅ (falta probar en el móvil) |
 | UX-20 | **Versión en la pantalla de inicio y en el menú principal** (abajo a la derecha, p. ej. `v1.0.123`): la pone el CI (`1.0.<nº de ejecución>`, la misma que el APK); en local sale `dev` | ✅ |
 | UX-21 | **«Más coches» vuelve a su sitio**: si el garaje se abre desde «Más coches» (preparar carrera o campeonato), «Usar este» devuelve al menú de origen con el coche elegido y «←» también vuelve ahí (no al menú principal) | ✅ |

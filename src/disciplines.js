@@ -18,6 +18,7 @@ export const MODES = {
     { go: 'race', icon: '🏁', name: 'Carrera rápida' },
     { go: 'cups', icon: '🏆', name: 'Campeonato' },
     { go: 'practice', icon: '⏱', name: 'Contrarreloj' },
+    { go: 'battle', icon: '⭐', name: 'Batalla' }, // UX-32: la batalla va dentro de Carrera
   ],
   drift: [
     { go: 'solo', icon: '🎯', name: 'Puntuación' },

@@ -16,7 +16,9 @@ await page.goto(url, { waitUntil: 'load' });
 await sleep(2500);
 await page.click('#btn-start'); await sleep(1500);
 await page.screenshot({ path: `${out}/1-main.png` });
-await page.click('[data-go="battle"]'); await sleep(1200);
+await page.click('[data-go="disc"]'); await sleep(800); // UX-32: Carrera › Batalla
+await page.screenshot({ path: `${out}/1b-disc.png` });
+await page.evaluate(() => [...document.querySelectorAll('#discs button')].find((b) => b.textContent.includes('Batalla')).click()); await sleep(1200);
 await page.screenshot({ path: `${out}/2-setup.png` });
 await page.goto(url + '?test&auto&battle&rivals=3', { waitUntil: 'load' });
 await until(() => window.__game?.race?.started, 90);

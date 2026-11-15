@@ -7,6 +7,8 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - **APK (última versión):** https://zeroping7.github.io/Re-Back/re-back.apk
   (alternativa: https://github.com/zeroping7/Re-Back/releases/latest)
 
+- 15-nov-2026: menú principal «Carrera · Garaje · Opciones»; la Batalla de la Estrella pasa a la columna Carrera (UX-32).
+
 ## Estado: fases 1-5 hechas ✅ + disciplinas Drift y Obstáculos — ahora puliendo (ver `specs/`)
 
 ### 📋 Próxima sesión (pedido el 13-nov-2026, sin empezar)

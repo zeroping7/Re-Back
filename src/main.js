@@ -130,6 +130,7 @@ async function init() {
     disc = d; settings.disc = d; saveSettings();
     useDisc(d);
     if (go === 'cups') { buildCups(); showScreen('m-cups'); return; }
+    if (go === 'battle') { enterBattle(); return; } // UX-32
     mode = go;
     $('setup-title').textContent = `${D().icon} ${disc === 'race' ? modeDef().name : D().name + ' · ' + modeDef().name}`;
     $('race-opts').style.display = go === 'race' ? '' : 'none';
@@ -137,6 +138,18 @@ async function init() {
     const info = { 'drift:solo': '🎯 2 vueltas tú solo. Ve de lado para sumar puntos y consigue medalla.', 'drift:race': '⚔️ Gana quien más puntos de derrape tenga cuando acabes tus vueltas.', 'obst:solo': '⏱ Una vuelta contra el reloj, con el fantasma de tu mejor tiempo.', 'obst:race': '🏁 Todos a la vez por el recorrido de obstáculos. Sin armas.' }[`${disc}:${go}`];
     $('setup-info').textContent = info || ''; $('setup-info').classList.toggle('hidden', !info);
     $('btn-go').textContent = disc === 'drift' ? '¡A derrapar!' : disc === 'obst' ? '¡Al lío!' : '¡A correr!';
+    buildSetup();
+    showScreen('m-setup');
+  }
+
+  // UX-14/UX-32: Batalla de la Estrella (se entra desde la columna Carrera)
+  function enterBattle() {
+    mode = 'battle'; disc = 'race'; useDisc('race');
+    $('setup-title').textContent = '⭐ Batalla de la Estrella';
+    $('race-opts').style.display = '';
+    $('setup-info').classList.add('hidden');
+    $('btn-go').textContent = '¡A correr!';
+    $('m-setup').classList.add('battle');
     buildSetup();
     showScreen('m-setup');
   }
@@ -171,16 +184,7 @@ async function init() {
     sfx.play('click');
     const go = b.dataset.go;
     if (go === 'main' && b.closest('#m-garage')) { leaveGarage(); return; }
-    if (go === 'battle') {
-      mode = go; disc = 'race'; useDisc('race');
-      $('setup-title').textContent = 'Batalla de la Estrella';
-      $('race-opts').style.display = '';
-      $('setup-info').classList.add('hidden');
-      $('btn-go').textContent = '¡A correr!';
-      $('m-setup').classList.add('battle');
-      buildSetup();
-      showScreen('m-setup');
-    } else if (go === 'back') showScreen(mode === 'battle' ? 'm-main' : 'm-disc');
+    if (go === 'back') showScreen('m-disc');
     else if (go === 'garage') { garageReturn = null; gDisc = disc; gSel = useDisc(gDisc) || profile.selected; showScreen('m-garage'); }
     else showScreen('m-' + go);
   }));
