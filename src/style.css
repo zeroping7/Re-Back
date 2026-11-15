@@ -470,3 +470,7 @@ body.pad-mode #btn-look { display: none; }
 #steer-float.active .sf-origin, #steer-float.active .sf-finger { display: block; }
 body.pad-mode #steer-bar, body.pad-mode #steer-float { display: none !important; }
 
+
+/* UX-33: botón Online deshabilitado hasta NET-08 */
+#btn-online:disabled { opacity: .45; filter: grayscale(.6); pointer-events: none; }
+#btn-online .soon { margin-left: auto; font-size: 11px; opacity: .8; font-style: normal; }
