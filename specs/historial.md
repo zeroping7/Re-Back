@@ -99,3 +99,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 85 | No gusta cómo responde la v1.0.97: volver a la v1.0.96 y sustituir los pulsadores de giro por un slider | Vuelta a v1.0.96 ✅ · slider UX-31 ✅ |
 | 86 | Implementar los dos sliders (barra fija y flotante) y conservar las flechas, a elegir en Opciones | UX-31 ✅ |
 | 87 | Otro tramo de obstáculos con los objetos que ya tenemos: cuesta bastante empinada, curvas entre objetos, muy divertido. Elegido: volcán, mezcla de eses + horquillas + caracol, 18-20°, 12-13 obstáculos | CRW-30, CRW-31, ECO-16 ✅ |
+| 88 | Revisar los circuitos (menos Drift y Obstáculos): charcos que no se ven y posibles fallos en tierra u otras superficies | CIR-29 ✅ |

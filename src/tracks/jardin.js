@@ -103,9 +103,9 @@ function build(B) {
   // agua con ondas animadas (charco y estanque)
   const wt = surfaceTex('water', [2, 2]), wt2 = surfaceTex('water', [3.1, 3.1]);
   const waterMat = new THREE.MeshPhysicalMaterial({
-    color: '#ffffff', map: wt.map, normalMap: wt.normalMap, normalScale: new THREE.Vector2(0.35, 0.35), roughness: 0.03, metalness: 0,
-    clearcoat: 1, clearcoatRoughness: 0.02, clearcoatNormalMap: wt2.normalMap, clearcoatNormalScale: new THREE.Vector2(0.5, 0.5),
-    envMapIntensity: 1.6, transparent: true, opacity: 0.9,
+    color: '#ffffff', map: wt.map, normalMap: wt.normalMap, normalScale: new THREE.Vector2(0.35, 0.35), roughness: 0.03, metalness: 0, specularIntensity: 0.4,
+    clearcoat: 0.3, clearcoatRoughness: 0.02, clearcoatNormalMap: wt2.normalMap, clearcoatNormalScale: new THREE.Vector2(0.5, 0.5),
+    envMapIntensity: 1, transparent: true, opacity: 0.94, // CIR-29: menos reflejo del entorno (lo blanqueaba y no se distinguía)
   });
   anim.push((t) => { wt.normalMap.offset.set(t * 0.03, t * 0.02); wt2.normalMap.offset.set(-t * 0.025, t * 0.035); wt.map.offset.set(-t * 0.01, 0); });
   // orilla de barro húmedo alrededor del agua (degradado irregular)
@@ -124,17 +124,18 @@ function build(B) {
   {
     let pi = circuit.straightest(0.4, 0.46, 3, 3, circuit.elev.map((e) => [e.i0, e.i1]));
     const s = circuit.samples[pi];
-    const p = s.p.clone().addScaledVector(s.n, 1);
+    const p = s.p.clone().addScaledVector(s.n, 0.6);
     const puddle = new THREE.Mesh(new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2), waterMat);
-    puddle.scale.set(4.5, 1, 3.2); puddle.rotation.y = yawOf(s.t);
+    // CIR-29: largo a lo largo de la pista (antes iba atravesado y se salía por debajo de los bordes)
+    puddle.scale.set(2.6, 1, 4.6); puddle.rotation.y = yawOf(s.t);
     puddle.position.set(p.x, s.p.y + 0.06, p.z);
     puddle.userData.dynamic = true;
     scene.add(puddle);
     const rim = new THREE.Mesh(new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2), rimMat);
-    rim.scale.set(6.4, 1, 4.9); rim.rotation.y = puddle.rotation.y;
+    rim.scale.set(3.5, 1, 6.2); rim.rotation.y = puddle.rotation.y;
     rim.position.set(p.x, s.p.y + 0.04, p.z); rim.userData.dynamic = true; rim.receiveShadow = true;
     scene.add(rim);
-    zones.push({ pos: p, r: 4.2, effect: 'wet', surface: 'water' });
+    zones.push({ pos: p, r: 3.6, effect: 'wet', surface: 'water' });
   }
 
   // ---------- Árboles, rocas, flores ----------

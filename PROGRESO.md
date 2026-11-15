@@ -13,7 +13,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 1. ~~Ruedas más pequeñas~~ ✅ en Carrera (FIS-43). Drift: pendiente de decidir.
 2. Mejorar la IA de Drift.
 3. Más velocidad punta en Drift (comprobar antes si con los neumáticos nuevos ya se gana algo).
-4. Primer circuito: arreglar la textura del agua.
+4. ~~Primer circuito: arreglar la textura del agua~~ ✅ (CIR-29: charcos, fregado y cera visibles en todos los circuitos de Carrera).
 5. Cajas sueltas de una en una en lugar de grupos.
 6. Batalla de la Estrella: IA más potente.
 7. Algún salto individual o camino alternativo para coger una caja o un nitro (se puede añadir el nitro).
@@ -26,6 +26,9 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - Arreglado de paso: al reaparecer por atasco ya no entra en bucle en piezas largas (también en La maqueta).
 - Pruebas: `TMAX=1200 node tests/racesim.mjs volcan 0 1 cabra`, `node tests/trackinfo.mjs volcan`, fotos `tests/spotshot.mjs` y `tests/camshot.mjs`.
 - **Pendiente:** probarlo en el móvil (dificultad de cada pieza, tiempos de las medallas) y decidir si entra en la Copa Obstáculos.
+
+### Superficies visibles ✅ (CIR-29)
+- Charcos del jardín y del muelle bien orientados (a lo largo, dentro de los bordes) y con orilla mojada; fregado (súper, muelle) y cera (salón, museo) ya se distinguen con la cámara normal. Barro y arena estaban bien. Capturas: `node tests/zoneview.mjs`.
 
 ### Dirección con slider ✅ (UX-31)
 - Opciones › Dirección: Flechas, **Barra** (fija, abajo a la izquierda) o **Flotante** (el pulgar marca el centro) e Inclinar. Probado con dos dedos a la vez (slider + gas). **Pendiente:** tacto en el móvil; si el flotante gira demasiado o poco, `FLOAT_RANGE` en `src/controls.js` (80 px = giro completo).

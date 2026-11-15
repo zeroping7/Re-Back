@@ -40,6 +40,7 @@
 | CIR-25 | **El salón sin curvas cerradas ni parpadeos**: la S de la derecha tiene radio ≥ 7 (con pista de 7 no se cierra el borde interior); la cuesta va en una recta, no sobre una curva; los bordes siguen la pendiente (sin escalones entre bloques); rampas y cuestas ganan al suelo en profundidad (sin parpadeo de textura al despegar y aterrizar). Criterio: por el carril interior (−0,7…0,6) el coche no baja de 20 km/h en la S | ✅ |
 | CIR-26 | **Rampas y cuestas sin parpadeo**: la malla sube hasta 1,5 cm solo donde casi toca el suelo (extremos), sin `polygonOffset` fuerte (tapaba marcas, manchas y la cinta de tierra del jardín); la malla no proyecta sombra (sin acné); el sol sigue al coche ajustado a la rejilla del mapa de sombras (sin hormigueo); plano cercano de cámara 0,25. Jardín: la rampa vuelve a verse de tierra | ✅ |
 | CIR-27 | **Bordes sin escalones en curvas cerradas**: cada tramo del borde se parte en trozos de ≤ ~5° (mismo color); así por el interior de una curva no hay bloques girados 30° entre sí | ✅ |
+| CIR-29 | **Superficies que se ven desde la cámara de juego** (circuitos de Carrera): los charcos del jardín y del muelle van a lo largo de la pista y dentro de los bordes (antes iban atravesados y se salían), con orilla mojada; agua, fregado y cera usan reflejo rasante reducido (`specularIntensity`) para que el entorno no los blanquee; fregado con charcos azules de borde marcado; cera más opaca y en el museo con tono ámbar. Prueba: `node tests/zoneview.mjs` (también `VARIANTS=mirror,rev`) | ✅ |
 
 ## Ideas futuras
 

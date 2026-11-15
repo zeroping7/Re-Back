@@ -499,19 +499,25 @@ function buildSurface(kind) {
     col = px(S, (u, v) => {
       const foam = n3(u, v, 2, 28) > 0.82 ? 1 : 0;
       H[Math.floor(v * S) * S + Math.floor(u * S)] = 0.5 + (n2(u, v, 4, 10) - 0.5) * 0.4 + foam * 0.3;
-      return foam ? [235, 245, 250] : mixc([92, 118, 138], [128, 156, 176], n2(u, v, 3, 4));
+      // CIR-29: charcos más oscuros y azulados con borde marcado, para que se lean desde la cámara (antes casi blancos)
+      const pool = clamp01((n1(u, v, 5, 3) - 0.6) / 0.05), lip = clamp01(1 - Math.abs(n1(u, v, 5, 3) - 0.6) / 0.025);
+      if (foam) return [235, 245, 250];
+      let k = mixc([84, 112, 134], [116, 146, 168], n2(u, v, 3, 4));
+      k = mixc(k, [38, 66, 90], pool * 0.9);
+      return mixc(k, [26, 44, 60], lip * 0.6);
     });
     rough = px(S, (u, v) => [0, (0.03 + n3(u, v, 2, 28) * 0.05) * 255, 0]);
     alpha = px(S, (u, v) => {
       const film = clamp01((n1(u, v, 5, 3) - 0.36) / 0.08);
       const mop = 0.5 + 0.5 * Math.sin((u * 9 + Math.sin(v * 12.566) * 1.2) * 6.283);
       const foam = n3(u, v, 2, 28) > 0.82 ? 0.9 : 0;
-      const a = Math.max(foam, film * (0.5 + mop * 0.25)) * edge(u, n2(u * 0.3, v, 3, 5), 0.07);
+      const pool = clamp01((n1(u, v, 5, 3) - 0.6) / 0.05);
+      const a = Math.max(foam, film * (0.62 + mop * 0.22), pool * 0.95) * edge(u, n2(u * 0.3, v, 3, 5), 0.07);
       return [a * 255, a * 255, a * 255];
     });
   } else if (kind === 'wax') {
     // cera recién dada: brillo con remolinos de abrillantadora
-    col = px(S, (u, v) => { H[Math.floor(v * S) * S + Math.floor(u * S)] = 0.5; return mixc([255, 236, 190], [255, 250, 232], n2(u, v, 2, 6)); });
+    col = px(S, (u, v) => { H[Math.floor(v * S) * S + Math.floor(u * S)] = 0.5; return mixc([250, 242, 222], [255, 253, 245], n2(u, v, 2, 6)); }); // el tono lo da `color` en cada circuito (CIR-29)
     rough = px(S, (u, v) => [0, (0.02 + n2(u, v, 3, 6) * 0.08) * 255, 0]);
     alpha = px(S, (u, v) => {
       let sw = 0;
@@ -519,7 +525,7 @@ function buildSurface(kind) {
         const d = Math.hypot(u - cx, (((v - cy + 1.5) % 1) - 0.5)) / rr;
         if (d < 1.4) sw = Math.max(sw, (0.5 + 0.5 * Math.sin(d * 40 + n1(u, v, 2, 4) * 6)) * clamp01(1.4 - d));
       }
-      const a = (0.26 + sw * 0.42 + (n1(u, v, 4, 3) - 0.5) * 0.25) * edge(u, n3(u * 0.3, v, 3, 5), 0.06);
+      const a = (0.5 + sw * 0.45 + (n1(u, v, 4, 3) - 0.5) * 0.2) * edge(u, n3(u * 0.3, v, 3, 5), 0.06);
       return [a * 255, a * 255, a * 255];
     });
   } else if (kind === 'sand') {

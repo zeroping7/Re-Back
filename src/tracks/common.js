@@ -575,7 +575,7 @@ export function scaleTrack(T, S, mirror = false) {
 }
 
 // Parche sobre la pista (zona de derrape, turbo…). Devuelve la zona para la carrera.
-export function trackPatch(B, circuit, at, len, effect, { color = '#ffffff', map = null, normalMap = null, roughnessMap = null, alphaMap = null, opacity = 0.85, emissive = null, inset = 0.4, roughness, metalness, normalScale = 1, surface = null } = {}) {
+export function trackPatch(B, circuit, at, len, effect, { color = '#ffffff', map = null, normalMap = null, roughnessMap = null, alphaMap = null, opacity = 0.85, emissive = null, inset = 0.4, roughness, metalness, normalScale = 1, surface = null, envMapIntensity = 1, specularIntensity = 1 } = {}) {
   const S = circuit.samples, N = S.length;
   const c = circuit.sampleNear(at[0], at[1]).i;
   const half = Math.max(1, Math.round(len / 2 / 1.6));
@@ -596,11 +596,14 @@ export function trackPatch(B, circuit, at, len, effect, { color = '#ffffff', map
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 4));
   g.setIndex(idx); g.computeVertexNormals();
-  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
+  // CIR-29: con specularIntensity < 1 (material físico) el reflejo rasante no lo blanquea todo y se ve el color de la superficie
+  const Mat = specularIntensity < 1 ? THREE.MeshPhysicalMaterial : THREE.MeshStandardMaterial;
+  const m = new THREE.Mesh(g, new Mat({
+    ...(specularIntensity < 1 ? { specularIntensity } : {}),
     color, map, normalMap, roughnessMap, alphaMap, vertexColors: !!surface, normalScale: new THREE.Vector2(normalScale, normalScale),
     transparent: true, opacity, roughness: roughness ?? (effect === 'slide' ? 0.05 : 0.4), metalness: metalness ?? (effect === 'slide' ? 0.3 : 0), depthWrite: !surface,
     emissive: emissive || '#000000', emissiveMap: emissive ? map : null, emissiveIntensity: emissive ? 0.9 : 0,
-    polygonOffset: true, polygonOffsetFactor: -3,
+    polygonOffset: true, polygonOffsetFactor: -3, envMapIntensity,
   }));
   m.receiveShadow = true; m.userData.dynamic = true;
   B.scene.add(m);

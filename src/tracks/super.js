@@ -76,7 +76,7 @@ function build(B) {
   const wetAt = [];
   for (const [f0, f1] of [[0.33, 0.4], [0.86, 0.95]]) {
     const p = curvy(f0, f1); wetAt.push(p);
-    zones.push(trackPatch(B, circuit, [p.x, p.z], 18, 'slide', { ...wet, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0.15, normalScale: 0.4, surface: 'wet' }));
+    zones.push(trackPatch(B, circuit, [p.x, p.z], 18, 'slide', { ...wet, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0.15, normalScale: 0.4, surface: 'wet', envMapIntensity: 0.8, specularIntensity: 0.3 }));
   }
   zones.push(...autoBoosts(B, circuit, 2, zones.map((z) => [z.from, z.to])));
   // pirámide de latas en la pista

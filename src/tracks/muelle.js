@@ -86,22 +86,39 @@ function build(B) {
   // ---------- Zonas: charcos (frenan y salpican), tablones resbaladizos, turbos ----------
   const zones = [];
   const wt = surfaceTex('water', [2, 2]);
-  const waterMat = new THREE.MeshPhysicalMaterial({ color: '#ffffff', map: wt.map, normalMap: wt.normalMap, normalScale: new THREE.Vector2(0.35, 0.35), roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.02, envMapIntensity: 1.6, transparent: true, opacity: 0.85 });
+  const waterMat = new THREE.MeshPhysicalMaterial({ color: '#ffffff', map: wt.map, normalMap: wt.normalMap, normalScale: new THREE.Vector2(0.35, 0.35), roughness: 0.03, specularIntensity: 0.4, clearcoat: 0.3, clearcoatRoughness: 0.02, envMapIntensity: 1, // CIR-29: menos reflejo rasante (se veía gris)
+    transparent: true, opacity: 0.93 });
   anim.push((t) => { wt.normalMap.offset.set(t * 0.03, t * 0.02); });
+  // orilla de madera mojada alrededor de cada charco (degradado irregular)
+  const rimTex = (() => {
+    const rnd = mulberry(7); // propio: no altera la colocación del resto
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const g = c.getContext('2d');
+    const gr = g.createRadialGradient(128, 128, 60, 128, 128, 128);
+    gr.addColorStop(0, '#2c1a0eff'); gr.addColorStop(0.55, '#3a2414c0'); gr.addColorStop(1, '#4a301c00');
+    g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+    for (let k = 0; k < 160; k++) { const a = rnd() * 6.28, r = 70 + rnd() * 55; g.fillStyle = `rgba(40,24,12,${0.15 + rnd() * 0.3})`; g.beginPath(); g.ellipse(128 + Math.cos(a) * r, 128 + Math.sin(a) * r, 3 + rnd() * 9, 2 + rnd() * 5, a, 0, 7); g.fill(); }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  })();
+  const rimMat = new THREE.MeshStandardMaterial({ map: rimTex, transparent: true, roughness: 0.3, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
   for (const f of [0.18, 0.75]) {
     const i = circuit.straightest(f - 0.04, f + 0.04, 3, 3, circuit.elev.map((e) => [e.i0, e.i1]));
-    const s = samples[i], p = s.p.clone().addScaledVector(s.n, (f > 0.5 ? -1 : 1) * 1.2);
+    const s = samples[i], p = s.p.clone().addScaledVector(s.n, (f > 0.5 ? -1 : 1) * 0.7);
+    // CIR-29: el largo va a lo largo de la pista (antes iba atravesado y se metía bajo los bordes) y con orilla de madera mojada
     const pd = new THREE.Mesh(new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2), waterMat);
-    pd.scale.set(4.2, 1, 3); pd.rotation.y = yawOf(s.t); pd.position.set(p.x, s.p.y + 0.06, p.z); pd.userData.dynamic = true;
+    pd.scale.set(2.4, 1, 4.4); pd.rotation.y = yawOf(s.t); pd.position.set(p.x, s.p.y + 0.06, p.z); pd.userData.dynamic = true;
     scene.add(pd);
-    zones.push({ pos: p, r: 3.9, effect: 'wet', surface: 'water' });
+    const rim = new THREE.Mesh(new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2), rimMat);
+    rim.scale.set(3.3, 1, 6); rim.rotation.y = pd.rotation.y; rim.position.set(p.x, s.p.y + 0.04, p.z); rim.userData.dynamic = true; rim.receiveShadow = true;
+    scene.add(rim);
+    zones.push({ pos: p, r: 3.4, effect: 'wet', surface: 'water' });
   }
   const wet = surfaceTex('wet', [1, 3]);
   {
     let best = circuit.at(0.44), br = Infinity;
     for (let f = 0.4; f < 0.52; f += 0.005) { const i = circuit.at(f); const r = circuit.minRadius(i, 3, 3); if (r < br) { br = r; best = i; } }
     const p = samples[best].p;
-    zones.push(trackPatch(B, circuit, [p.x, p.z], 18, 'slide', { ...wet, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0.15, normalScale: 0.4, surface: 'wet' }));
+    zones.push(trackPatch(B, circuit, [p.x, p.z], 18, 'slide', { ...wet, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0.15, normalScale: 0.4, surface: 'wet', envMapIntensity: 0.8, specularIntensity: 0.3 }));
   }
   zones.push(...autoBoosts(B, circuit, 2, zones.filter((z) => z.from !== undefined).map((z) => [z.from, z.to])));
   startArch(B, circuit, { color: '#ff7043', text: 'REGATA DEL MUELLE' });
