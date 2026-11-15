@@ -34,7 +34,7 @@ export function rockMaterial() {
   return new THREE.MeshStandardMaterial({ map: t.map, normalMap: t.normalMap, normalScale: new THREE.Vector2(1.2, 1.2), vertexColors: true, roughness: 0.92 });
 }
 
-function instanced(B, items) {
+function instanced(B, items, tint = 0.45) {
   if (!items.length) return;
   // tres formas distintas para que no se vean todas iguales
   const groups = [0, 1, 2].map(() => []);
@@ -46,7 +46,7 @@ function instanced(B, items) {
     list.forEach((it, i) => {
       e.set(it.tx || 0, it.ry, it.tz || 0); q.setFromEuler(e);
       m.compose(it.p, q, s.set(...it.s));
-      mesh.setMatrixAt(i, m); mesh.setColorAt(i, c.set(it.color).lerp(white, 0.45));
+      mesh.setMatrixAt(i, m); mesh.setColorAt(i, c.set(it.color).lerp(white, tint));
     });
     mesh.castShadow = true; mesh.receiveShadow = true;
     B.scene.add(mesh);
@@ -54,7 +54,8 @@ function instanced(B, items) {
 }
 
 // Muros de roca a los dos lados del camino (dos filas, la de atrás más alta)
-export function rockWalls(B, circuit, { seed = 5 } = {}) {
+// chunk: nº de muestras por lote; cada lote es una malla aparte, así las rocas que no se ven no se dibujan (circuitos largos)
+export function rockWalls(B, circuit, { seed = 5, colors = ROCK, tint = 0.45, chunk = 0 } = {}) {
   const rnd = mulberry(seed), S = circuit.samples, N = circuit.N, hw = circuit.width / 2, items = [];
   const [r0, r1] = circuit.drive || [0, N]; // tramo A→B: solo la parte que se recorre
   for (let k = r0; k < r1; k += 1) for (let sub = 0; sub < 2; sub++) {
@@ -65,10 +66,11 @@ export function rockWalls(B, circuit, { seed = 5 } = {}) {
       const R = 0.28 + rnd() * 0.25 + row * 0.22;                     // piedras pequeñas, a escala del coche
       const lat = side * (hw + 0.12 + R * 1.0 + row * R * 1.5);
       const sy = R * (row ? 0.9 + rnd() * 0.8 : 0.7 + rnd() * 0.6);
-      items.push({ p: new THREE.Vector3(px + nx * lat, h + sy * 0.45, pz + nz * lat), s: [R * (1 + rnd() * 0.4), sy, R * (1 + rnd() * 0.4)], ry: rnd() * 6.28, tx: (rnd() - 0.5) * 0.3, tz: (rnd() - 0.5) * 0.3, color: ROCK[(rnd() * ROCK.length) | 0] });
+      items.push({ p: new THREE.Vector3(px + nx * lat, h + sy * 0.45, pz + nz * lat), s: [R * (1 + rnd() * 0.4), sy, R * (1 + rnd() * 0.4)], ry: rnd() * 6.28, tx: (rnd() - 0.5) * 0.3, tz: (rnd() - 0.5) * 0.3, color: colors[(rnd() * colors.length) | 0], lot: chunk ? Math.floor((k - r0) / chunk) : 0 });
     }
   }
-  instanced(B, items);
+  const lots = new Map(); for (const it of items) { if (!lots.has(it.lot)) lots.set(it.lot, []); lots.get(it.lot).push(it); }
+  for (const list of lots.values()) instanced(B, list, tint);
 }
 
 // Montaña / macizos de roca en una región, lejos del camino

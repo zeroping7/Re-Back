@@ -28,7 +28,7 @@ race.respawn = (car) => { respawns.set(car.name, (respawns.get(car.name) || 0) +
 if (process.env.DUMP) { const [x0,x1,z0,z1]=process.env.DUMP.split(',').map(Number); race.world.colliders.forEach((c)=>{ const tr=c.translation(); if(tr.x>x0&&tr.x<x1&&tr.z>z0&&tr.z<z1&&c.shape.type!==undefined&&tr.y<3) console.log('col',c.shape.type,tr.x.toFixed(2),tr.y.toFixed(2),tr.z.toFixed(2),JSON.stringify(c.shape.halfExtents||c.shape.radius||c.shape.halfHeight)); }); process.exit(0); }
 let t = 0;
 const playerAI = race.playerAI;
-while (t < 240) {
+while (t < +(process.env.TMAX || 240)) {
   const st = race.state(race.player);
   if (!battle && race.player.item && playerAI.shouldUse(race.player.item, race, st)) race.items.fire(race.player);
   race.update(FIXED); if (process.env.MAXY) { const c = race.player; globalThis.my = Math.max(globalThis.my || 0, c.currPos.y); globalThis.mu = Math.min(globalThis.mu ?? 9, c.up.y); }

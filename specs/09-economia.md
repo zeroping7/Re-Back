@@ -20,6 +20,7 @@ coche en uso, copas y estrellas.
 | ECO-13 | **Primera victoria** en cada circuito y dificultad (carreras con 4 coches o más, también en copa): 300 / 400 / 500 🪙 una sola vez. Sale en los resultados | ✅ |
 | ECO-14 | Clave de guardado `reback.profile.v2`. Si no existe pero hay una partida `v1`, se migra entera (dinero, coches, mejoras, copas, estrellas, medallas); solo empieza de cero quien no tenía partida | ✅ |
 | ECO-15 | **Online**: las carreras online darán monedas, menos que en solitario (propuesta: 50 % del premio de carrera, sin primeras victorias). Se hace con NET-08 | 📝 |
+| ECO-16 | **Circuitos mucho más largos** que los demás de su disciplina llevan un factor de premio de carrera (`payK` en la definición del circuito). El volcán: ×1,6 (dura ~1,6 veces lo que La maqueta, subiendo y bajando). Las medallas pagan lo mismo que en cualquier circuito (1.900 la subida y 1.900 la bajada, una sola vez) | ✅ |
 
 ## Ritmo buscado (decidido el 12 nov 2026)
 

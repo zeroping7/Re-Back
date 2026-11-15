@@ -21,6 +21,12 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 9. ~~Coches de Obstáculos: subir la altura de los bajos~~ ✅ (CRW-29).
 10. Permitir cambiar el color del coche.
 
+### Obstáculos: circuito nuevo «El volcán» ✅ (CRW-30, CRW-31, ECO-16)
+- Subida de 18° al cráter con 12 obstáculos y curva entre cada dos: eses al pie, horquillas en la ladera y caracol a la cima (puente largo sobre río de lava y escalera final). También bajada. Mismas piezas que La maqueta, con variantes. Medallas 520/420/350 s (bajada 330/280/240); las carreras pagan ×1,6.
+- Arreglado de paso: al reaparecer por atasco ya no entra en bucle en piezas largas (también en La maqueta).
+- Pruebas: `TMAX=1200 node tests/racesim.mjs volcan 0 1 cabra`, `node tests/trackinfo.mjs volcan`, fotos `tests/spotshot.mjs` y `tests/camshot.mjs`.
+- **Pendiente:** probarlo en el móvil (dificultad de cada pieza, tiempos de las medallas) y decidir si entra en la Copa Obstáculos.
+
 ### Dirección con slider ✅ (UX-31)
 - Opciones › Dirección: Flechas, **Barra** (fija, abajo a la izquierda) o **Flotante** (el pulgar marca el centro) e Inclinar. Probado con dos dedos a la vez (slider + gas). **Pendiente:** tacto en el móvil; si el flotante gira demasiado o poco, `FLOAT_RANGE` en `src/controls.js` (80 px = giro completo).
 

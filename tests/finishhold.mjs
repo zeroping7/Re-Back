@@ -17,7 +17,7 @@ for (const id of (process.argv[2] || 'senda,senda:rev').split(',')) {
   race.autoPlayer = true;
   const st = race.state(race.player);
   let t = 0;
-  while (!st.finished && t < 400) { race.update(FIXED); t += FIXED; }
+  while (!st.finished && t < +(process.env.TMAX || 400)) { race.update(FIXED); t += FIXED; }
   let minFwd = Infinity, back = 0;
   const p0 = race.player.currPos.clone();
   for (let k = 0; k < 60 * 5; k++) { race.update(FIXED); if (k > 60) minFwd = Math.min(minFwd, race.player.fwdSpeed); if (race.player.reversing) back++; }

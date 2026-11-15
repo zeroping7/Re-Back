@@ -320,10 +320,10 @@ export class Race {
     }
 
     // IA atascada sin avanzar
-    if (this.started && (!st.finished || car.isPlayer)) {
+    if (this.started && (!st.finished || (car.isPlayer && this.T.finishIdx === undefined))) { // CRW-31: tras la meta de un tramo A→B el coche se queda sujeto, no se recoloca
       if (st.progress > (st.bestProg ?? -1e9)) { st.bestProg = st.progress; st.noProgT = 0; } else st.noProgT = (st.noProgT || 0) + dt;
       const limit = car.isPlayer && !st.finished && !this.autoPlayer ? 10 : 5;
-      if (st.noProgT > limit) { st.noProgT = 0; st.bestProg = st.progress; this.respawn(car); }
+      if (st.noProgT > limit) { st.noProgT = 0; this.respawn(car); st.bestProg = -1e9; } // CRW-31: tras reaparecer, la cuenta empieza desde la puerta (antes exigía volver al punto del atasco en `limit` s)
     }
     // fuera de la pista (por ejemplo tras una explosión)
     const sc = c.samples[st.idx];

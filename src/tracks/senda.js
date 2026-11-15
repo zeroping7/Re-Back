@@ -210,24 +210,24 @@ function mountain(B, circuit) {
 const TABLE_Y = -8, FLOOR_Y = -86;
 
 // Marco de madera de la base, mesa de trabajo y habitación (taller) alrededor
-function workshop(B) {
+export function workshop(B, RB = R, title = ['MONTE CABRERO', 'maqueta · escala 1:87']) {
   const pl = groundTex('plank', [6, 3]);
   const wood = new THREE.MeshStandardMaterial({ map: pl.map, normalMap: pl.normalMap, roughness: 0.7, color: '#c99a68' });
   const dark = new THREE.MeshStandardMaterial({ color: '#4a3222', roughness: 0.6 });
   // marco de la base (sobresale un poco por encima del borde de la montaña)
   const T = 3, Hf = 0.4 - TABLE_Y;
-  for (const [w, d, x, z] of [[R.x * 2 + T * 2, T, 0, R.z + T / 2], [R.x * 2 + T * 2, T, 0, -R.z - T / 2], [T, R.z * 2, R.x + T / 2, 0], [T, R.z * 2, -R.x - T / 2, 0]])
+  for (const [w, d, x, z] of [[RB.x * 2 + T * 2, T, 0, RB.z + T / 2], [RB.x * 2 + T * 2, T, 0, -RB.z - T / 2], [T, RB.z * 2, RB.x + T / 2, 0], [T, RB.z * 2, -RB.x - T / 2, 0]])
     B.box(w, Hf, d, x, TABLE_Y + Hf / 2, z, dark, { solid: false });
   // placa de latón en el frente del marco
   const c = document.createElement('canvas'); c.width = 512; c.height = 128; const g = c.getContext('2d');
   const gr = g.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, '#f1d58a'); gr.addColorStop(0.5, '#c79a3c'); gr.addColorStop(1, '#9a7428');
   g.fillStyle = gr; g.fillRect(0, 0, 512, 128); g.strokeStyle = '#6e5016'; g.lineWidth = 6; g.strokeRect(8, 8, 496, 112);
-  g.fillStyle = '#3d2c0c'; g.textAlign = 'center'; g.font = 'bold 54px serif'; g.fillText('MONTE CABRERO', 256, 66); g.font = 'italic 28px serif'; g.fillText('maqueta · escala 1:87', 256, 104);
+  g.fillStyle = '#3d2c0c'; g.textAlign = 'center'; g.font = 'bold 54px serif'; g.fillText(title[0], 256, 66); g.font = 'italic 28px serif'; g.fillText(title[1], 256, 104);
   const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace;
   const plate = new THREE.Mesh(new THREE.PlaneGeometry(24, 6), new THREE.MeshStandardMaterial({ map: tx, metalness: 0.6, roughness: 0.35 }));
-  plate.position.set(0, (TABLE_Y + 0.4) / 2, R.z + T + 0.05); B.scene.add(plate);
+  plate.position.set(0, (TABLE_Y + 0.4) / 2, RB.z + T + 0.05); B.scene.add(plate);
   // mesa (tablero y patas)
-  const TX = R.x + 70, TZ = R.z + 55;
+  const TX = RB.x + 70, TZ = RB.z + 55;
   B.box(TX * 2, 4, TZ * 2, 0, TABLE_Y - 2, 0, wood, { solid: false });
   for (const sx of [-1, 1]) for (const sz of [-1, 1]) B.box(7, -FLOOR_Y + TABLE_Y - 4, 7, sx * (TX - 8), (FLOOR_Y + TABLE_Y - 4) / 2, sz * (TZ - 8), dark, { solid: false });
   // habitación: suelo de parquet, paredes empapeladas, ventana y techo
@@ -252,28 +252,28 @@ function workshop(B) {
     B.box(160, 3, 22, -150, FLOOR_Y + y, RZ - 12, dark, { solid: false });
     for (let k = 0; k < 6; k++) B.box(14 + (k % 3) * 4, 18 + (k % 2) * 8, 14, -215 + k * 26, FLOOR_Y + y + 11 + (k % 2) * 4, RZ - 14, ['#c0392b', '#2471a3', '#f1c40f', '#7d6608', '#1e8449', '#cccccc'][k], { solid: false });
   }
-  workbenchProps(B);
+  workbenchProps(B, RB);
 }
 
 // Objetos gigantes sobre la mesa: botes de pintura, pinceles, taza, regla, tubo de cola y cúter
-function workbenchProps(B) {
+function workbenchProps(B, RB = R) {
   const Y = TABLE_Y;
-  const pots = [['#c0392b', -R.x - 25, 30], ['#2e86c1', -R.x - 40, 10], ['#f4d03f', -R.x - 22, -8], ['#27ae60', -R.x - 45, -28], ['#ecf0f1', -R.x - 26, -40]];
+  const pots = [['#c0392b', -RB.x - 25, 30], ['#2e86c1', -RB.x - 40, 10], ['#f4d03f', -RB.x - 22, -8], ['#27ae60', -RB.x - 45, -28], ['#ecf0f1', -RB.x - 26, -40]];
   for (const [col, x, z] of pots) {
     B.cyl(9, 9, 12, x, Y + 6, z, '#e8e8e8', { solid: false, seg: 24 });
     B.cyl(9.4, 9.4, 2.4, x, Y + 13.2, z, col, { solid: false, seg: 24 });
   }
   // bote con pinceles
-  B.cyl(8, 7, 22, R.x + 30, Y + 11, -35, '#7f8c8d', { solid: false, seg: 20 });
+  B.cyl(8, 7, 22, RB.x + 30, Y + 11, -35, '#7f8c8d', { solid: false, seg: 20 });
   for (let k = 0; k < 4; k++) {
-    const a = k * 1.6, x = R.x + 30 + Math.cos(a) * 3, z = -35 + Math.sin(a) * 3, tilt = 0.18;
+    const a = k * 1.6, x = RB.x + 30 + Math.cos(a) * 3, z = -35 + Math.sin(a) * 3, tilt = 0.18;
     B.cyl(0.9, 1.2, 38, x, Y + 30, z, ['#b03a2e', '#1f618d', '#d4ac0d', '#1d8348'][k], { solid: false, seg: 8, rot: [Math.sin(a) * tilt, 0, -Math.cos(a) * tilt] });
   }
   // taza
-  B.cyl(10, 9, 22, R.x + 34, Y + 11, 30, '#f5f0e6', { solid: false, seg: 24 });
-  B.cyl(8.6, 8.6, 0.6, R.x + 34, Y + 20.5, 30, '#3b2412', { solid: false, seg: 24 });
+  B.cyl(10, 9, 22, RB.x + 34, Y + 11, 30, '#f5f0e6', { solid: false, seg: 24 });
+  B.cyl(8.6, 8.6, 0.6, RB.x + 34, Y + 20.5, 30, '#3b2412', { solid: false, seg: 24 });
   const handle = new THREE.Mesh(new THREE.TorusGeometry(5, 1.4, 8, 16, Math.PI), new THREE.MeshStandardMaterial({ color: '#f5f0e6', roughness: 0.4 }));
-  handle.position.set(R.x + 44, Y + 12, 30); handle.rotation.z = -Math.PI / 2; B.scene.add(handle);
+  handle.position.set(RB.x + 44, Y + 12, 30); handle.rotation.z = -Math.PI / 2; B.scene.add(handle);
   // regla metálica con marcas
   const c = document.createElement('canvas'); c.width = 1024; c.height = 64; const g = c.getContext('2d');
   g.fillStyle = '#c9ccd1'; g.fillRect(0, 0, 1024, 64); g.fillStyle = '#222';
@@ -281,32 +281,32 @@ function workbenchProps(B) {
   g.font = 'bold 16px sans-serif'; for (let k = 0; k <= 10; k++) g.fillText(String(k * 10), k * 102 + 4, 50);
   const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace;
   const ruler = new THREE.Mesh(new THREE.BoxGeometry(150, 0.8, 10), [0, 0, new THREE.MeshStandardMaterial({ map: tx, metalness: 0.7, roughness: 0.35 }), 0, 0, 0].map((m) => m || new THREE.MeshStandardMaterial({ color: '#aeb2b8', metalness: 0.7, roughness: 0.35 })));
-  ruler.position.set(-10, Y + 0.4, R.z + 22); ruler.rotation.y = 0.06; B.scene.add(ruler);
+  ruler.position.set(-10, Y + 0.4, RB.z + 22); ruler.rotation.y = 0.06; B.scene.add(ruler);
   // tubo de cola y cúter
-  B.cyl(3.2, 3.2, 22, 45, Y + 3.2, R.z + 38, '#f0f0f0', { solid: false, seg: 14, rot: [0, 0, Math.PI / 2] });
-  B.cyl(1.4, 3.2, 5, 58.5, Y + 3.2, R.z + 38, '#e67e22', { solid: false, seg: 14, rot: [0, 0, -Math.PI / 2] });
-  B.box(30, 2.2, 5, -70, Y + 1.1, R.z + 36, '#f39c12', { solid: false, rot: [0, -0.4, 0] });
-  B.box(9, 0.6, 4, -84, Y + 1.1, R.z + 41.6, '#bdc3c7', { solid: false, rot: [0, -0.4, 0] });
+  B.cyl(3.2, 3.2, 22, 45, Y + 3.2, RB.z + 38, '#f0f0f0', { solid: false, seg: 14, rot: [0, 0, Math.PI / 2] });
+  B.cyl(1.4, 3.2, 5, 58.5, Y + 3.2, RB.z + 38, '#e67e22', { solid: false, seg: 14, rot: [0, 0, -Math.PI / 2] });
+  B.box(30, 2.2, 5, -70, Y + 1.1, RB.z + 36, '#f39c12', { solid: false, rot: [0, -0.4, 0] });
+  B.box(9, 0.6, 4, -84, Y + 1.1, RB.z + 41.6, '#bdc3c7', { solid: false, rot: [0, -0.4, 0] });
 }
 
 // Fondo pintado (cielo con nubes y montañas lejanas) curvado detrás de la maqueta, como en las de tren
-function backdrop(B) {
+export function backdrop(B, RB = R, { H = 120, sky = ['#6fa6dc', '#cfe3f3', '#eef3ef'], cloud = 'rgba(255,255,255,0.8)', ranges = [[300, 120, '#9db3c9'], [350, 90, '#7f97ad'], [410, 50, '#5f7a5a']], glow = 0.55 } = {}) {
   const c = document.createElement('canvas'); c.width = 2048; c.height = 512; const g = c.getContext('2d');
-  const sky = g.createLinearGradient(0, 0, 0, 512); sky.addColorStop(0, '#6fa6dc'); sky.addColorStop(0.7, '#cfe3f3'); sky.addColorStop(1, '#eef3ef');
-  g.fillStyle = sky; g.fillRect(0, 0, 2048, 512);
+  const sky0 = g.createLinearGradient(0, 0, 0, 512); sky0.addColorStop(0, sky[0]); sky0.addColorStop(0.7, sky[1]); sky0.addColorStop(1, sky[2]);
+  g.fillStyle = sky0; g.fillRect(0, 0, 2048, 512);
   const r = mulberry(7);
   for (let k = 0; k < 14; k++) { // nubes pintadas
-    const x = r() * 2048, y = 60 + r() * 160; g.fillStyle = 'rgba(255,255,255,0.8)';
+    const x = r() * 2048, y = 60 + r() * 160; g.fillStyle = cloud;
     for (let j = 0; j < 6; j++) { g.beginPath(); g.ellipse(x + j * 26 - 60, y + Math.sin(j) * 8, 40 + r() * 30, 16 + r() * 10, 0, 0, 7); g.fill(); }
   }
-  for (const [base, amp, col] of [[300, 120, '#9db3c9'], [350, 90, '#7f97ad'], [410, 50, '#5f7a5a']]) { // cordilleras lejanas
+  for (const [base, amp, col] of ranges) { // cordilleras lejanas
     g.fillStyle = col; g.beginPath(); g.moveTo(0, 512);
     for (let x = 0; x <= 2048; x += 16) g.lineTo(x, base - amp * Math.abs(Math.sin(x * 0.004 + base) * Math.cos(x * 0.0013 + amp)) - r() * 8);
     g.lineTo(2048, 512); g.fill();
   }
   const tx = new THREE.CanvasTexture(c); tx.colorSpace = THREE.SRGBColorSpace;
   // media elipse que pasa por las esquinas traseras de la base
-  const a = R.x * Math.SQRT2, b = R.z * Math.SQRT2, H = 120, n = 48, pos = [], uv = [], idx = [];
+  const a = RB.x * Math.SQRT2, b = RB.z * Math.SQRT2, n = 48, pos = [], uv = [], idx = [];
   for (let k = 0; k <= n; k++) {
     const t = Math.PI * 0.25 + (Math.PI * 0.5) * (k / n), x = -a * Math.cos(t) * (k / n * 2 - 1 < 0 ? 1 : 1), z = -b * Math.sin(t);
     const xx = a * Math.cos(Math.PI - t);
@@ -316,7 +316,7 @@ function backdrop(B) {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   geo.setIndex(idx); geo.computeVertexNormals();
-  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: tx, emissiveMap: tx, emissive: '#ffffff', emissiveIntensity: 0.55, roughness: 1, side: THREE.DoubleSide }));
+  const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: tx, emissiveMap: tx, emissive: '#ffffff', emissiveIntensity: glow, roughness: 1, side: THREE.DoubleSide }));
   B.scene.add(m);
   B.box(4, H + 4, 4, -a * Math.cos(Math.PI * 0.75), TABLE_Y + H / 2, -b * Math.sin(Math.PI * 0.25), '#4a3222', { solid: false });
   B.box(4, H + 4, 4, a * Math.cos(Math.PI * 0.75), TABLE_Y + H / 2, -b * Math.sin(Math.PI * 0.25), '#4a3222', { solid: false });
@@ -367,7 +367,7 @@ function modelDetails(B, M) {
 }
 
 // Textura de detalle en gris claro (media ≈ 1): solo añade grano y manchas al color de la ladera
-function detailTexture() {
+export function detailTexture() {
   const S = 512, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d'), r = mulberry(91);
   g.fillStyle = '#ececec'; g.fillRect(0, 0, S, S);
   for (let k = 0; k < 160; k++) { const x = r() * S, y = r() * S, rad = 10 + r() * 60, v = 190 + r() * 65; const gr = g.createRadialGradient(x, y, 0, x, y, rad); gr.addColorStop(0, `rgba(${v},${v},${v},0.5)`); gr.addColorStop(1, `rgba(${v},${v},${v},0)`); g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2); }
@@ -377,7 +377,7 @@ function detailTexture() {
 }
 
 // Borde del camino (CRW-23, solo visual): guijarros sueltos y matas de hierba entre el camino y las rocas
-function roadside(B, circuit) {
+export function roadside(B, circuit, { pebble = [0.08, 0.08, 0.55], tuft: tuftCol = [0.15, 0.35, 0.75], blade = [[0.33, 0.42, 0.18], [0.78, 0.72, 0.42]] } = {}) {
   const S = circuit.samples, N = circuit.N, hw = circuit.width / 2, [r0, r1] = circuit.drive, rnd = mulberry(23);
   const pebbles = [], tufts = [];
   for (let k = r0; k < r1; k++) {
@@ -400,7 +400,7 @@ function roadside(B, circuit) {
   pebbles.forEach(([x, y, z, sz, v], i) => {
     e.set((v - 0.5) * 0.6, v * 40, (v - 0.5) * 0.5); q.setFromEuler(e);
     mt.compose(p.set(x, y, z), q, sc.set(sz * (1 + v * 0.5), sz * 0.6, sz)); peb.setMatrixAt(i, mt);
-    peb.setColorAt(i, c.setHSL(0.08 + v * 0.05, 0.08 + v * 0.1, 0.55 + v * 0.25));
+    peb.setColorAt(i, c.setHSL(pebble[0] + v * 0.05, pebble[1] + v * 0.1, pebble[2] + v * 0.25));
   });
   peb.receiveShadow = true; B.scene.add(peb);
   // matas: haz de briznas finas, verde en la base y pajizo en la punta
@@ -410,7 +410,7 @@ function roadside(B, circuit) {
     const bx = Math.cos(a) * 0.02, bz = Math.sin(a) * 0.02, tx = bx + Math.cos(a) * lean * h, tz = bz + Math.sin(a) * lean * h;
     const px = -Math.sin(a) * w, pz = Math.cos(a) * w;
     blades.push(bx - px, 0, bz - pz, bx + px, 0, bz + pz, tx, h, tz);
-    cols.push(0.33, 0.42, 0.18, 0.33, 0.42, 0.18, 0.78, 0.72, 0.42);
+    cols.push(...blade[0], ...blade[0], ...blade[1]);
   }
   const bg = new THREE.BufferGeometry();
   bg.setAttribute('position', new THREE.Float32BufferAttribute(blades, 3)); bg.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3)); bg.computeVertexNormals();
@@ -418,7 +418,7 @@ function roadside(B, circuit) {
   tufts.forEach(([x, y, z, s, v], i) => {
     q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), v * 6.28);
     mt.compose(p.set(x, y, z), q, sc.set(s, s * (0.8 + v * 0.5), s)); tuft.setMatrixAt(i, mt);
-    tuft.setColorAt(i, c.setHSL(0.15 + v * 0.08, 0.35, 0.75 + v * 0.25));
+    tuft.setColorAt(i, c.setHSL(tuftCol[0] + v * 0.08, tuftCol[1], tuftCol[2] + v * 0.25));
   });
   B.scene.add(tuft);
 }

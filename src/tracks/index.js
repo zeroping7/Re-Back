@@ -8,10 +8,11 @@ import parque from './parque.js';
 import cocina from './cocina.js';
 import garaje from './garaje.js';
 import senda from './senda.js';
+import volcan from './volcan.js';
 
 // TRACKS = circuitos de Carrera (estrellas, coche secreto…). Los de Drift y Obstáculos llevan `disc` (DIS-02).
 export const TRACKS = [salon, superm, jardin, museo, muelle, parque];
-export const ALL_TRACKS = [...TRACKS, cocina, garaje, senda];
+export const ALL_TRACKS = [...TRACKS, cocina, garaje, senda, volcan];
 export const tracksFor = (disc) => ALL_TRACKS.filter((t) => (t.disc || 'race') === disc);
 export const trackById = (id) => ALL_TRACKS.find((t) => t.id === String(id).split(':')[0]) || TRACKS[0]; // CRW-26: admite 'senda:rev'
 
@@ -34,5 +35,6 @@ export function trackFromKey(key = 'salon') {
   const base = trackById(id);
   if (v === 'normal') return base;
   const V = VARIANTS.find((x) => x.id === v) || VARIANTS[0];
-  return { ...base, key: `${base.id}:${V.id}`, variant: V.id, reverse: V.id === 'rev', mirror: V.id === 'mirror', name: V.id === 'rev' && base.revName ? base.revName : `${base.name}${V.short}`, short: V.id === 'rev' && base.revShort ? base.revShort : `${base.short}${V.short}` };
+  return { ...base, key: `${base.id}:${V.id}`, variant: V.id, reverse: V.id === 'rev', mirror: V.id === 'mirror', name: V.id === 'rev' && base.revName ? base.revName : `${base.name}${V.short}`, short: V.id === 'rev' && base.revShort ? base.revShort : `${base.short}${V.short}`,
+    ...(V.id === 'rev' && base.revMedals ? { medals: base.revMedals } : {}) }; // CRW-30: la bajada puede tener sus propios tiempos de medalla
 }

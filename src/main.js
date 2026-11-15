@@ -591,7 +591,7 @@ async function init() {
       const value = drift ? me.score : me.time, lvl = medalLevel(def, value), got = awardMedal(def.key || def.id, lvl);
       reward = got.reward;
       title = lvl ? `${MEDALS[lvl - 1].icon} ¡Medalla de ${MEDALS[lvl - 1].name.toLowerCase()}!${got.isNew ? '' : ' (repetida)'}` : 'Sin medalla… ¡otra vez!';
-    } else reward = raceReward(me.place, res.length, cfg.battle ? 2 : cfg.laps, cfg.diff, def.disc || 'race'); // ECO-02 (la Batalla paga como 2 vueltas)
+    } else reward = Math.round(raceReward(me.place, res.length, cfg.battle ? 2 : cfg.laps, cfg.diff, def.disc || 'race') * (def.payK ?? 1) / 10) * 10; // ECO-02 (la Batalla paga como 2 vueltas; payK: circuitos mucho más largos, ECO-16)
     $('res-title').textContent = title;
     $('res-table').innerHTML = res.map((r) => `<tr class="${r.player ? 'me' : ''}"><td>${cfg.solo ? '' : r.place + 'º'}</td><td><span class="dot" style="background:${r.color}"></span>${r.name}</td>` +
       (drift ? `<td class="pts">${fmtPts(r.score)} pts</td>` : `<td>${r.finished ? fmtTime(r.time) : '—'}</td>`) +
