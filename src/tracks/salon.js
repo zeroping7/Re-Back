@@ -88,13 +88,11 @@ function build(B) {
     width: 7,
     limits: [ROOM.x - 1, ROOM.z - 1],
     hills: [
-      { frac: 0.82, len: 30, h: 1.6 },
+      { frac: 0.82, len: 65, h: 1.6 },
       { frac: 0.145, len: 22, h: 1.2 },
-      { frac: 0.5, len: 100, h: 4 },
-      { frac: 0.55, len: 100, h: 3 },
-      { frac: 0.6, len: 100, h: 3 },
+      { frac: 0.5, len: 180, h: 4 },
     ],
-    ramps: [{ frac: 0.07, len: 9, h: 1.8 }],
+    ramps: [{ frac: 0.07, len: 9, h: 1.5 }],
     hillMaterial: floorMat,
     rampMaterial: floorMat, // mismo parqué que el suelo (UV de mundo)
     groundUV,
@@ -111,7 +109,7 @@ function build(B) {
   const onTrack = (x, z, along = 0, lat = 0) => { const s = circuit.sampleNear(x, z); return s.p.clone().addScaledVector(s.t, along).addScaledVector(s.n, lat * circuit.width / 2); };
   const zones = [];
   // turbos fijos (colocados con el visor de circuitos)
-  for (const at of [[39, -37], [6, 14]]) zones.push(trackPatch(B, circuit, at, 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
+  for (const at of [[39, -37], [6, 14], [-3, 39], [0, 12]]) zones.push(trackPatch(B, circuit, at, 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
   // bolos para derribar
   {
     const s = samples[circuit.at(0.27)];
