@@ -111,3 +111,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 97 | Enlace web con dinero infinito para probar todo; darlo siempre junto a la web normal y el APK en cada versión | PLA-10 ✅ |
 | 98 | Sensibilidad de la dirección relativa a la velocidad: estable a alta velocidad y ágil en lento, en circuito, batalla y drift, teniendo en cuenta la Sensibilidad elegida | FIS-45 ✅ |
 | 99 | Más grados de giro de las ruedas en parado en coches de circuito | FIS-46 ✅ |
+| 100 | Comportamiento coherente con ids de circuito desconocidos y quitar restos de El escritorio y El fregadero | PLA-11, CRW-07 ✅ |

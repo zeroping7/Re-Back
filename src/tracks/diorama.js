@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mulberry } from './kit.js';
+import { mulberry } from './rng.js';
 import { ROCK } from './crawlkit.js';
 import { groundTex } from '../textures.js';
 

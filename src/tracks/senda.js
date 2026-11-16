@@ -3,7 +3,7 @@ import { groundTex, wallpaperTexture } from '../textures.js';
 import { buildCircuit, trackRibbon, bannerTexture } from './common.js';
 import { crawlKit, LEN } from './crawlkit.js';
 import { rockWalls, rockGeometry, rockMaterial, rockTextures } from './diorama.js';
-import { mulberry } from './kit.js';
+import { mulberry } from './rng.js';
 
 // Circuito 1 de Obstáculos · "La maqueta": maqueta de una montaña sobre la mesa de un taller de modelismo (CRW-22).
 // Un solo camino estrecho de A (abajo) a B (arriba) en cuesta, con nueve obstáculos obligatorios que ocupan todo el ancho.

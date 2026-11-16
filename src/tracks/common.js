@@ -104,28 +104,7 @@ export function createBuilder(scene, world, RAPIER, S = 1, { mirror = false, rev
   const dynCyl = (r, h, x, y, z, material, o) => dyn(new THREE.CylinderGeometry(r, r, h, 12), material, RAPIER.ColliderDesc.cylinder(h / 2 * S, r * S), x, y, z, o);
   const dynBall = (r, x, y, z, material, o) => dyn(new THREE.IcosahedronGeometry(r, 1), material, RAPIER.ColliderDesc.ball(r * S), x, y, z, o);
 
-  // Obstáculo móvil (OBS-01): cuerpo cinemático que empuja a los coches; las ruedas no lo pisan.
-  // desc en unidades del mundo (ya escalado); set() en unidades de diseño.
-  const _kq = new THREE.Quaternion(), _ky = new THREE.Vector3(0, 1, 0);
-  function kin(mesh, desc, { groups = PROP_GROUPS, friction = 0.3, restitution = 0.5 } = {}) {
-    mesh.traverse((o) => { o.userData.dynamic = true; if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-    scene.add(mesh);
-    const body = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased());
-    desc.setFriction(friction).setRestitution(restitution).setCollisionGroups(groups);
-    world.createCollider(desc, body);
-    dynamics.push({ body, mesh });
-    return {
-      body, mesh,
-      set(x, y, z, ry = 0, init = false) {
-        _kq.setFromAxisAngle(_ky, ry);
-        const t = { x: x * S * MX, y: y * S, z: z * S };
-        const r = mirror ? { x: _kq.x, y: -_kq.y, z: -_kq.z, w: _kq.w } : { x: _kq.x, y: _kq.y, z: _kq.z, w: _kq.w };
-        if (init) { body.setTranslation(t, true); body.setRotation(r, true); } else { body.setNextKinematicTranslation(t); body.setNextKinematicRotation(r); }
-      },
-    };
-  }
-
-  return { scene, world, RAPIER, fixed, collider, box, cyl, ball, wall, mat, S, MX, dynamics, dynBox, dynCyl, dynBall, dyn, kin, mirror, reverse };
+  return { scene, world, RAPIER, fixed, collider, box, cyl, ball, wall, mat, S, MX, dynamics, dynBox, dynCyl, dynBall, dyn, mirror, reverse };
 }
 
 // Construye el trazado: muestras, bordes, línea de salida, parrilla y utilidades

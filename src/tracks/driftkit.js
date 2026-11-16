@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { room, mat, BARRIER_GROUPS, trackRibbon, bannerTexture } from './common.js';
-import { mulberry } from './kit.js';
+import { mulberry } from './rng.js';
 import { fillTextM } from '../textures.js';
 
 // Pista de drift RC de verdad (DRI-09): suelo de losetas de plástico, pista pintada con líneas y goma,

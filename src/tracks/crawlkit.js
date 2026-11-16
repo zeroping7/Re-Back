@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { rockTextures } from './diorama.js';
 import { mat, trackPatch, bannerTexture } from './common.js';
-import { mulberry } from './kit.js';
+import { mulberry } from './rng.js';
 import { groundTex, surfaceTex } from '../textures.js';
 
 // Piezas del parque de crawlers (CRW-02, CRW-10). Todo en unidades de diseño (el mundo es ×2).

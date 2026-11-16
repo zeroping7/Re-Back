@@ -33,6 +33,7 @@
 | PLA-04 | Firma fija para actualizar sin desinstalar | ✅ |
 | PLA-05 | **Icono** original: buggy Rayo rojo saltando sobre rayos naranjas con el título "RE-BACK" en amarillo; adaptativo (fondo y primer plano en `mipmap-*`, contenido dentro de la zona segura para máscaras redonda y cuadrada), `ic_launcher`, `ic_launcher_round` y `public/icon.png` (1024 px, favicon de la web) | ✅ |
 | PLA-10 | **Enlace de pruebas con dinero infinito** (petición #97): `…/Re-Back/?rico=<clave>`; **la clave NO está en el repo** (solo su huella en `profile.js`): está en el doc privado del Proyecto «enlace-pruebas». Sin la clave correcta `?rico` no hace nada. Dinero fijo en 9.999.999 (comprar no lo gasta), todas las copas y disciplinas abiertas, coches iniciales y el secreto. Usa una partida aparte (`reback.profile.dev`), así que **no toca la partida real**. Solo en la web (el APK no lo tiene). El título de la pestaña muestra 🧪. Criterio: con `?rico` el dinero no baja al comprar y la partida normal queda intacta (`node tests/rico.mjs`) | ✅ |
+| PLA-11 | **Id de circuito desconocido** (petición #100): `trackById(id, disc)` y `trackFromKey(key, disc)` cargan el **primer circuito de la disciplina** (Carrera: El salón; Drift: El club de drift; Obstáculos: La maqueta), igual que el menú cuando el circuito guardado ya no existe. Se borra el código sin uso de los circuitos antiguos de Obstáculos. Criterio: `trackById('x','obst').id === 'senda'`, build sin errores y `racesim` termina | ✅ |
 
 ## Rendimiento
 

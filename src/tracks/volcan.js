@@ -4,7 +4,7 @@ import { buildCircuit, trackRibbon, bannerTexture } from './common.js';
 import { crawlKit, LEN } from './crawlkit.js';
 import { rockWalls, rockTextures } from './diorama.js';
 import { workshop, backdrop, roadside, detailTexture } from './senda.js';
-import { mulberry } from './kit.js';
+import { mulberry } from './rng.js';
 
 // Circuito 2 de Obstáculos · "El volcán" (CRW-30): maqueta de un volcán en el mismo taller de modelismo.
 // Tramo de A (abajo) a B (junto al cráter) a 18°, con doce obstáculos y una curva entre cada dos:

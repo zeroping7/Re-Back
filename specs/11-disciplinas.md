@@ -45,19 +45,19 @@ Las monedas y el garaje son comunes. Código: `src/disciplines.js`.
 
 | ID | Requisito | Estado |
 |---|---|---|
-| OBS-01 | Recorridos estrechos con obstáculos: **rampas-libro**, **puente de reglas** sin bordes, **eslalon** de lápices/botes, **barreras que van y vienen**, **barras giratorias**, **ventilador** y **cascada** que empujan de lado | ✅ |
+| OBS-01 | ~~Recorridos con barreras móviles~~ — sustituido por el crawler park (CRW) | ❌ Retirado |
 | OBS-02 | Si te caes o te sales, el coche vuelve a la pista en el último punto (más rápido que en Carrera: 0,9 s fuera) | ✅ |
 | OBS-03 | Modos: **Contrarreloj** (solo, 1 vuelta = recorrido completo, medallas por tiempo, fantasma de tu mejor vuelta) y **Carrera** (rivales a la vez, 2 vueltas) | ✅ |
 | OBS-04 | La IA esquiva los obstáculos (fijos y móviles) cambiando de carril y frena antes de los estrechos | ✅ |
-| OBS-05 | Los obstáculos móviles son deterministas (dependen del tiempo de carrera) para que el fantasma y la repetición coincidan | ✅ |
-| OBS-06 | Circuitos: **El escritorio** (libros, reglas, lápices, ventilador) y **El fregadero** (cascada del grifo, esponjas, pastillas de jabón resbaladizas, patitos) | ✅ |
+| OBS-05 | ~~Obstáculos móviles deterministas~~ — ya no hay obstáculos móviles | ❌ Retirado |
+| OBS-06 | ~~Circuitos antiguos de Obstáculos~~ — sustituidos por La maqueta y El volcán | ❌ Retirado |
 
 Nota de diseño: los recorridos son **circuitos cerrados** (salida y meta en el mismo sitio), no de A a B,
 para reutilizar vueltas, minimapa, IA, recolocación y variantes al revés/espejo.
 
 ## Obstáculos 2.0: crawler park (aprobado, 📝 pendiente)
 
-Lo de arriba (OBS-01..06: escritorio y fregadero con barreras móviles) **se sustituye** por un *crawler park*
+Lo de arriba (OBS-01, 05 y 06, retirados) **se sustituye** por un *crawler park*
 como en las fotos de referencia del usuario: todoterrenos lentos y precisos superando obstáculos de madera,
 troncos y roca. Decidido el 10-11-2026.
 
@@ -69,7 +69,7 @@ troncos y roca. Decidido el 10-11-2026.
 | CRW-04 | **Rivales a elegir** antes de empezar: fantasmas a la vez (no chocan), por turnos (cada uno su recorrido, se comparan resultados) o todos juntos chocando | 🚧 Por ahora: fantasmas (los coches no chocan entre sí en Obstáculos; falta el selector) |
 | CRW-05 | **Escenarios**: tapete de tierra y césped en interior (piezas de madera), jardín exterior (tierra, arena, troncos, rocas, musgo) y montaje de feria en centro comercial (montaña de roca, puentes, pista alrededor) | 📝 |
 | CRW-06 | Coches de Obstáculos rehechos como **crawlers** estrechos y altos (todoterrenos de escala con baca, faros, rueda de repuesto) | ✅ Modelos propios: Cabra (jeep abierto con barra y repuesto), Oruga (crawler ancho con cabrestante), Yeti (cabina alta, focos y cuernos), Morsa (colmillos y caja volquete); Tanque conserva el monster truck |
-| CRW-07 | Se quitan los circuitos El escritorio y El fregadero (hecho; `kit.js` aún conserva sus piezas sin uso) | ✅ |
+| CRW-07 | Se quitan los circuitos antiguos de Obstáculos y su código (piezas móviles de `kit.js` y `kin()` de `common.js`; `mulberry` pasa a `src/tracks/rng.js`) | ✅ |
 | CRW-09 | **Circuito 1 · La maqueta** (`senda`): diorama sobre mesa (cortinas azules con luna al fondo, tapete de césped, montaña de roca en el centro, pinos y cinta de balizar). **Un solo camino estrecho** (2,6 u, ~4 coches de ancho) con muros de roca a los dos lados: no hay forma de esquivar los obstáculos, todos ocupan el ancho completo | ✅ |
 | CRW-10 | **Obstáculos de La maqueta**, en este orden: 1 escalones de madera · 2 pila de troncos sueltos · 3 rampa doble de troncos · 4 puente de troncos cubierto (dos raíles) · 5 banco de arena · 6 vado de agua con rocas · 7 cuesta de roca · 8 jardín de rocas · 9 puente tibetano de tablillas sin barandilla. Orden y números vigentes tras CRW-13 (vuelta de IA ≈ 145 s; medallas 220/180/150 s) | ✅ |
 | CRW-11 | **Puertas numeradas**: cada obstáculo empieza con una puerta (dos postes con bandera y número). Al cruzarla el marcador avisa «Obstáculo n/N». Si vuelcas, te caes o te sales **reapareces en la puerta del obstáculo en el que estabas** (no donde caíste) | ✅ |
@@ -109,7 +109,7 @@ troncos y roca. Decidido el 10-11-2026.
 |---|---|---|
 | DEC-01 | **Medallas** en los modos en solitario: bronce 300 🪙, plata 600, oro 1.000 la primera vez que se consigue cada una; repetir sin mejorar da 60 / 150 / 250 según la medalla lograda en ese intento | ✅ |
 | DEC-02 | Duelo de Drift y Carrera de Obstáculos pagan como una carrera normal (ECO-02) | ✅ |
-| DEC-03 | **Copa Derrape** (cocina → garaje → cocina al revés) y **Copa Obstáculos** (escritorio → fregadero → escritorio al revés): 3 pruebas con puntos, premio 4.000 | ✅ |
+| DEC-03 | **Copa Derrape** (cocina → garaje → cocina al revés) y **Copa Obstáculos** (La maqueta → La maqueta bajada): pruebas con puntos, premio 2.500 (Copa Derrape también 2.500) | ✅ |
 
 ## Medallas (valores actuales)
 
@@ -117,8 +117,8 @@ troncos y roca. Decidido el 10-11-2026.
 |---|---|---|---|---|
 | El club de drift | 2.000 pts | 4.500 | 8.000 | ~3.000 pts |
 | El garaje nocturno | 2.000 pts | 4.500 | 8.000 | ~3.600 pts |
-| El escritorio | 1:22 | 1:10 | 1:01 | 1:00 |
-| El fregadero | 1:22 | 1:10 | 1:01 | 1:00 |
+| La maqueta | 5:00 | 4:00 | 3:20 | — |
+| El volcán | 8:40 | 7:00 | 5:50 | — |
 
 **Calibración pendiente**: estos umbrales y el tacto del derrape salen de simulaciones con la IA
 (`node tests/racesim.mjs`, `tests/driftprobe.mjs`), no de partidas reales: hay que ajustarlos con lo que
@@ -126,7 +126,7 @@ cuente el usuario al probar en el móvil.
 
 ## Pruebas
 
-- `node tests/racesim.mjs <cocina|garaje> 3 2 patin` y `<escritorio|fregadero> 3 2 cabra` (también `:rev` y `:mirror`): todos terminan.
+- `node tests/racesim.mjs <cocina|garaje> 3 2 patin` y `<senda|volcan> 3 1 cabra` (también `:rev`; El volcán con `TMAX=1200`): todos terminan.
 - `node tests/overlap.mjs <circuito>`: el trazado no se pisa y lista las curvas más cerradas.
 - `node tests/driftprobe.mjs cocina patin <gas|half|straight>`: ángulo, velocidad y radio del derrape.
 - `node tests/disc.mjs` (Chrome headless): selector, preparación, garaje por pestañas, carreras y resultados. `?fast=N` acelera la carrera en modo prueba.

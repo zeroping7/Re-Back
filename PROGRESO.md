@@ -210,9 +210,8 @@ Desde el garaje abierto por «Más coches», «Usar este» y «←» devuelven a
   Circuitos (pistas de drift RC reales, compactas y estrechas, con zonas de clip, conos, tarima de pilotos y boxes):
   El club de drift y El garaje nocturno. Coches (turismos de drift rebajados, salida patinando): Patín, Humo, Trompo,
   Bisonte y Katana (+ Bólido, Flecha y Saeta).
-- **Obstáculos**: rampas-libro, puentes sin bordes, eslalon, barreras que van y vienen, barras giratorias, ventilador, cascadas,
-  badenes y jabón. Modos Contrarreloj (solo, medallas y fantasma), Carrera y Copa Obstáculos.
-  Circuitos: El escritorio y El fregadero. Coches: Cabra, Oruga, Yeti (+ Tanque, Morsa y Rally).
+- **Obstáculos** (crawler park): Modos Contrarreloj (solo, medallas y fantasma), Carrera y Copa Obstáculos.
+  Circuitos: La maqueta y El volcán. Coches: Cabra, Oruga, Yeti (+ Tanque, Morsa y Rally).
 - Garaje con pestañas por disciplina; cada disciplina recuerda su coche.
 - **Pendiente de ajustar con pruebas reales**: tacto del derrape, puntos y tiempos de las medallas (salen de simulaciones con la IA).
 
