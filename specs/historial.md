@@ -103,3 +103,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 89 | Cambiar la UI: la Batalla de la Estrella dentro de Jugar, y el botón Jugar pasa a llamarse «Carrera» | UX-32 ✅ |
 | 90 | Botón «Online» debajo de Carrera, deshabilitado por ahora | UX-33 ✅ |
 | 91 | Poder cambiar el color del coche con un selector de toda la gama, guardado y para todos los coches | COC-25 ✅ |
+| 92 | Poder cambiar también el color de las llantas | COC-25 ✅ |

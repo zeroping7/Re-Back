@@ -33,7 +33,14 @@ await page.click('.paint-head'); await sleep(300);
 await page.evaluate(() => document.querySelector('.cp-reset').click()); await sleep(300);
 const d = await paint();
 console.log(sel, 'rápido', a, 'tono', b, 'tras recargar', c, 'tras reset', d, 'ERRORS', errors.join('\n') || 'ninguno');
-const ok = Object.values(a)[0] === '#e53935' && Object.values(b)[0] !== '#e53935' && JSON.stringify(b) === JSON.stringify(c) && !Object.keys(d).length;
+// llantas: pestaña Llantas, color rápido, se guarda aparte
+
+await page.evaluate(() => [...document.querySelectorAll('.cp-tabs button')][1].click()); await sleep(200);
+await page.evaluate(() => document.querySelectorAll('.cp-q button')[2].click()); await sleep(400);
+const rims = await page.evaluate(() => JSON.parse(localStorage.getItem('reback.profile.v2')).rims);
+await page.screenshot({ path: 'tests/shots/paint-rim.png' });
+console.log('llantas', rims);
+const ok = Object.values(rims)[0] === '#ffd400' && Object.values(a)[0] === '#e53935' && Object.values(b)[0] !== '#e53935' && JSON.stringify(b) === JSON.stringify(c) && !Object.keys(d).length;
 console.log(ok ? '✓ OK' : '✗ FALLA');
 await browser.close();
 process.exit(ok ? 0 : 1);

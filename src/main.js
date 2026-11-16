@@ -10,7 +10,7 @@ import { CARS, carById, UPGRADES, MAX_LEVEL, carTuning, tractionName, carNeeds, 
 import { carStats } from './carstats.js';
 import {
   profile, isOwned, upgradesOf, ownedUpgrades, installedLevel, stepUpgrade, upgradeCost, sellValue, buyCar, sellCar, buyUpgrade, selectCar, raceReward, addMoney,
-  onProfileChange, carColor, setCarColor, setCupResult, firstWin, takeStar, STAR_PRIZE, checkSecret, starsGot, useDisc, grantStarters, awardMedal,
+  onProfileChange, carColor, setCarColor, carRim, setCarRim, rimDefault, setCupResult, firstWin, takeStar, STAR_PRIZE, checkSecret, starsGot, useDisc, grantStarters, awardMedal,
 } from './profile.js';
 import { CUPS, cupById, cupUnlocked, cupPrize, cupPayout, addPoints, standings, POINTS, cupsFor } from './cups.js';
 import { createColorPicker } from './colorpicker.js';
@@ -374,22 +374,30 @@ async function init() {
     return [['Velocidad', st.vel], ['Aceleración', st.acel], ['Manejo', st.manejo]];
   };
   // COC-25: color del coche (selector plegable; los cambios no reconstruyen el garaje para no cortar el arrastre)
-  let paintOpen = false, paintT = 0;
+  let paintOpen = false, paintPart = 'body', paintT = 0;
   function buildPaint(d, own) {
     const box = $('g-paint'); box.innerHTML = '';
-    if (!own || d.secret && !own) return;
+    if (!own) return;
+    const cur = () => (paintPart === 'rim' ? carRim(d) || rimDefault(d) : carColor(d));
     const head = document.createElement('button'); head.className = 'paint-head';
     const sw = document.createElement('i'); sw.style.background = carColor(d);
-    head.append(sw, document.createTextNode(paintOpen ? '🎨 Color del coche ▴' : '🎨 Color del coche ▾'));
+    const sw2 = document.createElement('i'); sw2.style.background = carRim(d) || rimDefault(d);
+    head.append(sw, sw2, document.createTextNode(paintOpen ? '🎨 Colores ▴' : '🎨 Colores del coche ▾'));
     head.onclick = () => { sfx.play('click'); paintOpen = !paintOpen; buildPaint(d, own); };
     box.append(head);
     if (!paintOpen) return;
+    const seg = document.createElement('div'); seg.className = 'seg cp-tabs';
+    for (const [k, t] of [['body', 'Carrocería'], ['rim', 'Llantas']]) {
+      const b = document.createElement('button'); b.textContent = t; b.classList.toggle('sel', paintPart === k);
+      b.onclick = () => { sfx.play('click'); paintPart = k; buildPaint(d, own); };
+      seg.append(b);
+    }
     const apply = (hex) => {
-      if (hex) setCarColor(d.id, hex); else setCarColor(d.id, null);
-      sw.style.background = carColor(d);
+      if (paintPart === 'rim') setCarRim(d.id, hex); else setCarColor(d.id, hex);
+      sw.style.background = carColor(d); sw2.style.background = carRim(d) || rimDefault(d);
       clearTimeout(paintT); paintT = setTimeout(() => room.showCar(d.id, true), 90); // reconstruye el modelo sin saturar al arrastrar
     };
-    box.append(createColorPicker({ value: carColor(d), onChange: apply, onReset: () => { apply(null); buildPaint(d, own); } }));
+    box.append(seg, createColorPicker({ value: cur(), onChange: apply, onReset: () => { apply(null); buildPaint(d, own); } }));
     box.scrollIntoView({ block: 'nearest' });
   }
   function buildGarage() {

@@ -11,7 +11,7 @@ import { updateExhaust } from './exhaust.js';
 import { setupBattle, battleStep, battlePlaces, battleRender, dropStar, BattleDriver } from './battle.js';
 import { discTuning, carAllowed, fmtPts } from './disciplines.js';
 import { loadGhost, saveGhost, ghostModel, poseAt, poseLerp, ReplayRecorder, Director, GHOST_HZ } from './replay.js';
-import { carColor } from './profile.js';
+import { carColor, carRim } from './profile.js';
 import { setMirrorText } from './textures.js';
 
 export const FIXED = 1 / 60;
@@ -85,8 +85,9 @@ export class Race {
       const def = isPlayer ? carDef : rivalDefs[i % rivalDefs.length];
       const skill = isPlayer ? 1 : difficulty * (0.95 + 0.05 * (i / Math.max(1, total - 1)));
       const tuning = discTuning(isPlayer ? carTuning(baseTuning, def, 1, carUpgrades) : carTuning(baseTuningDefaults(baseTuning), def, skill), disc);
+      const rim = isPlayer ? carRim(def) : undefined;
       const color = isPlayer ? carColor(def) : RIVAL_COLORS[i % RIVAL_COLORS.length];
-      const car = new Car(scene, this.world, RAPIER, def, tuning, { color, index: i, name: isPlayer ? 'Tú' : RIVAL_NAMES[i % RIVAL_NAMES.length] });
+      const car = new Car(scene, this.world, RAPIER, def, tuning, { color, rim, index: i, name: isPlayer ? 'Tú' : RIVAL_NAMES[i % RIVAL_NAMES.length] });
       const slot = this.circuit.gridSlot(i);
       car.reset(slot.pos, slot.yaw);
       car.isPlayer = isPlayer;
@@ -646,7 +647,7 @@ export class Race {
   results() {
     return this.order.map((car) => {
       const st = this.state(car);
-      return { name: car.name, color: car.color, def: car.def.id, player: car.isPlayer, place: st.place, finished: st.finished, time: st.finishTime, best: st.bestLap, laps: st.laps, score: st.final ?? st.score };
+      return { name: car.name, color: car.color, rim: car.rim, def: car.def.id, player: car.isPlayer, place: st.place, finished: st.finished, time: st.finishTime, best: st.bestLap, laps: st.laps, score: st.final ?? st.score };
     });
   }
 

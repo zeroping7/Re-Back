@@ -478,6 +478,7 @@ body.pad-mode #steer-bar, body.pad-mode #steer-float { display: none !important;
 /* COC-25: selector de color del coche */
 #g-paint { margin: 2px 0 6px; }
 .paint-head { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border-radius: 12px; background: #ffffff1c; font-weight: 800; font-size: 14px; text-align: left; }
+.cp-tabs { margin-top: 6px; }
 .paint-head i { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; flex: none; }
 .cp { margin-top: 6px; padding: 8px; border-radius: 12px; background: #0000004d; display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px; }
 .cp-l, .cp-r { display: flex; flex-direction: column; gap: 8px; }

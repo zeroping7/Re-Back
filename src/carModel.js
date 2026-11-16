@@ -245,7 +245,7 @@ if (uDirt > 0.002) {
   };
 }
 
-export function buildCarModel(def, color, WHEELS, CONN_Y) {
+export function buildCarModel(def, color, WHEELS, CONN_Y, rim) {
   const WHEEL_R = def.wheelR;
   const g = new THREE.Group();
   const paint = mats(color, def.number || '7', def.pattern || 'stripes');
@@ -429,7 +429,7 @@ export function buildCarModel(def, color, WHEELS, CONN_Y) {
   for (const w of WHEELS) {
     const pivot = new THREE.Group();
     const spin = new THREE.Group();
-    const wheel = new THREE.Mesh(wheelGeometry(WHEEL_R, w.x > 0 ? 1 : -1, !!(def.slickWheels ?? S.slick), def.rimColor, def.spokes), M.wheel);
+    const wheel = new THREE.Mesh(wheelGeometry(WHEEL_R, w.x > 0 ? 1 : -1, !!(def.slickWheels ?? S.slick), rim || def.rimColor, def.spokes), M.wheel);
     wheel.castShadow = true; wheel.receiveShadow = true;
     spin.add(wheel);
     pivot.add(spin);

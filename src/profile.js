@@ -27,6 +27,7 @@ profile.medals ??= {}; // mejor medalla por circuito en los modos en solitario (
 profile.wins ??= {}; // primeras victorias cobradas por circuito y dificultad (ECO-13)
 profile.granted ??= {}; // disciplinas cuyo coche básico ya se regaló (DIS-04)
 
+profile.rims ??= {}; // COC-25: color de llantas por coche
 profile.paint ??= {}; // COC-25: color elegido por coche (#rrggbb); si falta, el de fábrica
 profile.inst ??= {}; // niveles montados por coche y mejora (si falta, todos los comprados)
 if (profile.off) { // migración de la versión anterior (mejora entera quitada)
@@ -44,6 +45,13 @@ export function saveProfile() {
 export const carColor = (def) => profile.paint?.[def.id] || def.color;
 export function setCarColor(id, hex) {
   if (hex && /^#[0-9a-f]{6}$/i.test(hex)) profile.paint[id] = hex.toLowerCase(); else delete profile.paint[id];
+  saveProfile();
+}
+
+export const carRim = (def) => profile.rims?.[def.id]; // undefined = las de fábrica
+export const rimDefault = (def) => def.rimColor || '#eeeeee';
+export function setCarRim(id, hex) {
+  if (hex && /^#[0-9a-f]{6}$/i.test(hex)) profile.rims[id] = hex.toLowerCase(); else delete profile.rims[id];
   saveProfile();
 }
 

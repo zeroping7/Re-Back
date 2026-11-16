@@ -26,11 +26,11 @@ const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q = new THREE.Quater
 const UP = new THREE.Vector3(0, 1, 0);
 
 export class Car {
-  constructor(scene, world, RAPIER, def, tuning, { color = def.color, index = 0, name = def.name } = {}) {
+  constructor(scene, world, RAPIER, def, tuning, { color = def.color, rim, index = 0, name = def.name } = {}) {
     this.world = world; this.RAPIER = RAPIER; this.t = tuning; this.def = def;
     this.mass = def.mass ?? MASS;
     this.massK = this.mass / MASS;
-    this.index = index; this.name = name; this.color = color;
+    this.index = index; this.name = name; this.color = color; this.rim = rim;
     const WHEELS = (this.W = wheelsFor(def));
     this.R = def.wheelR;
     // efectos de objetos (segundos restantes)
@@ -81,7 +81,7 @@ export class Car {
     this.applyTuning();
 
     // ----- Modelo low-poly -----
-    this.model = buildCarModel(def, color, WHEELS, CONN_Y);
+    this.model = buildCarModel(def, color, WHEELS, CONN_Y, rim);
     this.hubY = [0, 0, 0, 0];
     this.wheelMeshes = this.model.userData.wheels;
     scene.add(this.model);

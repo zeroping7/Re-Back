@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { carColor } from './profile.js';
+import { carColor, carRim } from './profile.js';
 import { buildCarModel } from './carModel.js';
 import { carById } from './cars.js';
 import { groundTex, canTexture } from './textures.js';
@@ -167,7 +167,7 @@ export class Showroom {
     this.spinT0 = this.t; // cada coche nuevo empieza girando desde el frente 3/4
     this.turntable.children.forEach(disposeTree);
     this.turntable.clear();
-    this.turntable.add(carOnStand(carById(id), carColor(carById(id))));
+    this.turntable.add(carOnStand(carById(id), carColor(carById(id)), carRim(carById(id))));
   }
 
   // Los tres primeros de la copa: [{ def, color }]
@@ -175,7 +175,7 @@ export class Showroom {
     this.podiumCars.children.forEach(disposeTree);
     this.podiumCars.clear();
     top3.slice(0, 3).forEach((e, i) => {
-      const def = carById(e.def), m = carOnStand(def, e.color);
+      const def = carById(e.def), m = carOnStand(def, e.color, e.rim);
       const s = this.podiumSlots[i];
       m.position.x = s.x; m.position.y += s.y + 0.5;
       m.rotation.y = i === 0 ? 0 : i === 1 ? 0.35 : -0.35;
@@ -230,12 +230,12 @@ function disposeTree(o) {
   });
 }
 
-export function carOnStand(def, color) {
+export function carOnStand(def, color, rim) {
   const W = [
     { x: def.wheelX, z: def.wheelZf, front: true }, { x: -def.wheelX, z: def.wheelZf, front: true },
     { x: def.wheelX, z: def.wheelZr, front: false }, { x: -def.wheelX, z: def.wheelZr, front: false },
   ];
-  const m = buildCarModel(def, color, W, -0.02);
+  const m = buildCarModel(def, color, W, -0.02, rim);
   const hubY = -0.02 - 0.22;
   m.userData.wheels.forEach((w) => { w.position.y = hubY; });
   m.userData.updateSuspension([hubY, hubY, hubY, hubY]);
