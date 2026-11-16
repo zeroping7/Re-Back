@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { surfaceTex, rugTexture, wallpaperTexture, canTexture, groundTex } from '../textures.js';
+import { rugTexture, wallpaperTexture, canTexture, groundTex } from '../textures.js';
 import { buildCircuit, mat, BARRIER_GROUPS, trackPatch, chevronTexture } from './common.js';
 
 // Circuito 1: "El salón". Escala de juguete: 1 unidad ≈ 22 cm.
@@ -90,7 +90,7 @@ function build(B) {
     hills: [
       { frac: 0.82, len: 30, h: 1.6 },
       { frac: 0.145, len: 22, h: 1.2 },
-      { frac: 0.5, len: 100, h: 3 },
+      { frac: 0.5, len: 100, h: 4 },
       { frac: 0.55, len: 100, h: 3 },
       { frac: 0.6, len: 100, h: 3 },
     ],
@@ -110,13 +110,6 @@ function build(B) {
   // punto relativo a la pista: avance y desplazamiento lateral (fracción del ancho)
   const onTrack = (x, z, along = 0, lat = 0) => { const s = circuit.sampleNear(x, z); return s.p.clone().addScaledVector(s.t, along).addScaledVector(s.n, lat * circuit.width / 2); };
   const zones = [];
-  // suelo recién encerado (derrapa) y flechas de turbo
-  const wax = surfaceTex('wax', [1, 3]);
-  const curvy = (f0, f1) => { let best = circuit.at(f0), br = Infinity; for (let f = f0; f < f1; f += 0.005) { const i = circuit.at(f); const r = circuit.minRadius(i, 3, 3); if (r < br) { br = r; best = i; } } return samples[best].p; };
-  for (const [f0, f1] of [[0.6, 0.72], [0.9, 0.98]]) {
-    const p = curvy(f0, f1);
-    zones.push(trackPatch(B, circuit, [p.x, p.z], 18, 'slide', { ...wax, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0.1, surface: 'wax', envMapIntensity: 0.8, specularIntensity: 0.35 }));
-  }
   // turbos fijos (colocados con el visor de circuitos)
   for (const at of [[39, -37], [6, 14]]) zones.push(trackPatch(B, circuit, at, 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
   // bolos para derribar
@@ -340,7 +333,7 @@ function build(B) {
   return {
     circuit,
     bounds: { x: ROOM.x - 1.5, z: ROOM.z - 1.5, h: ROOM.h - 1 },
-    itemSpots: [0.338, 0.624],
+    itemSpots: [0.338, 0.621],
     zones,
     update: (t) => { for (const f of anim) f(t); },
     lights: {
