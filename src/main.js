@@ -109,8 +109,6 @@ async function init() {
     if (VIEW[id]) { room.setView(VIEW[id]); room.showCar(id === 'm-garage' ? (gSel ||= profile.selected) : profile.selected); }
     if (id === 'm-garage') buildGarage();
     if (id === 'm-disc') buildDiscs();
-    $('btn-dtune').classList.toggle('hidden', disc !== 'drift');
-    $('btn-dtune-setup').classList.toggle('hidden', disc !== 'drift' || mode === 'battle');
   }
   let garageReturn = null; // pantalla de origen si el garaje se abrió desde "Más coches" (UX-21)
   const leaveGarage = () => { const r = garageReturn; garageReturn = null; if (r) { r.rebuild(); showScreen(r.screen); } else showScreen('m-main'); };
@@ -577,8 +575,6 @@ async function init() {
     $('dt-text').textContent = driftText();
   }
   const openDtune = (back) => { dtBack = back; buildDtune(); showScreen('m-dtune'); };
-  $('btn-dtune').addEventListener('click', () => { sfx.play('click'); openDtune('m-pause'); });
-  $('btn-dtune-setup').addEventListener('click', () => { sfx.play('click'); openDtune('m-setup'); });
   $('dt-back').addEventListener('click', () => { sfx.play('click'); showScreen(dtBack); });
   $('dt-reset').addEventListener('click', () => { sfx.play('click'); resetDriftTune(); if (race) race.applyTuning(tuning); buildDtune(); });
   $('dt-copy').addEventListener('click', () => {

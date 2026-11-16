@@ -106,3 +106,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 92 | Poder cambiar también el color de las llantas | COC-25 ✅ |
 | 93 | Mejorar las tarjetas de UI: poner la foto de La maqueta (Obstáculos) en las tarjetas de selección de circuito | UX-34 ✅ |
 | 94 | Subir la altura de los coches de Drift salvo la Flecha (opción 3 de la preview) | COC-26 ✅ |
+| 95 | Quitar el botón de ajustar derrape y poner la nueva altura de Drift en la peana y en las tarjetas | UX-35, COC-26 ✅ |

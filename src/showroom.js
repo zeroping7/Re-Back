@@ -236,7 +236,9 @@ export function carOnStand(def, color, rim) {
     { x: def.wheelX, z: def.wheelZr, front: false }, { x: -def.wheelX, z: def.wheelZr, front: false },
   ];
   const m = buildCarModel(def, color, W, -0.02, rim);
-  const hubY = -0.02 - 0.22;
+  // COC-26: los de Drift van más altos en pista (rueda ~0,34 bajo el anclaje con rest 1,3); en la peana igual
+  const drift = def.disc?.length === 1 && def.disc[0] === 'drift';
+  const hubY = -0.02 - (drift ? 0.34 * (def.mods?.rest ?? 1) / 1.3 : 0.22);
   m.userData.wheels.forEach((w) => { w.position.y = hubY; });
   m.userData.updateSuspension([hubY, hubY, hubY, hubY]);
   m.position.y = -0.5 + def.wheelR - hubY;
