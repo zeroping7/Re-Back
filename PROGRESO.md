@@ -24,7 +24,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 8. ~~Coches de Obstáculos: que no se frenen tanto al soltar el acelerador~~ ✅ (CRW-28).
 9. ~~Coches de Obstáculos: subir la altura de los bajos~~ ✅ (CRW-29).
 10. ~~Permitir cambiar el color del coche~~ ✅ (COC-25). Llantas también ✅.
-11. Coches de Drift: subir la altura de los bajos (todos menos la Flecha) — pedido el 16-nov-2026.
+11. ~~Coches de Drift: subir la altura de los bajos (todos menos la Flecha)~~ ✅ (COC-26).
 12. Sensibilidad relativa a la velocidad · saltos divertidos · mejora de suspensión (3) · mejorar circuito de batallas · inicio de sesión con Google (Firebase Auth) · mejorar tarjetas de UI.
 
 ### Obstáculos: circuito nuevo «El volcán» ✅ (CRW-30, CRW-31, ECO-16)

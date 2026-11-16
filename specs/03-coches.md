@@ -46,6 +46,7 @@ ajuste base. Nombres y diseños originales.
 
 | COC-24 | **Rally sin guardabarros** (`noArches` en `cars.js`; las aletas planas `flatArches` no se montan si el coche lo tiene). Criterio: el Rally no muestra aletas | ✅ (pendiente de probar en móvil) |
 | COC-25 | **Color del coche y de las llantas a elección** (peticiones #91-92). En el Garaje, cada coche tuyo tiene un botón 🎨 «Colores» (pestañas Carrocería y Llantas) que abre un selector con toda la gama (tono, saturación y brillo, más colores rápidos y «Original»). El color se guarda por coche en el perfil (`profile.paint[id]` y `profile.rims[id]`), vale para todos los coches y se ve en la peana, en carrera, en el fantasma y en el podio. Criterio: cambiar el color de dos coches, recargar y seguir viéndolos; «Original» devuelve el de fábrica (`node tests/paint.mjs`) | ✅ (pendiente de probar en móvil) |
+| COC-26 | **Coches de Drift más altos** (petición #94): Patín, Humo, Trompo, Bisonte y Katana pasan de `rest: 0.7` a `rest: 1.3` (la Flecha no cambia). Criterio: se ve hueco bajo la carrocería y `racesim cocina` termina | ✅ (pendiente de probar en móvil) |
 
 ## Mejoras (desviación DES-02)
 

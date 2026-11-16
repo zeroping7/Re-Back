@@ -105,3 +105,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 91 | Poder cambiar el color del coche con un selector de toda la gama, guardado y para todos los coches | COC-25 ✅ |
 | 92 | Poder cambiar también el color de las llantas | COC-25 ✅ |
 | 93 | Mejorar las tarjetas de UI: poner la foto de La maqueta (Obstáculos) en las tarjetas de selección de circuito | UX-34 ✅ |
+| 94 | Subir la altura de los coches de Drift salvo la Flecha (opción 3 de la preview) | COC-26 ✅ |
