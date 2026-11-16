@@ -9,6 +9,7 @@ coche en uso, copas y estrellas.
 | ECO-02 | Premio por carrera: `tabla[puesto] · (0,7 + 0,1·coches) · dificultad · vueltas/ref`, tabla 600/400/280/200/140/100; dificultad ×0,7 / ×1 / ×1,5; `ref` = 3 vueltas en Carrera y Drift, 1 en Obstáculos (vuelta mucho más larga). **Proporcional a las vueltas**: todas las duraciones pagan lo mismo por minuto. La Batalla paga como 2 vueltas y cuenta 6 coches como máximo | ✅ |
 | ECO-03 | Precios de coches de 1.500 a 18.000 (ver [03-coches.md](03-coches.md)) | ✅ |
 | ECO-04 | Mejora: `(120 + precio·0,027) · (nivel+1)`, redondeado a 50; el precio cuenta hasta 18.000 (tope para el Cometa) | ✅ |
+| ECO-17 | **Precio de la mejora de Suspensión** (medio-caro, petición #96): igual que ECO-04 pero ×1,6 (`SUSP_PRICE_MUL` en `economy.js`). `tests/economy.mjs` cuenta las 5 mejoras en los coches donde existe (✓ economía dentro de objetivo) | ✅ |
 | ECO-05 | Vender: 60 % de lo gastado (coche + mejoras); siempre queda al menos un coche | ✅ |
 | ECO-06 | **Copas**: premio final al 1º 100 %, 2º 50 %, 3º 25 % (Bronce 1.000, Plata 2.000, Oro 4.000, Platino 7.000, Derrape y Obstáculos 2.500) además del premio de cada carrera | ✅ |
 | ECO-07 | Copas encadenadas: Plata se abre quedando entre los 3 primeros en Bronce; Oro, en Plata | ✅ |

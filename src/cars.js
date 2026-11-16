@@ -160,7 +160,11 @@ export const UPGRADES = [
   { id: 'punta', name: 'Velocidad punta', icon: '💨', desc: '+4,5 % velocidad máx. por nivel' },
   { id: 'ruedas', name: 'Neumáticos', icon: '🛞', desc: '+5 % agarre por nivel' },
   { id: 'direccion', name: 'Dirección', icon: '🎯', desc: '+5 % giro y respuesta por nivel' },
+  { id: 'susp', name: 'Suspensión', icon: '🔩', desc: '−8 % altura y +12 % dureza por nivel' }, // COC-27
 ];
+// COC-27: mejoras que admite cada coche (la Suspensión no va en los que solo corren en Obstáculos)
+export const upgradesFor = (def) => UPGRADES.filter((u) => u.id !== 'susp' || (def.disc || ['race']).some((d) => d !== 'obst'));
+export const SUSP_REST_PER_LVL = 0.08, SUSP_STIFF_PER_LVL = 0.12, SUSP_DAMP_PER_LVL = 0.06;
 export const MAX_LEVEL = 3;
 
 export function carTuning(base, def, skill = 1, up = {}) {
@@ -173,8 +177,10 @@ export function carTuning(base, def, skill = 1, up = {}) {
     gripRear: base.gripRear * m.grip * (1 + 0.05 * L('ruedas')),
     steerMax: base.steerMax * m.steer * (1 + 0.05 * L('direccion')),
     steerSpeed: base.steerSpeed * (1 + 0.05 * L('direccion')),
-    suspStiff: base.suspStiff * m.susp,
-    suspRest: base.suspRest * (m.rest || 1),
+    suspStiff: base.suspStiff * m.susp * (1 + SUSP_STIFF_PER_LVL * L('susp')),
+    suspRest: base.suspRest * (m.rest || 1) * (1 - SUSP_REST_PER_LVL * L('susp')),
+    suspComp: base.suspComp * (1 + SUSP_DAMP_PER_LVL * L('susp')),
+    suspRelax: base.suspRelax * (1 + SUSP_DAMP_PER_LVL * L('susp')),
     // tracción propia del modelo, relativa al ajuste base (90 % por defecto)
     rearBias: def.rearBias === undefined ? base.rearBias : Math.max(0, Math.min(100, base.rearBias + def.rearBias - 90)),
     // DRI-17: en Drift mandan estos (los lee driftPhysics.js): potencia/empuje, giro del volante y agarre, con las mejoras

@@ -1,4 +1,4 @@
-import { CARS, carById, UPGRADES, MAX_LEVEL, carUnlocked } from './cars.js';
+import { CARS, carById, UPGRADES, upgradesFor, MAX_LEVEL, carUnlocked } from './cars.js';
 import { raceReward, upgradeLevelCost, STAR_PRIZE, FIRST_WIN, FIRST_WIN_MIN_CARS, diffTier } from './economy.js';
 import { TRACKS } from './tracks/index.js';
 import { DISCS, discUnlocked, carAllowed, carDiscs, MEDALS, MEDAL_REPEAT } from './disciplines.js';
@@ -86,15 +86,15 @@ export function stepUpgrade(id, upId, d) {
 
 export function upgradeCost(id, upId) {
   const lvl = ownedUpgrades(id)[upId] || 0;
-  if (lvl >= MAX_LEVEL) return null;
-  return upgradeLevelCost(carById(id).price, lvl);
+  if (lvl >= MAX_LEVEL || !upgradesFor(carById(id)).some((u) => u.id === upId)) return null;
+  return upgradeLevelCost(carById(id).price, lvl, upId);
 }
 
 function spentOn(id) {
   let total = carById(id).price;
   const up = ownedUpgrades(id);
   for (const u of UPGRADES) {
-    for (let l = 0; l < (up[u.id] || 0); l++) total += upgradeLevelCost(carById(id).price, l);
+    for (let l = 0; l < (up[u.id] || 0); l++) total += upgradeLevelCost(carById(id).price, l, u.id);
   }
   return total;
 }

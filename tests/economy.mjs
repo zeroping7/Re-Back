@@ -1,12 +1,12 @@
 // Simulación de la economía (specs/09-economia.md). Uso: node tests/economy.mjs
 // Pásala cada vez que cambien premios o precios, o se añadan coches, circuitos o copas.
-import { CARS, UPGRADES, MAX_LEVEL, carNeeds } from '../src/cars.js';
+import { CARS, UPGRADES, upgradesFor, MAX_LEVEL, carNeeds } from '../src/cars.js';
 import { CUPS } from '../src/cups.js';
 import { raceReward, upgradeLevelCost, cupPayout, FIRST_WIN } from '../src/economy.js';
 import { DISCS, MEDALS } from '../src/disciplines.js';
 
 const f = (n) => Math.round(n).toLocaleString('es-ES');
-const fullUp = (c) => { let t = 0; for (let l = 0; l < MAX_LEVEL; l++) t += upgradeLevelCost(c.price, l); return t * UPGRADES.length; };
+const fullUp = (c) => { let t = 0; for (const u of upgradesFor(c)) for (let l = 0; l < MAX_LEVEL; l++) t += upgradeLevelCost(c.price, l, u.id); return t; };
 const discOf = (c) => c.disc || ['race'];
 let fail = 0;
 

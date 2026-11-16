@@ -29,6 +29,7 @@ export class Race {
     if (battle) this.laps = laps = 999;
     if (trackDef.oneWay) this.laps = laps = 1; // CRW-18: tramo A→B, una sola pasada
     this.disc = battle ? 'race' : (trackDef.disc || 'race'); // DIS-02
+    if (this.disc === 'obst' && this.carUpgrades.susp) this.carUpgrades = { ...this.carUpgrades, susp: 0 }; // COC-27: en Obstáculos no actúa
     this.simT = 0;
     this.camMode = camMode;
     this.time = 0; this.phase = 'countdown'; this.countdown = 3.2; this.started = false; this.paused = false;

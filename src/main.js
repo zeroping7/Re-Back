@@ -6,7 +6,7 @@ import { Race, FIXED, fmtTime, getBest } from './race.js';
 import { TRACKS, trackById, trackFromKey, VARIANTS, variantUnlocked, tracksFor, trackUnlocked, trackNeeds } from './tracks/index.js';
 import { DISCS, discById, discUnlocked, carAllowed, MODES, MEDALS, medalLevel, fmtPts } from './disciplines.js';
 import { ARENA, battleTime } from './battle.js';
-import { CARS, carById, UPGRADES, MAX_LEVEL, carTuning, tractionName, carNeeds, carUnlocked } from './cars.js';
+import { CARS, carById, UPGRADES, upgradesFor, MAX_LEVEL, carTuning, tractionName, carNeeds, carUnlocked } from './cars.js';
 import { carStats } from './carstats.js';
 import {
   profile, isOwned, upgradesOf, ownedUpgrades, installedLevel, stepUpgrade, upgradeCost, sellValue, buyCar, sellCar, buyUpgrade, selectCar, raceReward, addMoney,
@@ -461,7 +461,7 @@ async function init() {
     }
     buildPaint(d, own);
     const ups = $('g-ups'); ups.innerHTML = '';
-    for (const u of UPGRADES) {
+    for (const u of upgradesFor(d)) {
       const lvl = raw[u.id] || 0, cost = upgradeCost(d.id, u.id), ins = installedLevel(d.id, u.id);
       const row = document.createElement('div'); row.className = 'up-row' + (lvl && !ins ? ' off' : '');
       // ● montado · ◌ comprado pero quitado · ○ sin comprar
@@ -480,6 +480,7 @@ async function init() {
       b.onclick = () => { if (buyUpgrade(d.id, u.id)) { sfx.play('pickup'); buildGarage(); } };
       row.append(b); ups.append(row);
     }
+    room.showCar(gSel); // COC-27: la peana refleja el nivel de suspensión montado
   }
 
   // ---------- Carrera ----------

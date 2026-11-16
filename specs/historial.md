@@ -107,3 +107,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 93 | Mejorar las tarjetas de UI: poner la foto de La maqueta (Obstáculos) en las tarjetas de selección de circuito | UX-34 ✅ |
 | 94 | Subir la altura de los coches de Drift salvo la Flecha (opción 3 de la preview) | COC-26 ✅ |
 | 95 | Quitar el botón de ajustar derrape y poner la nueva altura de Drift en la peana y en las tarjetas | UX-35, COC-26 ✅ |
+| 96 | Mejora de suspensión (niveles 1-3): comprable, baja el coche y endurece la suspensión; afecta a pista y peana; todos los coches menos los de Obstáculos; precio medio-caro | COC-27, ECO-17 ✅ |

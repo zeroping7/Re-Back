@@ -14,7 +14,8 @@ export function raceReward(place, total, laps, diff, disc = 'race') {
 
 // ECO-04: precio de un nivel de mejora (lvl = niveles ya comprados)
 export const UPGRADE_PRICE_CAP = 18000;
-export const upgradeLevelCost = (price, lvl) => Math.round(((120 + Math.min(price, UPGRADE_PRICE_CAP) * 0.027) * (lvl + 1)) / 50) * 50;
+export const SUSP_PRICE_MUL = 1.6; // ECO-17: la Suspensión cuesta ×1,6
+export const upgradeLevelCost = (price, lvl, upId) => Math.round(((120 + Math.min(price, UPGRADE_PRICE_CAP) * 0.027) * (lvl + 1) * (upId === 'susp' ? SUSP_PRICE_MUL : 1)) / 50) * 50;
 
 // ECO-10: premio de copa. Entero la primera vez; al mejorar puesto, la diferencia; al repetir, el 25 %
 export const CUP_SHARE = [1, 0.5, 0.25];

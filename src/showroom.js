@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { carColor, carRim } from './profile.js';
+import { carColor, carRim, installedLevel } from './profile.js';
 import { buildCarModel } from './carModel.js';
-import { carById } from './cars.js';
+import { carById, SUSP_REST_PER_LVL } from './cars.js';
 import { groundTex, canTexture } from './textures.js';
 
 // Taller de juguetes detrás de los menús (UX-03): el coche gira en una peana encima de un banco de trabajo
@@ -162,12 +162,13 @@ export class Showroom {
 
   // Coche en la peana
   showCar(id, force = false) {
-    if (id === this.carId && !force) return;
-    this.carId = id;
-    this.spinT0 = this.t; // cada coche nuevo empieza girando desde el frente 3/4
+    const lvl = installedLevel(id, 'susp'); // COC-27
+    if (id === this.carId && lvl === this.carSusp && !force) return;
+    if (id !== this.carId) this.spinT0 = this.t; // cada coche nuevo empieza girando desde el frente 3/4
+    this.carId = id; this.carSusp = lvl;
     this.turntable.children.forEach(disposeTree);
     this.turntable.clear();
-    this.turntable.add(carOnStand(carById(id), carColor(carById(id)), carRim(carById(id))));
+    this.turntable.add(carOnStand(carById(id), carColor(carById(id)), carRim(carById(id)), lvl));
   }
 
   // Los tres primeros de la copa: [{ def, color }]
@@ -230,7 +231,7 @@ function disposeTree(o) {
   });
 }
 
-export function carOnStand(def, color, rim) {
+export function carOnStand(def, color, rim, susp = 0) {
   const W = [
     { x: def.wheelX, z: def.wheelZf, front: true }, { x: -def.wheelX, z: def.wheelZf, front: true },
     { x: def.wheelX, z: def.wheelZr, front: false }, { x: -def.wheelX, z: def.wheelZr, front: false },
@@ -238,7 +239,7 @@ export function carOnStand(def, color, rim) {
   const m = buildCarModel(def, color, W, -0.02, rim);
   // COC-26: los de Drift van más altos en pista (rueda ~0,34 bajo el anclaje con rest 1,3); en la peana igual
   const drift = def.disc?.length === 1 && def.disc[0] === 'drift';
-  const hubY = -0.02 - (drift ? 0.34 * (def.mods?.rest ?? 1) / 1.3 : 0.22);
+  const hubY = -0.02 - (drift ? 0.34 * (def.mods?.rest ?? 1) / 1.3 : 0.22) * (1 - SUSP_REST_PER_LVL * susp); // COC-27: más nivel, más bajo
   m.userData.wheels.forEach((w) => { w.position.y = hubY; });
   m.userData.updateSuspension([hubY, hubY, hubY, hubY]);
   m.position.y = -0.5 + def.wheelR - hubY;
