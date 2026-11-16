@@ -27,6 +27,7 @@ profile.medals ??= {}; // mejor medalla por circuito en los modos en solitario (
 profile.wins ??= {}; // primeras victorias cobradas por circuito y dificultad (ECO-13)
 profile.granted ??= {}; // disciplinas cuyo coche básico ya se regaló (DIS-04)
 
+profile.paint ??= {}; // COC-25: color elegido por coche (#rrggbb); si falta, el de fábrica
 profile.inst ??= {}; // niveles montados por coche y mejora (si falta, todos los comprados)
 if (profile.off) { // migración de la versión anterior (mejora entera quitada)
   for (const id in profile.off) for (const u in profile.off[id]) (profile.inst[id] ??= {})[u] = 0;
@@ -38,6 +39,12 @@ export function onProfileChange(fn) { listeners.add(fn); }
 export function saveProfile() {
   try { localStorage.setItem(KEY, JSON.stringify(profile)); } catch { /* nada */ }
   for (const f of listeners) f(profile);
+}
+
+export const carColor = (def) => profile.paint?.[def.id] || def.color;
+export function setCarColor(id, hex) {
+  if (hex && /^#[0-9a-f]{6}$/i.test(hex)) profile.paint[id] = hex.toLowerCase(); else delete profile.paint[id];
+  saveProfile();
 }
 
 export const isOwned = (id) => !!profile.owned[id];

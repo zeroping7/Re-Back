@@ -11,6 +11,7 @@ import { updateExhaust } from './exhaust.js';
 import { setupBattle, battleStep, battlePlaces, battleRender, dropStar, BattleDriver } from './battle.js';
 import { discTuning, carAllowed, fmtPts } from './disciplines.js';
 import { loadGhost, saveGhost, ghostModel, poseAt, poseLerp, ReplayRecorder, Director, GHOST_HZ } from './replay.js';
+import { carColor } from './profile.js';
 import { setMirrorText } from './textures.js';
 
 export const FIXED = 1 / 60;
@@ -84,7 +85,7 @@ export class Race {
       const def = isPlayer ? carDef : rivalDefs[i % rivalDefs.length];
       const skill = isPlayer ? 1 : difficulty * (0.95 + 0.05 * (i / Math.max(1, total - 1)));
       const tuning = discTuning(isPlayer ? carTuning(baseTuning, def, 1, carUpgrades) : carTuning(baseTuningDefaults(baseTuning), def, skill), disc);
-      const color = isPlayer ? def.color : RIVAL_COLORS[i % RIVAL_COLORS.length];
+      const color = isPlayer ? carColor(def) : RIVAL_COLORS[i % RIVAL_COLORS.length];
       const car = new Car(scene, this.world, RAPIER, def, tuning, { color, index: i, name: isPlayer ? 'Tú' : RIVAL_NAMES[i % RIVAL_NAMES.length] });
       const slot = this.circuit.gridSlot(i);
       car.reset(slot.pos, slot.yaw);
@@ -149,7 +150,7 @@ export class Race {
     if (!rec || rec.length < 7 * GHOST_HZ * 3) return;
     if (this.ghost && this.ghost.time <= lapTime) return;
     const frames = Float32Array.from(rec);
-    const g = { time: lapTime, car: this.player.def.id, color: this.player.def.color, frames, n: frames.length / 7 };
+    const g = { time: lapTime, car: this.player.def.id, color: this.player.color, frames, n: frames.length / 7 };
     saveGhost(this.trackKey, g);
     this.setGhost(g);
     setTimeout(() => this.hud.message('👻 Nuevo fantasma: tu mejor vuelta', 1.6), 1700);

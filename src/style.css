@@ -474,3 +474,18 @@ body.pad-mode #steer-bar, body.pad-mode #steer-float { display: none !important;
 /* UX-33: botón Online deshabilitado hasta NET-08 */
 #btn-online:disabled { opacity: .45; filter: grayscale(.6); pointer-events: none; }
 #btn-online .soon { margin-left: auto; font-size: 11px; opacity: .8; font-style: normal; }
+
+/* COC-25: selector de color del coche */
+#g-paint { margin: 2px 0 6px; }
+.paint-head { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border-radius: 12px; background: #ffffff1c; font-weight: 800; font-size: 14px; text-align: left; }
+.paint-head i { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; flex: none; }
+.cp { margin-top: 6px; padding: 8px; border-radius: 12px; background: #0000004d; display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px; }
+.cp-l, .cp-r { display: flex; flex-direction: column; gap: 8px; }
+.cp canvas { width: 100%; border-radius: 8px; display: block; }
+.cp-sv { height: 120px; }
+.cp-hue { height: 22px; }
+.cp-q { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.cp-q button { aspect-ratio: 1; border-radius: 50%; border: 2px solid #ffffffaa; }
+.cp-row { display: flex; align-items: center; gap: 10px; }
+.cp-cur { width: 34px; height: 34px; border-radius: 10px; border: 2px solid #fff; flex: none; }
+.cp-reset { flex: 1; padding: 8px; border-radius: 10px; background: #ffffff22; font-weight: 800; font-size: 13px; }

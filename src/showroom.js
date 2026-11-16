@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { carColor } from './profile.js';
 import { buildCarModel } from './carModel.js';
 import { carById } from './cars.js';
 import { groundTex, canTexture } from './textures.js';
@@ -160,13 +161,13 @@ export class Showroom {
   }
 
   // Coche en la peana
-  showCar(id) {
-    if (id === this.carId) return;
+  showCar(id, force = false) {
+    if (id === this.carId && !force) return;
     this.carId = id;
     this.spinT0 = this.t; // cada coche nuevo empieza girando desde el frente 3/4
     this.turntable.children.forEach(disposeTree);
     this.turntable.clear();
-    this.turntable.add(carOnStand(carById(id), carById(id).color));
+    this.turntable.add(carOnStand(carById(id), carColor(carById(id))));
   }
 
   // Los tres primeros de la copa: [{ def, color }]

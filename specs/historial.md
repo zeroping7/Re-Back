@@ -102,3 +102,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 88 | Revisar los circuitos (menos Drift y Obstáculos): charcos que no se ven y posibles fallos en tierra u otras superficies | CIR-29 ✅ |
 | 89 | Cambiar la UI: la Batalla de la Estrella dentro de Jugar, y el botón Jugar pasa a llamarse «Carrera» | UX-32 ✅ |
 | 90 | Botón «Online» debajo de Carrera, deshabilitado por ahora | UX-33 ✅ |
+| 91 | Poder cambiar el color del coche con un selector de toda la gama, guardado y para todos los coches | COC-25 ✅ |

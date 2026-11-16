@@ -10,9 +10,10 @@ import { CARS, carById, UPGRADES, MAX_LEVEL, carTuning, tractionName, carNeeds, 
 import { carStats } from './carstats.js';
 import {
   profile, isOwned, upgradesOf, ownedUpgrades, installedLevel, stepUpgrade, upgradeCost, sellValue, buyCar, sellCar, buyUpgrade, selectCar, raceReward, addMoney,
-  onProfileChange, setCupResult, firstWin, takeStar, STAR_PRIZE, checkSecret, starsGot, useDisc, grantStarters, awardMedal,
+  onProfileChange, carColor, setCarColor, setCupResult, firstWin, takeStar, STAR_PRIZE, checkSecret, starsGot, useDisc, grantStarters, awardMedal,
 } from './profile.js';
 import { CUPS, cupById, cupUnlocked, cupPrize, cupPayout, addPoints, standings, POINTS, cupsFor } from './cups.js';
+import { createColorPicker } from './colorpicker.js';
 import { Showroom } from './showroom.js';
 import { Controls } from './controls.js';
 import { PadInput } from './gamepad.js';
@@ -372,6 +373,25 @@ async function init() {
     const st = carStats(def, gDisc, up);
     return [['Velocidad', st.vel], ['Aceleración', st.acel], ['Manejo', st.manejo]];
   };
+  // COC-25: color del coche (selector plegable; los cambios no reconstruyen el garaje para no cortar el arrastre)
+  let paintOpen = false, paintT = 0;
+  function buildPaint(d, own) {
+    const box = $('g-paint'); box.innerHTML = '';
+    if (!own || d.secret && !own) return;
+    const head = document.createElement('button'); head.className = 'paint-head';
+    const sw = document.createElement('i'); sw.style.background = carColor(d);
+    head.append(sw, document.createTextNode(paintOpen ? '🎨 Color del coche ▴' : '🎨 Color del coche ▾'));
+    head.onclick = () => { sfx.play('click'); paintOpen = !paintOpen; buildPaint(d, own); };
+    box.append(head);
+    if (!paintOpen) return;
+    const apply = (hex) => {
+      if (hex) setCarColor(d.id, hex); else setCarColor(d.id, null);
+      sw.style.background = carColor(d);
+      clearTimeout(paintT); paintT = setTimeout(() => room.showCar(d.id, true), 90); // reconstruye el modelo sin saturar al arrastrar
+    };
+    box.append(createColorPicker({ value: carColor(d), onChange: apply, onReset: () => { apply(null); buildPaint(d, own); } }));
+    box.scrollIntoView({ block: 'nearest' });
+  }
   function buildGarage() {
     // DIS-03: pestañas por disciplina
     const tabs = $('g-tabs'); tabs.innerHTML = '';
@@ -433,6 +453,7 @@ async function init() {
         if (confirm(`¿Vender ${d.name} por ${sellValue(d.id)} monedas?`) && sellCar(d.id)) { sfx.play('pass'); gSel = useDisc(gDisc) || null; buildGarage(); room.showCar(gSel); }
       });
     }
+    buildPaint(d, own);
     const ups = $('g-ups'); ups.innerHTML = '';
     for (const u of UPGRADES) {
       const lvl = raw[u.id] || 0, cost = upgradeCost(d.id, u.id), ins = installedLevel(d.id, u.id);
