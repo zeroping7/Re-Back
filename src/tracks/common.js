@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { checkerTexture, fillTextM } from '../textures.js';
+import { checkerTexture, fillTextM, surfaceTex } from '../textures.js';
+import { mulberry } from './rng.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 // Grupos de colisión (membresía << 16 | filtro)
@@ -657,4 +658,41 @@ function chevronSignTexture(bg, fg, dir) {
   }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
   return t;
+}
+
+// Charco de agua (el del muelle, CIR-29): óvalo de agua con ondas a lo largo de la pista y orilla mojada.
+// Es el ÚNICO charco del juego: frena y salpica (zona effect 'wet', surface 'water').
+// const pud = makePuddles(B); anim.push(pud.update); zones.push(pud.atIdx(circuit, i, lado));
+export function makePuddles(B) {
+  const wt = surfaceTex('water', [2, 2]);
+  const waterMat = new THREE.MeshPhysicalMaterial({ color: '#ffffff', map: wt.map, normalMap: wt.normalMap, normalScale: new THREE.Vector2(0.35, 0.35), roughness: 0.03, specularIntensity: 0.4, clearcoat: 0.3, clearcoatRoughness: 0.02, envMapIntensity: 1,
+    transparent: true, opacity: 0.93 });
+  const rimTex = (() => {
+    const rnd = mulberry(7); // propio: no altera la colocación del resto
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const g = c.getContext('2d');
+    const gr = g.createRadialGradient(128, 128, 60, 128, 128, 128);
+    gr.addColorStop(0, '#2c1a0eff'); gr.addColorStop(0.55, '#3a2414c0'); gr.addColorStop(1, '#4a301c00');
+    g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+    for (let k = 0; k < 160; k++) { const a = rnd() * 6.28, r = 70 + rnd() * 55; g.fillStyle = `rgba(40,24,12,${0.15 + rnd() * 0.3})`; g.beginPath(); g.ellipse(128 + Math.cos(a) * r, 128 + Math.sin(a) * r, 3 + rnd() * 9, 2 + rnd() * 5, a, 0, 7); g.fill(); }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  })();
+  const rimMat = new THREE.MeshStandardMaterial({ map: rimTex, transparent: true, roughness: 0.3, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+  // p: centro (diseño), yaw: dirección de la pista, y: altura del suelo
+  const add = (p, yaw, y) => {
+    const pd = new THREE.Mesh(new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2), waterMat);
+    pd.scale.set(2.4, 1, 4.4); pd.rotation.y = yaw; pd.position.set(p.x, y + 0.06, p.z); pd.userData.dynamic = true;
+    B.scene.add(pd);
+    const rim = new THREE.Mesh(new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2), rimMat);
+    rim.scale.set(3.3, 1, 6); rim.rotation.y = yaw; rim.position.set(p.x, y + 0.04, p.z); rim.userData.dynamic = true; rim.receiveShadow = true;
+    B.scene.add(rim);
+    return { pos: p.clone(), r: 3.4, effect: 'wet', surface: 'water', meshes: [pd, rim] };
+  };
+  // en la muestra i de la pista, desplazado `side` unidades hacia el borde (n)
+  const atIdx = (circuit, i, side = 0) => {
+    const s = circuit.samples[i], p = s.p.clone().addScaledVector(s.n, side);
+    const z = add(p, Math.atan2(s.t.x, s.t.z), s.p.y); z.idx = i; return z;
+  };
+  const at = (circuit, xz, side = 0) => atIdx(circuit, circuit.sampleNear(xz[0], xz[1]).i, side);
+  return { add, atIdx, at, update: (t) => { wt.normalMap.offset.set(t * 0.03, t * 0.02); } };
 }

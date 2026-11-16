@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { groundTex, surfaceTex } from '../textures.js';
-import { buildCircuit, startArch, trackRibbon, mat, BARRIER_GROUPS, trackPatch, autoBoosts } from './common.js';
+import { buildCircuit, startArch, trackRibbon, mat, BARRIER_GROUPS, trackPatch, autoBoosts, makePuddles } from './common.js';
 
 // Circuito 3: "El jardín". Al aire libre: camino de tierra, charco, rampa-tabla y árboles.
 const AREA = { x: 96, z: 70 };
@@ -122,20 +122,10 @@ function build(B) {
   // ---------- Charco (frena y salpica) ----------
   const zones = extraZones;
   {
-    let pi = circuit.straightest(0.4, 0.46, 3, 3, circuit.elev.map((e) => [e.i0, e.i1]));
-    const s = circuit.samples[pi];
-    const p = s.p.clone().addScaledVector(s.n, 0.6);
-    const puddle = new THREE.Mesh(new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2), waterMat);
-    // CIR-29: largo a lo largo de la pista (antes iba atravesado y se salía por debajo de los bordes)
-    puddle.scale.set(2.6, 1, 4.6); puddle.rotation.y = yawOf(s.t);
-    puddle.position.set(p.x, s.p.y + 0.06, p.z);
-    puddle.userData.dynamic = true;
-    scene.add(puddle);
-    const rim = new THREE.Mesh(new THREE.CircleGeometry(1, 32).rotateX(-Math.PI / 2), rimMat);
-    rim.scale.set(3.5, 1, 6.2); rim.rotation.y = puddle.rotation.y;
-    rim.position.set(p.x, s.p.y + 0.04, p.z); rim.userData.dynamic = true; rim.receiveShadow = true;
-    scene.add(rim);
-    zones.push({ pos: p, r: 3.6, effect: 'wet', surface: 'water' });
+    // el charco de siempre (el del muelle)
+    const pud = makePuddles(B);
+    anim.push(pud.update);
+    zones.push(pud.atIdx(circuit, circuit.straightest(0.4, 0.46, 3, 3, circuit.elev.map((e) => [e.i0, e.i1])), 0.6));
   }
 
   // ---------- Árboles, rocas, flores ----------

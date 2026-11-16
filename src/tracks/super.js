@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { labelTexture, canTexture, groundTex, surfaceTex } from '../textures.js';
-import { buildCircuit, startArch, room, mat, trackPatch, autoBoosts } from './common.js';
+import { labelTexture, canTexture, groundTex } from '../textures.js';
+import { buildCircuit, startArch, room, mat, autoBoosts, makePuddles } from './common.js';
 
 // Circuito 2: "El supermercado". Pasillos, estanterías gigantes y carritos.
 const ROOM = { x: 84, z: 48, h: 40 };
@@ -70,15 +70,16 @@ function build(B) {
   // punto relativo a la pista: avance y desplazamiento lateral (fracción del ancho)
   const onTrack = (x, z, along = 0, lat = 0) => { const s = circuit.sampleNear(x, z); return s.p.clone().addScaledVector(s.t, along).addScaledVector(s.n, lat * circuit.width / 2); };
   const zones = [];
-  // suelo recién fregado (derrapa) y turbos
-  const wet = surfaceTex('wet', [1, 3]);
+  // charcos (frenan y salpican) y turbos
+  const pud = makePuddles(B);
+  anim.push(pud.update);
   const curvy = (f0, f1) => { let best = circuit.at(f0), br = Infinity; for (let f = f0; f < f1; f += 0.005) { const i = circuit.at(f); const r = circuit.minRadius(i, 3, 3); if (r < br) { br = r; best = i; } } return samples[best].p; };
   const wetAt = [];
   for (const [f0, f1] of [[0.33, 0.4], [0.86, 0.95]]) {
     const p = curvy(f0, f1); wetAt.push(p);
-    zones.push(trackPatch(B, circuit, [p.x, p.z], 18, 'slide', { ...wet, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0.15, normalScale: 0.4, surface: 'wet', envMapIntensity: 0.8, specularIntensity: 0.3 }));
+    zones.push(pud.at(circuit, [p.x, p.z]));
   }
-  zones.push(...autoBoosts(B, circuit, 2, zones.map((z) => [z.from, z.to])));
+  zones.push(...autoBoosts(B, circuit, 2, zones.map((z) => (z.from !== undefined ? [z.from, z.to] : [z.idx - 3, z.idx + 3]))));
   // pirámide de latas en la pista
   {
     const s = samples[circuit.at(0.12)];
