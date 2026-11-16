@@ -106,7 +106,7 @@ function build(B) {
     [-46, 8],
     [-60, -6],
     [-52, 1]]) {
-    zones.push(trackPatch(B, circuit, at, 20, 'sand', { ...sand, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0, normalScale: 1.2, inset: 0.1, surface: 'sand' }));
+    zones.push(trackPatch(B, circuit, at, 20, 'slide', { ...sand, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0, normalScale: 1.2, inset: 0.1, surface: 'sand' }));
   }
   // turbos fijos (colocados con el visor de circuitos)
   for (const at of [[60, -41], [-62, 38]]) zones.push(trackPatch(B, circuit, at, 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
