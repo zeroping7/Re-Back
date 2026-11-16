@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import RAPIER from '@dimforge/rapier3d-compat';
-import { PROP_GROUPS, CAMERA_RAY_GROUPS } from './tracks/common.js';
+import { PROP_GROUPS, CAMERA_RAY_GROUPS, WHEEL_RAY_GROUPS } from './tracks/common.js';
 
 export const ITEMS = {
   rocket: { icon: '🚀', name: 'Cohete' },
@@ -149,7 +149,14 @@ export class Items {
       const pos = p.clone().addScaledVector(f, -2.2);
       const mesh = new THREE.Mesh(this.oilGeo, this.oilMat);
       mesh.scale.setScalar(2.3);
-      mesh.position.set(pos.x, 0.035, pos.z);
+      // OBJ-21: posarla sobre el suelo real (cuestas, rampas, alfombras), no a altura 0
+      const ray = new RAPIER.Ray({ x: pos.x, y: p.y + 3, z: pos.z }, { x: 0, y: -1, z: 0 });
+      const hit = R.world.castRayAndGetNormal(ray, 12, true, undefined, WHEEL_RAY_GROUPS, car.collider, car.body);
+      if (hit) {
+        pos.y = p.y + 3 - hit.timeOfImpact;
+        mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(hit.normal.x, hit.normal.y, hit.normal.z).normalize());
+      } else pos.y = 0;
+      mesh.position.set(pos.x, pos.y + 0.06, pos.z);
       mesh.receiveShadow = true;
       this.scene.add(mesh);
       this.slicks.push({ mesh, pos, t: 0, owner: car, life: 20 });
@@ -233,7 +240,7 @@ export class Items {
       sl.mesh.scale.setScalar(2.3 * Math.min(1, sl.t * 4) * Math.max(0.01, fade));
       for (const car of R.cars) {
         if (car === sl.owner && sl.t < 1.2) continue;
-        if (car.contacts > 0 && Math.hypot(car.currPos.x - sl.pos.x, car.currPos.z - sl.pos.z) < 2.4) {
+        if (car.contacts > 0 && Math.abs(car.currPos.y - sl.pos.y) < 2.5 && Math.hypot(car.currPos.x - sl.pos.x, car.currPos.z - sl.pos.z) < 2.4) {
           if (car.fx.oil < 0.5 && car === R.player) R.sound('slip', car.currPos);
           car.fx.oil = 1.3;
         }

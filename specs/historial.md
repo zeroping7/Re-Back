@@ -112,3 +112,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 98 | Sensibilidad de la dirección relativa a la velocidad: estable a alta velocidad y ágil en lento, en circuito, batalla y drift, teniendo en cuenta la Sensibilidad elegida | FIS-45 ✅ |
 | 99 | Más grados de giro de las ruedas en parado en coches de circuito | FIS-46 ✅ |
 | 100 | Comportamiento coherente con ids de circuito desconocidos y quitar restos de El escritorio y El fregadero | PLA-11, CRW-07 ✅ |
+| 101 | En el salón el aceite no se veía (quedaba enterrado bajo la cuesta) aunque sí afectaba | OBJ-21 ✅ |
