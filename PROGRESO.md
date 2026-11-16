@@ -7,6 +7,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - **APK (última versión):** https://zeroping7.github.io/Re-Back/re-back.apk
   (alternativa: https://github.com/zeroping7/Re-Back/releases/latest)
 
+- 16-nov-2026: tarjetas de circuito: La maqueta ya tiene foto (UX-34).
 - 16-nov-2026: **color del coche a elección** (Garaje › 🎨 Colores: carrocería y llantas): selector de tono/saturación/brillo + colores rápidos + «Original»; se guarda por coche en el perfil (COC-25).
 - 15-nov-2026: menú principal «Carrera · Garaje · Opciones»; la Batalla de la Estrella pasa a la columna Carrera (UX-32).
 
