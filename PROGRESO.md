@@ -7,7 +7,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - **APK (última versión):** https://zeroping7.github.io/Re-Back/re-back.apk
   (alternativa: https://github.com/zeroping7/Re-Back/releases/latest)
 
-- 16-nov-2026: enlace de pruebas con dinero infinito `…/Re-Back/?rico` (PLA-10; partida aparte, solo web).
+- 16-nov-2026: enlace de pruebas con dinero infinito secreto `?rico=<clave>` (PLA-10; clave en el doc privado del Proyecto; partida aparte, solo web).
 - 16-nov-2026: **mejora de Suspensión** niveles 1-3 (COC-27, ECO-17): −8 % altura y +12 % dureza por nivel, ×1,6 de precio; no en Cabra/Oruga/Yeti ni actúa en Obstáculos; baja el coche en la peana. Ajustes: `SUSP_*` en `src/cars.js`.
 - 16-nov-2026: quitado «Ajustar derrape» (UX-35); coches de Drift más altos también en Garaje y tarjetas (COC-26).
 - 16-nov-2026: tarjetas de circuito: La maqueta ya tiene foto (UX-34).

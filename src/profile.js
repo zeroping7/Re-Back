@@ -4,8 +4,10 @@ import { TRACKS } from './tracks/index.js';
 import { DISCS, discUnlocked, carAllowed, carDiscs, MEDALS, MEDAL_REPEAT } from './disciplines.js';
 
 // Partida guardada: dinero, coches comprados y sus mejoras
-// PLA-10: enlace de pruebas «?rico»: dinero infinito, todo desbloqueado y partida aparte (no toca la real)
-export const DEV = typeof location !== 'undefined' && new URLSearchParams(location.search).has('rico');
+// PLA-10: enlace de pruebas secreto «?rico=<clave>»: dinero infinito, todo desbloqueado y partida aparte (no toca la real)
+// Solo se activa con la clave secreta (?rico=<clave>): en el código solo está su huella, no la clave. Es discreción, no seguridad.
+const hash = (s) => { let a = 0xdeadbeef, b = 0x41c6ce57; for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); a = Math.imul(a ^ c, 2654435761); b = Math.imul(b ^ c, 1597334677); } a = Math.imul(a ^ (a >>> 16), 2246822507) ^ Math.imul(b ^ (b >>> 13), 3266489909); b = Math.imul(b ^ (b >>> 16), 2246822507) ^ Math.imul(a ^ (a >>> 13), 3266489909); return (4294967296 * (2097151 & b) + (a >>> 0)).toString(36); };
+export const DEV = typeof location !== 'undefined' && hash(new URLSearchParams(location.search).get('rico') || '') === '1r3yqn3yy0h';
 const DEV_MONEY = 9999999;
 const KEY = DEV ? 'reback.profile.dev' : 'reback.profile.v2'; // ECO-14: v2 = economía nueva; si hay partida v1 se conserva (coches, mejoras, copas, dinero)
 const OLD_KEY = DEV ? 'reback.profile.dev.none' : 'reback.profile.v1';

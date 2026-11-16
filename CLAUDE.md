@@ -18,7 +18,7 @@ logotipos, música, sonidos, texturas ni modelos de Re-Volt, y no mencionarlo de
 - Trabaja **solo desde el móvil**: Claude escribe todo el código, lo sube y le dice qué probar.
 - Respuestas **breves y en español**.
 - **Cada vez que publiques una versión nueva, dile siempre el número de versión** (`v1.0.N`, el mismo que sale en la pantalla de inicio y en el APK)
-  junto con los links de la web, del APK **y el de pruebas con dinero infinito (`https://zeroping7.github.io/Re-Back/?rico`, PLA-10)**. `N` = número de ejecución del workflow *Build*: tras el push, `gh run list -R zeroping7/re-back -L 1 --json number,headSha`
+  junto con los links de la web, del APK **y el enlace secreto de pruebas con dinero infinito (PLA-10; la clave está en el doc `claude/enlace-pruebas.md` del Proyecto, nunca la escribas en el repo)**. `N` = número de ejecución del workflow *Build*: tras el push, `gh run list -R zeroping7/re-back -L 1 --json number,headSha`
   (comprueba que `headSha` es tu commit). La compilación tarda ~2 min; avísale de que hasta entonces verá la versión anterior.
 
 ## ⚠ Economía: revísala al añadir coches, circuitos, copas o modos

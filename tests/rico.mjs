@@ -1,4 +1,4 @@
-// PLA-10: ?rico = dinero infinito y partida aparte; sin ?rico la partida real no se toca
+// PLA-10 (RICO_TOKEN=<clave> node tests/rico.mjs): ?rico = dinero infinito y partida aparte; sin ?rico la partida real no se toca
 import puppeteer from 'puppeteer-core';
 const b = await puppeteer.launch({ executablePath: '/usr/bin/google-chrome', headless: 'new', args: ['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'] });
 const p = await b.newPage(); await p.setViewport({ width: 900, height: 420 });
@@ -6,7 +6,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const errs = []; p.on('pageerror', (e) => errs.push(e.message));
 await p.goto('http://localhost:4173/', { waitUntil: 'load' }); await sleep(2000);
 const real0 = await p.evaluate(() => JSON.parse(localStorage.getItem('reback.profile.v2') || 'null')?.money ?? 'sin partida');
-await p.goto('http://localhost:4173/?rico', { waitUntil: 'load' }); await sleep(2500);
+await p.goto(`http://localhost:4173/?rico=${process.env.RICO_TOKEN}`, { waitUntil: 'load' }); await sleep(2500);
 await p.click('#btn-start'); await sleep(600); await p.click('[data-go="garage"]'); await sleep(800);
 const money = await p.evaluate(() => document.getElementById('money').textContent.trim());
 // compra la 1.ª mejora de suspensión que haya disponible
