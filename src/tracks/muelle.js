@@ -75,7 +75,7 @@ function build(B) {
     hills: [{ frac: 0.62, len: 28, h: 1.3 }, { frac: 0.86, len: 30, h: 1.0, double: true }],
     ramps: [{ frac: 0.3, len: 10, h: 2.0 }],
     hillMaterial: deckMat,
-    rampMaterial: new THREE.MeshStandardMaterial({ map: groundTex('plank', [1, 1]).map, color: '#a8794e', roughness: 0.8 }),
+    rampMaterial: deckMat, // mismo tablón que el resto del muelle (UV de mundo)
     groundUV,
     barrier: { colors: ['#1565c0', '#f5f5f5', '#c62828', '#f5f5f5'], thick: 0.7, round: true, roughness: 0.6 },
     chevrons: { bg: '#1565c0', fg: '#ffffff' },
