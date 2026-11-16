@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { groundTex, surfaceTex } from '../textures.js';
-import { buildCircuit, startArch, trackRibbon, mat, BARRIER_GROUPS, trackPatch, autoBoosts } from './common.js';
+import { buildCircuit, startArch, trackRibbon, mat, BARRIER_GROUPS, trackPatch, chevronTexture } from './common.js';
 
 // Circuito 6: "Parque infantil" (CIR-22). Caucho de colores, areneros, tobogán-rampa, columpios y balancín.
 const AREA = { x: 84, z: 56 };
@@ -92,12 +92,24 @@ function build(B) {
   // ---------- Zonas: areneros (derrapan), charco y turbos ----------
   const zones = [];
   const sand = surfaceTex('sand', [1, 2]);
-  const curvy = (f0, f1) => { let best = circuit.at(f0), br = Infinity; for (let f = f0; f < f1; f += 0.005) { const i = circuit.at(f); const r = circuit.minRadius(i, 3, 3); if (r < br) { br = r; best = i; } } return samples[best].p; };
-  for (const [f0, f1] of [[0.26, 0.34], [0.52, 0.6], [0.78, 0.86]]) {
-    const p = curvy(f0, f1);
-    zones.push(trackPatch(B, circuit, [p.x, p.z], 20, 'slide', { ...sand, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0, normalScale: 1.2, inset: 0.1, surface: 'sand' }));
+  // areneros fijos (colocados con el visor de circuitos)
+  for (const at of [
+    [2, -36],
+    [-8, -43],
+    [-24, -44],
+    [-37, -38],
+    [-37, -22],
+    [-25, -15],
+    [-14, -8],
+    [-13, 5],
+    [-28, 14],
+    [-46, 8],
+    [-60, -6],
+    [-52, 1]]) {
+    zones.push(trackPatch(B, circuit, at, 20, 'sand', { ...sand, color: '#ffffff', opacity: 1, roughness: 1, metalness: 0, normalScale: 1.2, inset: 0.1, surface: 'sand' }));
   }
-  zones.push(...autoBoosts(B, circuit, 2, zones.map((z) => [z.from, z.to])));
+  // turbos fijos (colocados con el visor de circuitos)
+  for (const at of [[60, -41], [-62, 38]]) zones.push(trackPatch(B, circuit, at, 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
 
   // ---------- Arenero grande con cubo y pala ----------
   {
@@ -183,7 +195,7 @@ function build(B) {
     circuit,
     update: (t) => { for (const f of anim) f(t); },
     bounds: { x: AREA.x - 1.5, z: AREA.z - 1.5, h: 80 },
-    itemSpots: [0.36, 0.74],
+    itemSpots: [0.36, 0.737],
     zones,
     dust: [0.86, 0.76, 0.56],
     lights: {
