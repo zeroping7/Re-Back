@@ -109,7 +109,7 @@ function build(B) {
   const onTrack = (x, z, along = 0, lat = 0) => { const s = circuit.sampleNear(x, z); return s.p.clone().addScaledVector(s.t, along).addScaledVector(s.n, lat * circuit.width / 2); };
   const zones = [];
   // turbos fijos (colocados con el visor de circuitos)
-  for (const at of [[39, -37], [6, 14], [-3, 39], [0, 12]]) zones.push(trackPatch(B, circuit, at, 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
+  for (const at of [[39, -37], [6, 14], [-3, 39]]) zones.push(trackPatch(B, circuit, at, 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
   // bolos para derribar
   {
     const s = samples[circuit.at(0.27)];
