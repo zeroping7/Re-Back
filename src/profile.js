@@ -4,8 +4,11 @@ import { TRACKS } from './tracks/index.js';
 import { DISCS, discUnlocked, carAllowed, carDiscs, MEDALS, MEDAL_REPEAT } from './disciplines.js';
 
 // Partida guardada: dinero, coches comprados y sus mejoras
-const KEY = 'reback.profile.v2'; // ECO-14: v2 = economía nueva; si hay partida v1 se conserva (coches, mejoras, copas, dinero)
-const OLD_KEY = 'reback.profile.v1';
+// PLA-10: enlace de pruebas «?rico»: dinero infinito, todo desbloqueado y partida aparte (no toca la real)
+export const DEV = typeof location !== 'undefined' && new URLSearchParams(location.search).has('rico');
+const DEV_MONEY = 9999999;
+const KEY = DEV ? 'reback.profile.dev' : 'reback.profile.v2'; // ECO-14: v2 = economía nueva; si hay partida v1 se conserva (coches, mejoras, copas, dinero)
+const OLD_KEY = DEV ? 'reback.profile.dev.none' : 'reback.profile.v1';
 const START = { money: 500, owned: { furgo: {}, pulga: {} }, selected: 'pulga', earned: 0, cups: {}, stars: {} };
 
 function load() {
@@ -38,6 +41,7 @@ if (profile.off) { // migración de la versión anterior (mejora entera quitada)
 const listeners = new Set();
 export function onProfileChange(fn) { listeners.add(fn); }
 export function saveProfile() {
+  if (DEV) profile.money = DEV_MONEY; // dinero infinito: comprar o vender no lo gasta
   try { localStorage.setItem(KEY, JSON.stringify(profile)); } catch { /* nada */ }
   for (const f of listeners) f(profile);
 }
@@ -206,3 +210,11 @@ export function checkSecret() {
 export function addMoney(n) { profile.money += n; profile.earned = (profile.earned || 0) + n; saveProfile(); }
 
 export { CARS, raceReward, STAR_PRIZE };
+
+if (DEV) { // todas las copas abiertas, coches iniciales y el coche secreto
+  for (const id of ['bronce', 'plata', 'oro', 'platino', 'derrape', 'trepa']) profile.cups[id] = 1;
+  grantStarters();
+  for (const c of CARS) if (c.secret) profile.owned[c.id] ??= {};
+  saveProfile();
+  if (typeof document !== 'undefined') document.title = '🧪 Re-Back · dinero infinito';
+}
