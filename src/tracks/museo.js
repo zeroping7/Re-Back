@@ -56,7 +56,7 @@ function build(B) {
     hills: [{ frac: 0.3, len: 26, h: 1.3 }, { frac: 0.7, len: 36, h: 1.0, double: true }],
     ramps: [{ frac: 0.52, len: 9, h: 1.9 }],
     hillMaterial: floorMat,
-    rampMaterial: carpet,
+    rampMaterial: floorMat,
     groundUV,
     barrier: { colors: ['#c9a86a', '#2a2a2a'], thick: 0.5, height: 0.7 },
     chevrons: { bg: '#2a2a2a', fg: '#ffd166' },
