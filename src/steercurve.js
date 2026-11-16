@@ -2,9 +2,9 @@
 // f = velocidad / velocidad punta del coche. Devuelve el multiplicador de giro (k) y de rapidez del volante (r).
 // 1 = el giro de antes a media velocidad. La Sensibilidad (UX-29) multiplica todo; en lento el total se limita a LOW_CAP.
 export const STEER_CURVE = {
-  race: { low: 1.3, top: 0.5, rateTop: 0.5 },
+  race: { low: 1.7, top: 0.5, rateTop: 0.5 },
   drift: { low: 1.0, top: 0.75, rateTop: 0.75 },
-  LOW_CAP: 1.6,
+  LOW_CAP: 2.0,
 };
 const lerp = (a, b, x) => a + (b - a) * Math.max(0, Math.min(1, x));
 const sm = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
