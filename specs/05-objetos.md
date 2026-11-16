@@ -35,4 +35,5 @@ Como en Re-Volt: cajas de energía brillantes en la pista; al pasar por una se r
 |---|---|---|
 | OBJ-20 | **Cohete**: apunta solo a rivales que están por delante (en batalla, primero al que lleva la estrella); si el objetivo se queda detrás lo suelta y sigue recto/por la pista; explota contra paredes y decorado; **nunca daña a quien lo lanza** | ✅ |
 | OBJ-21 | **Aceite visible en cuestas** (petición #101): la mancha se posa sobre el suelo real bajo el coche (rayo hacia abajo), inclinada según la pendiente, y solo afecta a coches a su altura | ✅ |
+| OBJ-22 | **Bola de agua en cuestas** (petición #102): rebota sobre el suelo real, no lo atraviesa en rampas y cuestas | ✅ |
 | OBJ-TIRON | **Sin tirones al disparar**: los shaders de todas las armas se compilan antes de la carrera (`Items.warm`) y la bola de agua ya no usa `transmission` (obligaba a renderizar la escena dos veces) | ✅ |

@@ -366,8 +366,13 @@ export class Items {
     const R = this.race;
     pr.vel.y -= 28 * dt;
     pr.pos.addScaledVector(pr.vel, dt);
-    if (pr.pos.y < 0.5) {
-      pr.pos.y = 0.5;
+    // OBJ-22: rebota en el suelo real (cuestas, rampas), no a altura 0
+    const ray = (this._gRay ||= new RAPIER.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: -1, z: 0 }));
+    ray.origin = { x: pr.pos.x, y: pr.pos.y + 2, z: pr.pos.z };
+    const gh = R.world.castRay(ray, 30, true, undefined, WHEEL_RAY_GROUPS);
+    const floorY = (gh ? pr.pos.y + 2 - gh.timeOfImpact : 0) + 0.5;
+    if (pr.pos.y < floorY) {
+      pr.pos.y = floorY;
       pr.vel.y = Math.abs(pr.vel.y) * 0.45;
       pr.vel.x *= 0.8; pr.vel.z *= 0.8;
       pr.bounces++;

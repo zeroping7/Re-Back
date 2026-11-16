@@ -31,7 +31,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 11. ~~Coches de Drift: subir la altura de los bajos (todos menos la Flecha)~~ ✅ (COC-26).
 12. saltos divertidos · mejorar circuito de batallas · inicio de sesión con Google (Firebase Auth). (Tarjetas de UI: ✅ hecho)
 
-### Aceite visible en cuestas ✅ (OBJ-21)
+### Aceite y bola de agua en cuestas ✅ (OBJ-21, OBJ-22)
 La mancha se posa sobre el suelo real (antes quedaba a altura 0, enterrada bajo la cuesta del salón).
 
 ### Obstáculos: circuito nuevo «El volcán» ✅ (CRW-30, CRW-31, ECO-16)
