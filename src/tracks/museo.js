@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { groundTex, surfaceTex, labelTexture } from '../textures.js';
-import { buildCircuit, startArch, room, mat, trackPatch, autoBoosts } from './common.js';
+import { buildCircuit, startArch, room, mat, trackPatch, chevronTexture } from './common.js';
 
 // Circuito 4: "Museo de noche" (CIR-20). Mármol pulido, vitrinas, columnas y un dinosaurio gigante.
 const ROOM = { x: 74, z: 50, h: 44 };
@@ -67,12 +67,12 @@ function build(B) {
   // ---------- Zonas: cera recién dada y turbos ----------
   const zones = [];
   const wax = surfaceTex('wax', [1, 3]);
-  const curvy = (f0, f1) => { let best = circuit.at(f0), br = Infinity; for (let f = f0; f < f1; f += 0.005) { const i = circuit.at(f); const r = circuit.minRadius(i, 3, 3); if (r < br) { br = r; best = i; } } return samples[best].p; };
-  for (const [f0, f1] of [[0.12, 0.2], [0.82, 0.9]]) {
-    const p = curvy(f0, f1);
-    zones.push(trackPatch(B, circuit, [p.x, p.z], 18, 'slide', { ...wax, color: '#f2b65c', opacity: 1, roughness: 1, metalness: 0.1, surface: 'wax', envMapIntensity: 0.8, specularIntensity: 0.35 }));
+  // cera fija (colocada con el visor de circuitos)
+  for (const [at, len] of [[[-16, 7], 19], [[7, -3], 18]]) {
+    zones.push(trackPatch(B, circuit, at, len, 'slide', { ...wax, color: '#f2b65c', opacity: 1, roughness: 1, metalness: 0.1, surface: 'wax', envMapIntensity: 0.8, specularIntensity: 0.35 }));
   }
-  zones.push(...autoBoosts(B, circuit, 2, zones.map((z) => [z.from, z.to])));
+  // turbos fijos (colocados con el visor de circuitos)
+  for (const at of [[-53, 35], [51, -40]]) zones.push(trackPatch(B, circuit, at, 5, 'boost', { map: chevronTexture(), emissive: '#ffffff', opacity: 0.95 }));
   startArch(B, circuit, { color: '#5c6bc0', text: 'NOCHE EN EL MUSEO' });
 
   // ---------- Dinosaurio (esqueleto low-poly) en el centro ----------
@@ -160,7 +160,7 @@ function build(B) {
     circuit,
     update: (t) => { for (const f of anim) f(t); },
     bounds: { x: ROOM.x - 1.5, z: ROOM.z - 1.5, h: ROOM.h - 1 },
-    itemSpots: [0.28, 0.66],
+    itemSpots: [0.181, 0.754],
     zones,
     dust: [0.75, 0.75, 0.8],
     lights: {
