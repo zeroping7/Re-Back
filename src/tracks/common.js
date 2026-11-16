@@ -180,7 +180,9 @@ export function buildCircuit(B, def) {
   // simétrica. Sin caras verticales: se puede recorrer en los dos sentidos (circuito al revés).
   for (const rp of def.ramps || []) {
     const n = Math.max(3, Math.round(rp.len / 1.6)), d = rp.deck ?? 3, total = n * 2 + d;
-    const c = rp.idx ?? (rp.frac !== undefined ? straightest(rp.frac - 0.06, rp.frac + 0.06, 2, total + 4, elev.map((e) => [e.i0, e.i1])) : nearestIdx(samples, rp.at));
+    // at: [x, z] = centro exacto de la rampa (lo usa el visor; vale igual en sentido normal y al revés).
+    // frac: busca el tramo más recto cerca de esa fracción de vuelta.
+    const c = rp.idx ?? (rp.at ? (nearestIdx(samples, rp.at) - Math.floor(total / 2) + N) % N : straightest(rp.frac - 0.06, rp.frac + 0.06, 2, total + 4, elev.map((e) => [e.i0, e.i1])));
     for (let k = 0; k <= total; k++) {
       const s = samples[(c + k) % N];
       const u = k <= n ? k / n : k >= n + d ? (total - k) / n : 1;
