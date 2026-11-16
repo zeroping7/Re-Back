@@ -2,6 +2,7 @@
 // pico y caída suave), transferencia de peso, tracción trasera con elipse de fricción (el gas le quita agarre lateral a las traseras:
 // sobreviraje de potencia), freno de mano y contravolante asistido. Ejes locales: +Z adelante, +X izquierda, giro + = izquierda.
 // Todo en aceleraciones (fuerza por unidad de masa); se aplica con impulsos sobre el chasis y el torque solo en vertical.
+import { steerCurve, steerGain } from './steercurve.js';
 import * as THREE from 'three';
 
 export const DRIFT = {
@@ -68,9 +69,11 @@ export function driftForces(car, dt, input, c) {
   // --- Volante: ángulo de las ruedas delanteras, con contravolante automático ---
   const lock = D.lockMin + (D.lock0 - D.lockMin) / (1 + (speed / D.lockV) * (speed / D.lockV));
   const sens = input.sens ?? 1; // UX-29
-  const target = st * Math.min(0.95, lock * sens);
+  const vf = speed / Math.max(1, car.t.maxSpeed), cv = steerCurve(vf, true); // FIS-45
+  const target = st * Math.min(0.95, lock * steerGain(cv.k, sens, vf));
   car._din = (car._din || 0);
-  car._din += THREE.MathUtils.clamp(target - car._din, -D.steerRate * sens * dt, D.steerRate * sens * dt);
+  const rr = D.steerRate * sens * (Math.abs(target) < Math.abs(car._din) ? 1 : cv.r) * dt;
+  car._din += THREE.MathUtils.clamp(target - car._din, -rr, rr);
   const zf = W[0].z, zr = W[2].z, L = zf - zr, T = 2 * Math.abs(W[0].x);
   let dAl = 0;
   if (fwd > 3) dAl = Math.atan2(lv.x + w * zf, fwd); // hacia dónde va realmente el eje delantero

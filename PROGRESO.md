@@ -7,6 +7,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - **APK (última versión):** https://zeroping7.github.io/Re-Back/re-back.apk
   (alternativa: https://github.com/zeroping7/Re-Back/releases/latest)
 
+- 16-nov-2026: **dirección relativa a la velocidad** (FIS-45): lento ×1,3, media ×1, tope ×0,5 (Drift ×0,75); volante más lento a tope; Sensibilidad encima (tope ×1,6 en lento). Ajustes: `STEER_CURVE` en `src/steercurve.js`.
 - 16-nov-2026: enlace de pruebas con dinero infinito secreto `?rico=<clave>` (PLA-10; clave en el doc privado del Proyecto; partida aparte, solo web).
 - 16-nov-2026: **mejora de Suspensión** niveles 1-3 (COC-27, ECO-17): −8 % altura y +12 % dureza por nivel, ×1,6 de precio; no en Cabra/Oruga/Yeti ni actúa en Obstáculos; baja el coche en la peana. Ajustes: `SUSP_*` en `src/cars.js`.
 - 16-nov-2026: quitado «Ajustar derrape» (UX-35); coches de Drift más altos también en Garaje y tarjetas (COC-26).
@@ -28,7 +29,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 9. ~~Coches de Obstáculos: subir la altura de los bajos~~ ✅ (CRW-29).
 10. ~~Permitir cambiar el color del coche~~ ✅ (COC-25). Llantas también ✅.
 11. ~~Coches de Drift: subir la altura de los bajos (todos menos la Flecha)~~ ✅ (COC-26).
-12. Sensibilidad relativa a la velocidad · saltos divertidos · mejorar circuito de batallas · inicio de sesión con Google (Firebase Auth) · mejorar tarjetas de UI.
+12. saltos divertidos · mejorar circuito de batallas · inicio de sesión con Google (Firebase Auth) · mejorar tarjetas de UI.
 
 ### Obstáculos: circuito nuevo «El volcán» ✅ (CRW-30, CRW-31, ECO-16)
 - Subida de 18° al cráter con 12 obstáculos y curva entre cada dos: eses al pie, horquillas en la ladera y caracol a la cima (puente largo sobre río de lava y escalera final). También bajada. Mismas piezas que La maqueta, con variantes. Medallas 520/420/350 s (bajada 330/280/240); las carreras pagan ×1,6.

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { WHEEL_RAY_GROUPS, CAR_GROUPS } from './tracks/common.js';
 import { buildCarModel } from './carModel.js';
+import { steerCurve, steerGain } from './steercurve.js';
 import { driftForces } from './driftPhysics.js';
 export { DRIFT } from './driftPhysics.js';
 
@@ -137,9 +138,12 @@ export class Car {
     const pull = (1 - this.health / 100) * 0.12 * this.pullDir;
     // FIS-24: giro extra a baja velocidad (maniobrar en parado), se desvanece a 6 u/s
     const sens = input.sens ?? 1; // UX-29: sensibilidad elegida en Opciones (solo jugador)
-    const lowBoost = 1 + (t.steerLow || 0) * Math.max(0, 1 - Math.abs(fwd) / 6);
-    const target = THREE.MathUtils.clamp(input.steer + (Math.abs(fwd) > 3 ? pull : 0), -1, 1) * t.steerMax * lowBoost * sens / (1 + Math.abs(fwd) * t.steerFalloff);
-    const ds = t.steerSpeed * sens * dt * (Math.sign(target - this.steer) !== Math.sign(this.steer) ? 1.6 : 1);
+    // FIS-45: curva según % de velocidad punta. Base = giro de antes a media velocidad
+    const vf = Math.abs(fwd) / Math.max(1, t.maxSpeed), cv = steerCurve(vf);
+    const base = t.steerMax / (1 + 0.5 * t.maxSpeed * (t.steerFalloff || 0));
+    const target = THREE.MathUtils.clamp(input.steer + (Math.abs(fwd) > 3 ? pull : 0), -1, 1) * base * steerGain(cv.k, sens, vf);
+    const back = Math.abs(target) < Math.abs(this.steer); // volver hacia recto: siempre rápido
+    const ds = t.steerSpeed * sens * (back ? 1 : cv.r) * dt * (Math.sign(target - this.steer) !== Math.sign(this.steer) ? 1.6 : 1);
     this.steer += THREE.MathUtils.clamp(target - this.steer, -ds, ds);
     veh.setWheelSteering(0, this.steer);
     veh.setWheelSteering(1, this.steer);
