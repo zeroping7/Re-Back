@@ -232,15 +232,27 @@ export class Car {
     const lk = this.driftMode || this.crawl ? 0 : THREE.MathUtils.clamp(Math.abs(this.steer) / (t.steerMax * 0.55), 0, 1) * THREE.MathUtils.clamp((speed - 6) / 14, 0, 1) * (1 - anti);
     const sideR = t.sideRear * (1 - SLIDE * lk), slipR = 1 - SLIDE_GRIP * lk;
     const rear = t.rearBias / 100;
+    // FIS-48: curva del neumático: agarra más hasta el ángulo de máximo agarre y, si te pasas, pierde agarre y desliza
+    const curve = !this.driftMode && !this.crawl && t.tireDrop > 0 && speed > 3;
+    const tf = this._tf || (this._tf = [1, 1, 1, 1]);
     for (let i = 0; i < 4; i++) {
       const front = this.W[i].front;
+      let f = 1;
+      if (curve) {
+        const sa = front ? this.steer : 0, lv = this.localVel;
+        const wl = Math.cos(sa) * lv.x - Math.sin(sa) * lv.z, wf = Math.sin(sa) * lv.x + Math.cos(sa) * lv.z;
+        const a = Math.atan2(Math.abs(wl), Math.abs(wf)) * 57.3;
+        const over = Math.max(0, a - t.tirePeak) / t.tireFall;
+        f = 1 - t.tireDrop * (1 - Math.exp(-over * over));
+      }
+      tf[i] += (f - tf[i]) * Math.min(1, dt * 12); f = tf[i];
       // DRI-15: en drift las fuerzas de los neumáticos las pone driftPhysics.js; Rapier solo hace la suspensión
       veh.setWheelEngineForce(i, this.driftMode ? 0 : ((engine * (front ? 1 - rear : rear)) / 2) * this.massK);
       veh.setWheelBrake(i, this.driftMode ? 0 : (front ? brakeF : brakeR) * this.massK);
-      veh.setWheelSideFrictionStiffness(i, this.driftMode ? 0 : front ? t.sideFront : sideR);
+      veh.setWheelSideFrictionStiffness(i, this.driftMode ? 0 : (front ? t.sideFront : sideR) * f);
       // aceite: casi sin agarre · zona de derrape: agarre reducido pero controlable
       const oil = fx.oil > 0 ? 0.22 : fx.slide > 0 ? (front ? 0.88 : 0.74) : fx.sand > 0 ? 0.8 : 1;
-      veh.setWheelFrictionSlip(i, (front ? t.gripFront : t.gripRear * rearK * slipR) * oil);
+      veh.setWheelFrictionSlip(i, (front ? t.gripFront : t.gripRear * rearK * slipR) * oil * f);
     }
 
     veh.updateVehicle(dt, undefined, WHEEL_RAY_GROUPS);

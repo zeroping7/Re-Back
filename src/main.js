@@ -588,7 +588,7 @@ async function init() {
     for (const d of TUNING_DEFS.filter((x) => GT_KEYS.includes(x.key))) {
       const row = document.createElement('div'); row.className = 'dt-row';
       const lab = document.createElement('span'); lab.textContent = d.label;
-      const inp = document.createElement('input'); inp.type = 'range'; inp.min = 0.1; inp.max = d.max; inp.step = 0.05; inp.value = tuning[d.key];
+      const inp = document.createElement('input'); inp.type = 'range'; const raw = ['gripFront', 'gripRear', 'sideFront', 'sideRear'].includes(d.key); inp.min = raw ? 0.1 : d.min; inp.max = d.max; inp.step = raw ? 0.05 : d.step; inp.value = tuning[d.key];
       const out = document.createElement('output');
       const show = () => { out.textContent = (+inp.value).toFixed(2); row.classList.toggle('chg', +inp.value !== d.def); };
       show();

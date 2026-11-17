@@ -13,6 +13,9 @@ export const TUNING_DEFS = [
   { key: 'gripRear',    label: 'Agarre trasero',        min: 0.5, max: 8,   step: 0.1,  def: 1.0 },
   { key: 'sideFront',   label: 'Rigidez lateral del.',  min: 0.2, max: 2,   step: 0.05, def: 1.3 },
   { key: 'sideRear',    label: 'Rigidez lateral tras.', min: 0.2, max: 2,   step: 0.05, def: 1.3 },
+  { key: 'tirePeak',    label: 'Neumático: ángulo de máximo agarre (°)', min: 2, max: 20, step: 0.5, def: 8 },
+  { key: 'tireDrop',    label: 'Neumático: agarre perdido al pasarse',   min: 0, max: 0.8, step: 0.05, def: 0.35 },
+  { key: 'tireFall',    label: 'Neumático: brusquedad de la caída (°)',  min: 1, max: 30, step: 0.5, def: 8 },
   { key: 'driftRear',   label: 'Agarre trasero al derrapar', min: 0.05,max: 1, step: 0.05, def: 0.45 },
   { key: 'suspStiff',   label: 'Suspensión dureza',     min: 5,   max: 120, step: 1,    def: 30 },
   { key: 'suspComp',    label: 'Amortig. compresión',   min: 0.5, max: 12,  step: 0.1,  def: 2.2 },
@@ -30,7 +33,7 @@ export const tuning = {};
 for (const d of TUNING_DEFS) tuning[d.key] = d.def;
 
 // FIS-47: el agarre de los coches de circuito se puede cambiar desde la pausa y se guarda
-export const GRIP_KEYS = ['gripFront', 'gripRear', 'sideFront', 'sideRear'];
+export const GRIP_KEYS = ['gripFront', 'gripRear', 'sideFront', 'sideRear', 'tirePeak', 'tireDrop', 'tireFall'];
 const GRIP_SAVE = 'reback.grip.v1';
 try {
   const g = JSON.parse(localStorage.getItem(GRIP_SAVE) || '{}');

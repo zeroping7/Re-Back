@@ -115,3 +115,4 @@ Todo lo que el usuario ha pedido, en orden, y lo que se decidió. Las specs refl
 | 101 | En el salón el aceite no se veía (quedaba enterrado bajo la cuesta) aunque sí afectaba | OBJ-21 ✅ |
 | 102 | Revisar que no pase lo del aceite con otros efectos en los circuitos de Carrera: la bola de agua atravesaba las cuestas; manchas de suelo, marcas y salpicaduras ya iban bien | OBJ-22 ✅ |
 | 103 | Botón en el menú de pausa para cambiar el agarre y la rigidez lateral de los coches de circuito | FIS-47 ✅ |
+| 104 | Curva de neumático tipo simulador (agarre máximo y caída al pasarse), con barras en el panel de agarre | FIS-48 ✅ |
