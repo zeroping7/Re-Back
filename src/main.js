@@ -19,7 +19,7 @@ import { Controls } from './controls.js';
 import { PadInput } from './gamepad.js';
 import { Hud } from './hud.js';
 import { Sfx } from './audio.js';
-import { tuning } from './tuning.js';
+import { tuning, TUNING_DEFS } from './tuning.js';
 import { DRIFT_DEFS, driftVals, applyDriftTune, resetDriftTune, driftText } from './driftTune.js';
 
 const params = new URLSearchParams(location.search);
@@ -101,7 +101,7 @@ async function init() {
   document.querySelectorAll('.app-version').forEach((e) => { e.textContent = __APP_VERSION__ === 'dev' ? 'dev' : 'v' + __APP_VERSION__; }); // la pone el CI
 
   // ---------- Pantallas ----------
-  const screens = ['m-main', 'm-disc', 'm-setup', 'm-settings', 'm-pause', 'm-results', 'm-garage', 'm-cups', 'm-podium', 'm-dtune'];
+  const screens = ['m-main', 'm-disc', 'm-setup', 'm-settings', 'm-pause', 'm-results', 'm-garage', 'm-cups', 'm-podium', 'm-dtune', 'm-gtune'];
   const VIEW = { 'm-main': 'main', 'm-disc': 'main', 'm-settings': 'main', 'm-setup': 'car', 'm-garage': 'car', 'm-cups': 'car' };
   function showScreen(id) {
     for (const s of screens) $(s).classList.toggle('hidden', s !== id);
@@ -582,10 +582,34 @@ async function init() {
     try { navigator.clipboard.writeText(driftText()); toast('📋 Valores copiados'); } catch { toast('Mantén pulsado el texto para copiarlo'); }
   });
 
+  // FIS-47: ajuste del agarre de los coches de circuito desde la pausa
+  const GT_KEYS = ['gripFront', 'gripRear', 'sideFront', 'sideRear'];
+  function buildGtune() {
+    const box = $('gt-list'); box.innerHTML = '';
+    for (const d of TUNING_DEFS.filter((x) => GT_KEYS.includes(x.key))) {
+      const row = document.createElement('div'); row.className = 'dt-row';
+      const lab = document.createElement('span'); lab.textContent = d.label;
+      const inp = document.createElement('input'); inp.type = 'range'; inp.min = 0.1; inp.max = d.max; inp.step = 0.05; inp.value = tuning[d.key];
+      const out = document.createElement('output');
+      const show = () => { out.textContent = (+inp.value).toFixed(2); row.classList.toggle('chg', +inp.value !== d.def); };
+      show();
+      inp.addEventListener('input', () => { tuning[d.key] = +inp.value; show(); if (race) race.applyTuning(tuning); });
+      row.append(lab, inp, out); box.append(row);
+    }
+  }
+  $('btn-gtune').addEventListener('click', () => { sfx.play('click'); buildGtune(); showScreen('m-gtune'); });
+  $('gt-back').addEventListener('click', () => { sfx.play('click'); showScreen('m-pause'); });
+  $('gt-reset').addEventListener('click', () => {
+    sfx.play('click');
+    for (const d of TUNING_DEFS) if (GT_KEYS.includes(d.key)) tuning[d.key] = d.def;
+    if (race) race.applyTuning(tuning); buildGtune();
+  });
+
   function pause(on) {
     if (!race || race.phase === 'done') return;
     race.paused = on;
     controls.releaseAll();
+    if (on) $('btn-gtune').classList.toggle('hidden', race.disc !== 'race');
     showScreen(on ? 'm-pause' : null);
     if (on) { sfx.stopEngine(); sfx.duckAmbient(true); } else sfx.duckAmbient(false);
   }
