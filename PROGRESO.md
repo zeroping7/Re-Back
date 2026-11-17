@@ -7,6 +7,7 @@ Stack: Three.js (low-poly) + Rapier (físicas) + Vite, empaquetado con Capacitor
 - **APK (última versión):** https://zeroping7.github.io/Re-Back/re-back.apk
   (alternativa: https://github.com/zeroping7/Re-Back/releases/latest)
 
+- 17-nov-2026: El salón al revés: la mesa-túnel ya no cae a media cuesta y se puede pasar por debajo (CIR-30).
 - 17-nov-2026: ruedas de los coches de Drift al tamaño de las de circuito (radio 0,26-0,28; antes 0,31-0,33) (COC-28).
 - 16-nov-2026: **dirección relativa a la velocidad** (FIS-46 (más giro en parado), FIS-45): lento ×1,3, media ×1, tope ×0,5 (Drift ×0,75); volante más lento a tope; Sensibilidad encima (tope ×1,6 en lento). Ajustes: `STEER_CURVE` en `src/steercurve.js`.
 - 16-nov-2026: enlace de pruebas con dinero infinito secreto `?rico=<clave>` (PLA-10; clave en el doc privado del Proyecto; partida aparte, solo web).

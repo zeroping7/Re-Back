@@ -153,7 +153,8 @@ export function buildCircuit(B, def) {
   // índice del tramo más recto entre dos fracciones de la vuelta
   function straightest(f0, f1, back = 4, fwd = 10, avoid = []) {
     const i0 = B.reverse ? at(f1) : at(f0);
-    let best = i0, br = -1;
+    // si no hay tramo válido (todo cae en cuestas/rampas), el mismo sitio físico en los dos sentidos (CIR-30)
+    let best = at(f0), br = -1;
     const n = Math.round(((f1 - f0 + 1) % 1 || 1) * N);
     for (let k = 0; k < n; k++) {
       const i = (i0 + k) % N;
