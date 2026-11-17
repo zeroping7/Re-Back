@@ -19,7 +19,7 @@ import { Controls } from './controls.js';
 import { PadInput } from './gamepad.js';
 import { Hud } from './hud.js';
 import { Sfx } from './audio.js';
-import { tuning, TUNING_DEFS } from './tuning.js';
+import { tuning, TUNING_DEFS, GRIP_KEYS as GT_KEYS, saveGrip } from './tuning.js';
 import { DRIFT_DEFS, driftVals, applyDriftTune, resetDriftTune, driftText } from './driftTune.js';
 
 const params = new URLSearchParams(location.search);
@@ -583,7 +583,6 @@ async function init() {
   });
 
   // FIS-47: ajuste del agarre de los coches de circuito desde la pausa
-  const GT_KEYS = ['gripFront', 'gripRear', 'sideFront', 'sideRear'];
   function buildGtune() {
     const box = $('gt-list'); box.innerHTML = '';
     for (const d of TUNING_DEFS.filter((x) => GT_KEYS.includes(x.key))) {
@@ -593,7 +592,7 @@ async function init() {
       const out = document.createElement('output');
       const show = () => { out.textContent = (+inp.value).toFixed(2); row.classList.toggle('chg', +inp.value !== d.def); };
       show();
-      inp.addEventListener('input', () => { tuning[d.key] = +inp.value; show(); if (race) race.applyTuning(tuning); });
+      inp.addEventListener('input', () => { tuning[d.key] = +inp.value; show(); saveGrip(); if (race) race.applyTuning(tuning); });
       row.append(lab, inp, out); box.append(row);
     }
   }
@@ -602,6 +601,7 @@ async function init() {
   $('gt-reset').addEventListener('click', () => {
     sfx.play('click');
     for (const d of TUNING_DEFS) if (GT_KEYS.includes(d.key)) tuning[d.key] = d.def;
+    saveGrip();
     if (race) race.applyTuning(tuning); buildGtune();
   });
 

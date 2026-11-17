@@ -28,7 +28,17 @@ export const TUNING_DEFS = [
 // Valores fijos: no hay panel de ajustes en el juego (evita trampas). Se borran ajustes guardados antiguos.
 export const tuning = {};
 for (const d of TUNING_DEFS) tuning[d.key] = d.def;
-Object.freeze(tuning);
+
+// FIS-47: el agarre de los coches de circuito se puede cambiar desde la pausa y se guarda
+export const GRIP_KEYS = ['gripFront', 'gripRear', 'sideFront', 'sideRear'];
+const GRIP_SAVE = 'reback.grip.v1';
+try {
+  const g = JSON.parse(localStorage.getItem(GRIP_SAVE) || '{}');
+  for (const k of GRIP_KEYS) if (Number.isFinite(g[k])) tuning[k] = g[k];
+} catch { /* sin almacenamiento */ }
+export function saveGrip() {
+  try { localStorage.setItem(GRIP_SAVE, JSON.stringify(Object.fromEntries(GRIP_KEYS.map((k) => [k, tuning[k]])))); } catch { /* nada */ }
+}
 
 try {
   for (const k of ['reback.tuning.v1', 'reback.tuning.v2', 'reback.tuning.v3', 'reback.tuning.v4']) localStorage.removeItem(k);

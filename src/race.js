@@ -1,3 +1,4 @@
+import { TUNING_DEFS, GRIP_KEYS } from './tuning.js';
 import * as THREE from 'three';
 import { rumble } from './gamepad.js';
 import RAPIER from '@dimforge/rapier3d-compat';
@@ -29,6 +30,7 @@ export class Race {
     if (battle) this.laps = laps = 999;
     if (trackDef.oneWay) this.laps = laps = 1; // CRW-18: tramo A→B, una sola pasada
     this.disc = battle ? 'race' : (trackDef.disc || 'race'); // DIS-02
+    baseTuning = gripFor(baseTuning, this.disc); this.baseTuning = baseTuning; // FIS-47
     if (this.disc === 'obst' && this.carUpgrades.susp) this.carUpgrades = { ...this.carUpgrades, susp: 0 }; // COC-27: en Obstáculos no actúa
     this.simT = 0;
     this.camMode = camMode;
@@ -985,6 +987,7 @@ export class Race {
   }
 
   applyTuning(base) {
+    base = gripFor(base, this.disc);
     this.baseTuning = base;
     this.player.t = discTuning(carTuning(base, this.player.def, 1, this.carUpgrades), this.disc);
     this.player.applyTuning();
@@ -1008,6 +1011,14 @@ export class Race {
     this.world.free();
     this.sfx.stopEngine();
   }
+}
+
+// FIS-47: el agarre cambiado en la pausa solo vale en Carrera (y Batalla)
+function gripFor(base, disc) {
+  if (disc === 'race') return base;
+  const b = { ...base };
+  for (const d of TUNING_DEFS) if (GRIP_KEYS.includes(d.key)) b[d.key] = d.def;
+  return b;
 }
 
 // La IA usa el ajuste por defecto (no el del jugador) para no heredar trucos raros
